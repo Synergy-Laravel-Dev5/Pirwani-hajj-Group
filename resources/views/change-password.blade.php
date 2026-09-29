@@ -3,10 +3,10 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Change Password | Maxims Group</title>
+    <title>Change Password | Pirwani Hajj Group</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="shortcut icon" href="{{ asset('assets/images/logo/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/images/PIRWANI PNG FILE.png') }}">
 
     <!-- CSS -->
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
@@ -122,13 +122,13 @@
 
                                         <!-- LOGO -->
                                         <div class="mb-4 text-center">
-                                            <img src="{{ asset('assets/images/logo/logo.png') }}" height="80">
+                                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" height="90" style="object-fit:contain; border-radius: 8px;">
                                         </div>
 
                                         <!-- TITLE -->
                                         <div class="text-center mb-3">
                                             <h3>Change Password</h3>
-                                            <p>Maxims Group <br> Manage Hajj & Umrah Bookings</p>
+                                            <p>Pirwani Hajj Group <br> Manage Hajj Operations</p>
                                         </div>
 
                                         <!-- SUCCESS MESSAGE -->
@@ -214,7 +214,7 @@
                                                 Password</button>
 
                                             <div class="text-center mt-3">
-                                                <a href="{{ route('welcome') }}" class="text-muted small">
+                                                <a href="{{ route('dashboard') }}" class="text-muted small">
                                                     <i class="ri-arrow-left-line"></i> Back to Dashboard
                                                 </a>
                                             </div>
@@ -232,8 +232,8 @@
                 <div class="col-xl-8">
                     <div class="account-page-bg">
                         <div class="overlay-content">
-                            <h2>Welcome to Maxims Group</h2>
-                            <p>Manage Hajj &amp; Umrah Bookings</p>
+                            <h2>Welcome to Pirwani Hajj Group</h2>
+                            <p>Manage Hajj Operations</p>
                         </div>
                     </div>
                 </div>

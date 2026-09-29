@@ -9,14 +9,14 @@
 <head>
 
     <meta charset="utf-8" />
-    <title>Dashboard | Maxims Group Hajj</title>
+    <title>Dashboard | Pirwani Hajj Group</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A fully featured admin theme which can be used to build , CMS, etc." />
-    <meta name="author" content="Zoyothemes" />
+    <meta name="description" content="Pirwani Hajj Group Management System" />
+    <meta name="author" content="Pirwani Hajj Group" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
     <!-- App favicon -->
-    <link rel="shortcut icon" href="{{ asset('assets/images/logo/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('assets/images/PIRWANI PNG FILE.png') }}">
 
     <!-- App css -->
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" id="app-style" />
@@ -34,13 +34,244 @@
     <link href="{{ asset('assets/libs/datatables.net-select-bs5/css/select.bootstrap5.min.css') }}" rel="stylesheet"
         type="text/css" />
 
-    <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" id="app-style" />
+    <!-- Custom Styles for Sidebar & Branding -->
+    <style>
+        /* Sidebar Logo Box (Normal Open State) */
+        .logo-box {
+            height: 140px !important;
+            width: 260px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 10px 15px !important;
+            background: #FFFFFF !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+            border-right: 1px solid #E2E8F0 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 1001 !important;
+            transition: all 0.2s ease-out !important;
+        }
+        .logo-box .logo {
+            line-height: normal !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .logo-box .logo span.logo-lg {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .logo-box .logo span.logo-lg img,
+        .sidebar-logo-full {
+            height: 120px !important;
+            max-height: 120px !important;
+            width: auto !important;
+            max-width: 230px !important;
+            object-fit: contain !important;
+            image-rendering: -webkit-optimize-contrast !important;
+            image-rendering: crisp-edges !important;
+            display: block !important;
+            margin: 0 auto !important;
+        }
+        .logo-box .logo span.logo-sm img,
+        .sidebar-logo-small {
+            height: 44px !important;
+            max-height: 44px !important;
+            width: 44px !important;
+            object-fit: contain !important;
+            image-rendering: -webkit-optimize-contrast !important;
+        }
+        .app-sidebar-menu {
+            padding-top: 140px !important;
+            background: #FFFFFF !important;
+            transition: all 0.2s ease-out !important;
+        }
 
-    <!-- Icons -->
-    <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
+        /* ── CRITICAL: Hide logo-box and collapse cleanly when sidebar is closed/hidden ── */
+        body[data-sidebar="hidden"] .logo-box,
+        .left-side-menu.condensed .logo-box,
+        body[data-sidebar="hidden"] .sidebar-logo-full,
+        body[data-sidebar="hidden"] .sidebar-logo-small {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            width: 0 !important;
+            height: 0 !important;
+            pointer-events: none !important;
+            transform: translateX(-100%) !important;
+        }
+        body[data-sidebar="hidden"] .app-sidebar-menu {
+            width: 0 !important;
+            overflow: hidden !important;
+            visibility: hidden !important;
+        }
+        body[data-sidebar="hidden"] .topbar-custom {
+            left: 0 !important;
+        }
+        body[data-sidebar="hidden"] .content-page {
+            margin-left: 0 !important;
+        }
 
+        /* ── Header Topbar: Deep Midnight Navy & Luxury Gold (Logo Themed) ── */
+        .topbar-custom {
+            background: linear-gradient(135deg, #071527 0%, #0E233E 55%, #08162A 100%) !important;
+            border-bottom: 2px solid #C9A84C !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(201, 168, 76, 0.2) !important;
+            height: 70px !important;
+            padding: 0 20px !important;
+            transition: all 0.2s ease-out !important;
+        }
 
+        /* Hamburger Sidebar Toggle Button */
+        .topbar-custom .button-toggle-menu {
+            background: rgba(201, 168, 76, 0.12) !important;
+            border: 1px solid rgba(201, 168, 76, 0.35) !important;
+            border-radius: 8px !important;
+            color: #F3DC9B !important;
+            width: 40px !important;
+            height: 40px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+        }
+        .topbar-custom .button-toggle-menu:hover {
+            background: linear-gradient(135deg, #D4AF37, #B88E28) !important;
+            border-color: #D4AF37 !important;
+            color: #071527 !important;
+            transform: none !important;
+        }
+        .topbar-custom .button-toggle-menu i,
+        .topbar-custom .button-toggle-menu svg {
+            width: 22px !important;
+            height: 22px !important;
+            stroke-width: 2.2 !important;
+        }
 
+        /* Topbar Search */
+        .topbar-custom .topbar-search input {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(201, 168, 76, 0.35) !important;
+            color: #FFFFFF !important;
+            border-radius: 24px !important;
+            padding: 7px 16px 7px 38px !important;
+            font-size: 13px !important;
+            height: 38px !important;
+            transition: all 0.2s ease !important;
+        }
+        .topbar-custom .topbar-search input::placeholder {
+            color: rgba(243, 220, 155, 0.6) !important;
+        }
+        .topbar-custom .topbar-search input:focus {
+            background: rgba(255, 255, 255, 0.14) !important;
+            border-color: #D4AF37 !important;
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.25) !important;
+            color: #FFFFFF !important;
+        }
+        .topbar-custom .topbar-search i {
+            color: #E5C368 !important;
+        }
+
+        /* Topbar User Profile Pill */
+        .topbar-custom .nav-user {
+            background: rgba(201, 168, 76, 0.12) !important;
+            border: 1px solid rgba(201, 168, 76, 0.35) !important;
+            padding: 4px 12px 4px 6px !important;
+            border-radius: 30px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            transition: all 0.2s ease !important;
+        }
+        .topbar-custom .nav-user:hover {
+            background: rgba(201, 168, 76, 0.22) !important;
+            border-color: #D4AF37 !important;
+        }
+        .topbar-custom .nav-user .user-avatar-top,
+        .topbar-custom .nav-user img {
+            width: 32px !important;
+            height: 32px !important;
+            object-fit: cover !important;
+            border: 1.5px solid #C9A84C !important;
+            box-shadow: 0 0 8px rgba(201, 168, 76, 0.3) !important;
+        }
+        .topbar-custom .nav-user .pro-user-name {
+            color: #FFFFFF !important;
+            font-weight: 600 !important;
+            font-size: 13.5px !important;
+        }
+        .topbar-custom .nav-user i {
+            color: #F3DC9B !important;
+            font-size: 14px !important;
+            margin-left: 3px !important;
+        }
+
+        /* Profile Dropdown & Logout Menu Item */
+        .profile-dropdown {
+            background: #0B1E36 !important;
+            border-radius: 12px !important;
+            border: 1px solid #C9A84C !important;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+            padding: 8px !important;
+            min-width: 210px !important;
+        }
+        .profile-dropdown .noti-title {
+            background: rgba(201, 168, 76, 0.1) !important;
+            border-radius: 8px !important;
+        }
+        .profile-dropdown .noti-title small {
+            color: #C9A84C !important;
+        }
+        .profile-dropdown .noti-title h6 {
+            color: #FFFFFF !important;
+        }
+        .profile-dropdown .dropdown-divider {
+            border-color: rgba(201, 168, 76, 0.2) !important;
+        }
+        .profile-dropdown .dropdown-item {
+            border-radius: 8px !important;
+            font-size: 13.5px !important;
+            font-weight: 500 !important;
+            color: #E2E8F0 !important;
+            padding: 8px 12px !important;
+            transition: all 0.18s ease !important;
+        }
+        .profile-dropdown .dropdown-item:hover {
+            background: rgba(201, 168, 76, 0.2) !important;
+            color: #F3DC9B !important;
+        }
+        .profile-dropdown .dropdown-item i.mdi-lock-reset {
+            color: #E5C368 !important;
+        }
+        .profile-dropdown .logout-menu-btn {
+            color: #FF6B6B !important;
+            font-weight: 600 !important;
+            background: rgba(255, 107, 107, 0.08) !important;
+            border: none !important;
+            width: 100% !important;
+            text-align: left !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            transition: all 0.18s ease !important;
+        }
+        .profile-dropdown .logout-menu-btn:hover {
+            background: #E11D48 !important;
+            color: #FFFFFF !important;
+        }
+        .profile-dropdown .logout-menu-btn:hover i {
+            color: #FFFFFF !important;
+        }
+    </style>
 </head>
 
 <!-- body start -->

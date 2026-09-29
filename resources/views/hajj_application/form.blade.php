@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hajj Application & Contract - {{ $selectedPackage->package_title ?? 'Maxims Group' }}</title>
+    <title>Hajj Application & Contract - {{ $selectedPackage->package_title ?? 'Pirwani Hajj Group' }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>

@@ -227,12 +227,12 @@
 
             {{-- Header --}}
             <div class="header-row">
-                <img src="{{ asset('assets/images/logo1.png') }}" alt="Logo">
+                <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" alt="Pirwani Hajj Group">
                 <div class="header-right">
-                    <div class="company-name">Maxims Group &amp; UMRAH SERVICES (PVT) LTD</div>
+                    <div class="company-name">PIRWANI HAJJ GROUP (PVT) LTD</div>
                     <div class="company-address-ar">شركــة إعـمـار الضیافــة الفندقیــة</div>
                     <div class="company-meta">
-                        Telephone: +92-XXX-XXXXXXX &nbsp;|&nbsp; Email: info@gulfhajjumrah.com
+                        Telephone: +92-XXX-XXXXXXX &nbsp;|&nbsp; Email: info@pirwanihajj.com
                     </div>
                 </div>
             </div>
@@ -397,7 +397,7 @@
             <div class="bank-cols">
                 <div class="bank-col">
                     <strong>UNITED BANK LIMITED</strong><br>
-                    MAXIMS GROUP Hajj &amp; UMRAH SERVICES<br>
+                    PIRWANI HAJJ GROUP (PVT) LTD<br>
                     Account #: 050701047181<br>
                     IBAN: PK46UNIL0112050701047181<br>
                     LIAQUAT BAZAR BRANCH QUETTA.
@@ -406,7 +406,7 @@
 
             <div class="footer-note">
                 This is a system generated voucher. Please collect official receipt after payment.<br>
-                <span class="footer-company">Maxims Group HAJJ &amp; UMRAH SERVICES (PVT) LTD</span><br>
+                <span class="footer-company">PIRWANI HAJJ GROUP (PVT) LTD</span><br>
                 Printed by {{ auth()->user()->name ?? 'Admin' }} on {{ now()->format('d-m-Y H:i:s') }}
             </div>
 

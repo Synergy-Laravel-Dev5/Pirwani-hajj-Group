@@ -229,7 +229,7 @@
 
             {{-- Header --}}
             <div class="invoice-header text-center">
-                <img src="{{ asset('assets/images/logo1.png') }}" height="100">
+                <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" height="100">
                 <p class="company-address-ar mb-0">شركــة إعـمـار الضیافــة الفندقیــة</p>
             </div>
 
@@ -251,7 +251,7 @@
 
             <div class="thin-line"></div>
 
-            <p class="intro-text">Thank you for showing your interest in Maxims Group HAJJ &amp; UMRAH SERVICES (PVT) LTD </p>
+            <p class="intro-text">Thank you for showing your interest in PIRWANI HAJJ GROUP (PVT) LTD </p>
 
             <p class="mb-1"><strong>Bill. No:</strong> {{ str_pad($transaction->id, 4, '0', STR_PAD_LEFT) }}</p>
             <p class="mb-1"><strong>Guest name:</strong>
@@ -409,7 +409,7 @@
             <table class="bank-table">
                 <tr>
                     <td class="bank-label">Account name:</td>
-                    <td>Maxims Group HAJJ &amp; UMRAH SERVICES</td>
+                    <td>PIRWANI HAJJ GROUP (PVT) LTD</td>
                 </tr>
                 <tr>
                     <td class="bank-label">Bank name:</td>

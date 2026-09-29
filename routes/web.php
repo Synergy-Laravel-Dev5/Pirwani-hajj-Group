@@ -42,8 +42,11 @@ Route::post('/save-agreement-signature', [BookingController::class, 'saveAgreeme
 // URL::signedRoute('booking.agreement',['booking' => $booking->id]);
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'welcome'])->name('welcome');
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/welcome', function () {
+        return redirect()->route('dashboard');
+    })->name('welcome');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/change-password', [AuthController::class, 'changePassword'])->name('change.password');
     Route::post('/change-password', [AuthController::class, 'changePasswordPost'])->name('change.password.post');

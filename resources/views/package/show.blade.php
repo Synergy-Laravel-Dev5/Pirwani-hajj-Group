@@ -973,169 +973,14 @@
 
         <div class="price-disclaimer">{!! $package->price_disclaimer ?? '"Book Early, Prices and Packages Subject to Change."' !!}</div>
 
-        <!-- Bottom Icons and Terms/Notes -->
-        @php
-            $feat = $package->feature_icons ?? [];
-
-            $item1Zone = $feat['item_1']['badge_zone'] ?? ('ZONE ' . ($package->category_zone ?? '1'));
-            $item1Maktab = $feat['item_1']['badge_maktab'] ?? ('MAKTAB ' . ($package->maktab ?? 'A-CATEGORY'));
-            $item1Title = $feat['item_1']['title'] ?? 'BEST LOCATION IN MINA';
-            $item1Desc = $feat['item_1']['desc'] ?? "AVG16 PEOPLE TO A TENT\n<small>SOFACUM BED SIZE 50-55 CM EACH \n(TENT MAY BE COMBINED) \nAS PER SAUDI TALIMAAT</small>";
-
-            $item2Icon = $feat['item_2']['icon'] ?? 'assets/images/package_images/1.png';
-            $item2Text = $feat['item_2']['text'] ?? "MAKKAH AND \n MEDINAH HOTELS \n HALF BOARD BASIS";
-
-            $item3Icon = $feat['item_3']['icon'] ?? 'assets/images/package_images/2.png';
-            $item3Text = $feat['item_3']['text'] ?? "FULL BOARD BUFFET \n MEAL IN MINA & ARAFAT \n <small>For Group Maktab A Category \nHujjaj</small>";
-
-            $item4Icon = $feat['item_4']['icon'] ?? 'assets/images/package_images/2.png';
-            $item4Text = $feat['item_4']['text'] ?? "AZIZIYA ACCOMMODATION \nQUAD SHARING, FULL \nBOARD BUFFET";
-
-            $item5Icon = $feat['item_5']['icon'] ?? 'assets/images/package_images/3.png';
-            $item5Text = $feat['item_5']['text'] ?? "PRIVATE BATHROOM \n IN MINA & ARAFAT FOR \n UB GROUP";
-
-            $item6Icon = $feat['item_6']['icon'] ?? 'assets/images/package_images/4.png';
-            $item6Text = $feat['item_6']['text'] ?? "<small>BULLET TRAIN MAK-MED OR MED-MAK</small>\n PRIVATE LUXURY BUSSES \n MODEL 2025 FOR MASHAER \n DAYS WITH BATHROOM";
-        @endphp
-
+        <!-- Bottom Terms/Notes -->
         <div class="row align-items-start">
-            <div class="col-lg-5 col-5 mb-2 align-self-start">
-                <div class="icon-box">
-                    <div class="row">
-                        <!-- Block 1: Zone & Maktab -->
-                        <div class="col-6 icon-item">
-                            <div class="text-center mb-1">
-                                <span class="zone-badge">{{ $item1Zone }}@if(!empty($item1Maktab))<small>{{ $item1Maktab }}</small>@endif</span>
-                            </div>
-                            @if(!empty($item1Title))
-                                <div class="desc fw-bold">{!! nl2br($item1Title) !!}</div>
-                            @endif
-                            <div class="desc">{!! nl2br($item1Desc) !!}</div>
-                        </div>
-
-                        <!-- Block 2: Hotels & Meals -->
-                        <div class="col-6 icon-item">
-                            <div>
-                                <img src="{{ asset($item2Icon) }}" alt="Icon"
-                                    width="26" height="26" style="object-fit: contain;">
-                            </div>
-                            <div class="desc">{!! nl2br($item2Text) !!}</div>
-                        </div>
-
-                        <!-- Block 3: Mina & Arafat Meal -->
-                        <div class="col-6 icon-item">
-                            <div>
-                                <img src="{{ asset($item3Icon) }}" alt="Icon"
-                                    width="26" height="26" style="object-fit: contain;">
-                            </div>
-                            <div class="desc">{!! nl2br($item3Text) !!}</div>
-                        </div>
-
-                        <!-- Block 4: Aziziya Accommodation -->
-                        <div class="col-6 icon-item">
-                            <div>
-                                <img src="{{ asset($item4Icon) }}" alt="Icon"
-                                    width="26" height="26" style="object-fit: contain;">
-                            </div>
-                            <div class="desc">{!! nl2br($item4Text) !!}</div>
-                        </div>
-
-                        <!-- Block 5: Private Bathroom -->
-                        <div class="col-6 icon-item">
-                            <div>
-                                <img src="{{ asset($item5Icon) }}" alt="Icon"
-                                    width="26" height="26" style="object-fit: contain;">
-                            </div>
-                            <div class="desc">{!! nl2br($item5Text) !!}</div>
-                        </div>
-
-                        <!-- Block 6: Transport & Luxury Busses -->
-                        <div class="col-6 icon-item">
-                            <div>
-                                <img src="{{ asset($item6Icon) }}" alt="Icon"
-                                    width="26" height="26" style="object-fit: contain;">
-                            </div>
-                            <div class="desc">{!! nl2br($item6Text) !!}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-7 col-7 mb-2">
-                {{-- <div class="notes-title">NOTES:</div> --}}
+            <div class="col-12 mb-2">
                 <div class="notes-content">
                     {!! $package->notes !!}
                 </div>
-                {{-- <div class="taxi-strip">FAMILY CAR/TAXI SERVICES AVAILABLE SAR
-                    {{ $package->jeddah_taxi_fare ?? '600' }} PER PERSON FROM JEDDAH AIRPORT TO MAKKAH HOTEL &amp; V.V
-                </div>
-                <div class="taxi-strip">FAMILY CAR/TAXI SERVICES AVAILABLE SAR
-                    {{ $package->madinah_taxi_fare ?? '150' }} PER PERSON FROM MEDINAH AIRPORT TO MEDINAH HOTEL &amp;
-                    V.V</div> --}}
-
             </div>
         </div>
-        </div>
-
-        <div class="sign-box">
-            Applicant Sign: ____________________
-        </div>
-    </div>
-
-    <!-- Page 2 Sheet: Platinum Packages Services (Matching Image 1) -->
-    @php
-        $defaultServicesContent = '<ul>
-    <li>Meet & assist at the airport Jeddah/Medinah Hajj Terminal. (Sub to Approval Handling).</li>
-    <li>Group arrival transfer by Bus from Airport to hotel is provided by NAQABA / SAUDI MOULLEM.</li>
-    <li>Average 04 person sharing Accommodation in Aziziya with air condition A class building with proper beds (Pillow, Bed sheet, Blanket).</li>
-    <li>Fullboard meal (Breakfast, Lunch & dinner) with hot & Coldrink to serve in Aziziya building except Hajj Days.</li>
-    <li>Aziziya Services please reference to Page # 25 & 25A.</li>
-    <li>Accommodation in Makkah hotels with Breakfast & Dinner (by Saudi Star Standard).</li>
-    <li>Accommodation in Medinah hotels with Breakfast & Dinner (by Saudi Star Standard).</li>
-    <li>During peak days from the 1st to the 14th of Zill Hajj, the check-in time at hotels in Makkah and Medinah is after Isha prayers, in accordance with hotel policies and due to the large number of check-ins and check-outs. The check-out time is 12 PM</li>
-    <li>Fullboard meal to be serve in Mina from 08 Zil hajj to 12 Zil hajj.</li>
-    <li>5 days Platinum Arrangment between 08 Zil hajj to 12 Zil hajj with retaining room in Aziziya.</li>
-    <li>Private Special Luxury Busses with Bathroom (Mina - Arafat - Muzdalfa - Mina).</li>
-    <li>Transfer Makkah to Medinah or Medinah to Makkah by Bus/Train.</li>
-    <li>Best location MAKTAB (A) in mina very near to Jamarat, with Sofa Cum Bed (size 50 to 55cm) Private Toilet, for Group MAKTAB (A) Category Hujjaj. (Indian and western) (Services by Saudi Company)</li>
-    <li>(Mashaer Hajj Services) Pillow, Bed sheet, blanket, Air conditioned tent, buffet meal & Hot & Coldrink. Avg 16 people to a tent (Tent may be combined). (Services by Saudi Company)</li>
-    <li>Tent in Arafat with meals and Hot & Coldrink. Floor Mat & snack box in Muzdalfa. (Services by Saudi Company)</li>
-    <li>Mic and Speaker are installed to the religious speeches for guidance.</li>
-</ul>
-
-<p><strong>Airline Ticket not included in this package<br>
-(Approx PKR 335,000/- FROM KARACHI & PKR 345,000/- FROM NORTH PAKISTAN.)</strong></p>
-
-<p>Different fares for Hajis coming from international destination.</p>
-<ul>
-    <li>Saudi Airline, Emirates, Oman, PIA, Qatar, SereneAir, FlyNas, Turkish Airlines, Fly Dubai etc Inclusive PSF.</li>
-    <li>International ticket may be upgraded to Business class by paying suppliment. (Subject to Availability)</li>
-    <li>Ziyarat in Medinah with guidance.</li>
-    <li>Hajj training program and guidance in Pakistan / Saudia.</li>
-    <li>Religious guide book etc.</li>
-    <li>Assitance in doing Qurbani Approx Charges SAR 720/-</li>
-    <li>Assitance in Tawaf - e - Ziyara.</li>
-</ul>
-
-<p><strong>IMPORTANT NOTES:</strong></p>
-<ol>
-    <li>No of days of stay in Makkah can be reduced but prices remain the same.</li>
-    <li>Shuttle will be provided two times a day for drop to Haram till 07 Zil hajj, (Shuttle services subject to Saudi Laws and traffic).</li>
-    <li>Abraaj Tower Means Swiss Maqam, Hajar tower, Swissotel, Safwa orchid, Al marwa etc & Project of Jabal e Omar, means Hayat Regency, Address Hotel, Jumeirah Hotel, Hilton Convention, Double Tree, Marriot Hotel etc.</li>
-    <li>Kaba view Supplement SAR 3800/- per person.</li>
-    <li>Rates & Hotels subject to change (Currency Difference) prices are subject to change. Even after booking /Saudi Talimaat changes.</li>
-</ol>';
-    @endphp
-
-    <div class="sheet mb-4" id="packageSheet2">
-        <div class="sheet-content">
-            <div class="services-header-banner">
-                <h2>{{ $package->services_title ?? 'PLATINUM PACKAGES SERVICES (WITH AZIZIYA)' }}</h2>
-            </div>
-
-            <div class="services-sheet-body">
-                {!! $package->services_content ?? $defaultServicesContent !!}
-            </div>
         </div>
 
         <div class="sign-box">
@@ -1146,14 +991,13 @@
     <script>
         function downloadPackagePDF() {
             const sheet1 = document.getElementById('packageSheet1');
-            const sheet2 = document.getElementById('packageSheet2');
             if (!sheet1) return;
 
             const filename = '{{ $package->code ?? 'Package' }}_{{ $package->days ?? '14' }}_Days_Package.pdf';
             const jsPDFClass = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
 
             if (typeof html2canvas !== 'undefined' && jsPDFClass) {
-                // Render Sheet 1 (Page 1)
+                // Render Sheet 1
                 html2canvas(sheet1, {
                     scale: 2,
                     useCORS: true,
@@ -1181,39 +1025,7 @@
                     }
 
                     pdf.addImage(imgData1, 'JPEG', posX1, posY1, renderWidth1, renderHeight1);
-
-                    // Render Sheet 2 (Page 2) if it exists
-                    if (sheet2) {
-                        html2canvas(sheet2, {
-                            scale: 2,
-                            useCORS: true,
-                            logging: false,
-                            scrollY: 0
-                        }).then(function(canvas2) {
-                            pdf.addPage('a4', 'portrait');
-                            const imgData2 = canvas2.toDataURL('image/jpeg', 0.98);
-
-                            let renderWidth2 = printableWidth;
-                            let renderHeight2 = (canvas2.height * renderWidth2) / canvas2.width;
-                            let posX2 = margin;
-                            let posY2 = margin;
-
-                            if (renderHeight2 > printableHeight) {
-                                const ratio = printableHeight / renderHeight2;
-                                renderHeight2 = printableHeight;
-                                renderWidth2 = renderWidth2 * ratio;
-                                posX2 = margin + ((printableWidth - renderWidth2) / 2);
-                            }
-
-                            pdf.addImage(imgData2, 'JPEG', posX2, posY2, renderWidth2, renderHeight2);
-                            pdf.save(filename);
-                        }).catch(function(err) {
-                            console.error('Error rendering sheet 2:', err);
-                            pdf.save(filename);
-                        });
-                    } else {
-                        pdf.save(filename);
-                    }
+                    pdf.save(filename);
                 }).catch(function(err) {
                     console.error('Error generating PDF:', err);
                 });

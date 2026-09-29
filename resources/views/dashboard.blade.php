@@ -473,27 +473,14 @@
                     {{-- Title --}}
                     <div class="flex-grow-1">
                         <h4 class="page-title-font mb-1">
-                            {{ $package === 'hajj' ? '🕋' : '🕌' }}
-                            {{ ucfirst($package) }} Dashboard
+                            🕋 Hajj Dashboard
                         </h4>
-                        <p class="page-subtitle mb-0">Maxims Group &mdash; {{ $year }}</p>
-                    </div>
-
-                    {{-- Package Toggle --}}
-                    <div class="pkg-tabs">
-                        <a href="{{ route('dashboard', ['package' => 'hajj', 'year' => $year]) }}"
-                            class="pkg-tab {{ $package === 'hajj' ? 'active-hajj' : '' }}">
-                            🕋 Hajj
-                        </a>
-                        <a href="{{ route('dashboard', ['package' => 'umrah', 'year' => $year]) }}"
-                            class="pkg-tab {{ $package === 'umrah' ? 'active-umrah' : '' }}">
-                            🕌 Umrah
-                        </a>
+                        <p class="page-subtitle mb-0">Pirwani Hajj Group &mdash; {{ $year }}</p>
                     </div>
 
                     {{-- Year Dropdown --}}
                     <form method="GET" action="{{ route('dashboard') }}" id="yearForm">
-                        <input type="hidden" name="package" value="{{ $package }}">
+                        <input type="hidden" name="package" value="hajj">
                         <select name="year" class="year-select" onchange="document.getElementById('yearForm').submit()">
                             @foreach ($availableYears as $yr)
                                 <option value="{{ $yr }}" {{ $yr == $year ? 'selected' : '' }}>
@@ -507,12 +494,6 @@
                         style="background:var(--gold-subtle);color:var(--gold);border:1px solid #E0C97A;font-size:12px;font-weight:600;">
                         <i class="mdi mdi-calendar-month me-1"></i> {{ now()->format('d M Y') }}
                     </span>
-
-                    {{-- Back to Welcome --}}
-                    <a href="{{ route('welcome') }}"
-                        style="font-size:12px;font-weight:600;color:var(--text-muted);text-decoration:none;">
-                        <i class="mdi mdi-arrow-left me-1"></i> Switch Package
-                    </a>
                 </div>
 
                 {{-- ════ ROW 1 — STAT CARDS ════ --}}

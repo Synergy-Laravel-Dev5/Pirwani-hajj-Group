@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAXIMS GROUP WELCOME</title>
+    <title>PIRWANI HAJJ GROUP</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;600&display=swap"
         rel="stylesheet">
@@ -498,7 +498,7 @@
             <div class="logo">
                 <div class="logo-mark">🌙</div>
                 <div>
-                    <div class="logo-name">Maxims Group</div>
+                    <div class="logo-name">Pirwani Hajj Group</div>
                     <div class="logo-sub">Management Portal</div>
                 </div>
             </div>
@@ -523,7 +523,7 @@
             {{-- Headline --}}
             <div class="headline">
                 <div class="eyebrow">✦ Management Dashboard ✦</div>
-                <h1 class="h1">Welcome to <em>Maxims Group</em></h1>
+                <h1 class="h1">Welcome to <em>Pirwani Hajj Group</em></h1>
                 <p class="tagline">Select a package to view bookings, revenue & monthly reports.</p>
             </div>
 

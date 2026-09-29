@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking — {{ $booking->client->name ?? 'N/A' }} | Maxims Group</title>
+    <title>Booking — {{ $booking->client->name ?? 'N/A' }} | Pirwani Hajj Group</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@300;400;500;600&display=swap"
         rel="stylesheet">
@@ -815,11 +815,11 @@
                 {{-- ── LOGO ── --}}
                 <div class="hero-logo-wrap">
                     <div class="logo-img-box">
-                        <img src="{{ asset('assets/images/logo1.png') }}" alt="Maxims Group"
+                        <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" alt="Pirwani Hajj Group"
                             onerror="this.parentElement.style.display='none'">
                     </div>
                     <div class="logo-text-wrap">
-                        <div class="logo-name">Maxims Group Umrah</div>
+                        <div class="logo-name">Pirwani Hajj Group</div>
                         <div class="logo-sub">Booking Detail</div>
                     </div>
                 </div>
@@ -1303,7 +1303,7 @@
             var element = document.getElementById('page-top').parentElement;
 
             var clientName = '{{ addslashes($booking->client->name ?? 'booking') }}';
-            var filename = 'Gulf-Umrah-' + clientName.replace(/\s+/g, '-') + '.pdf';
+            var filename = 'Pirwani-Hajj-' + clientName.replace(/\s+/g, '-') + '.pdf';
 
             var opt = {
                 margin: [6, 6, 6, 6],
