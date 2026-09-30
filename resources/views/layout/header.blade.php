@@ -171,10 +171,68 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('package.index') }}">
+                        <a href="#sidebarPackageManagement" data-bs-toggle="collapse">
                             <i data-feather="package"></i>
-                            <span>Packages</span>
+                            <span>Package Management</span>
+                            <span class="menu-arrow"></span>
                         </a>
+                        <div class="collapse" id="sidebarPackageManagement">
+                            <ul class="nav-second-level">
+                                <li>
+                                    <a class="tp-link" href="{{ route('package.index') }}">
+                                        Packages
+                                    </a>
+                                </li>
+                                @can('hotel_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('hotel.index') }}">
+                                            Hotels
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('airline_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('airline.index') }}">
+                                            Airlines
+                                        </a>
+                                    </li>
+                                @endcan
+                                <li>
+                                    <a class="tp-link" href="{{ route('flight.index') }}">
+                                        Flights
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="tp-link" href="{{ route('route.index') }}">
+                                        Routes
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="tp-link" href="{{ route('travel-route.index') }}">
+                                        Travel Routes
+                                    </a>
+                                </li>
+                                @can('train_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('train.index') }}">
+                                            Trains
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('vehicle_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('vehicle.index') }}">
+                                            Vehicles
+                                        </a>
+                                    </li>
+                                @endcan
+                                <li>
+                                    <a class="tp-link" href="{{ route('training-session.index') }}">
+                                        Training Sessions
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
                     @can('booking_view')
                         <li>
@@ -214,62 +272,6 @@
                             <span>Hajj Applications</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('training-session.index') }}">
-                            <i data-feather="book-open"></i>
-                            <span>Training Sessions</span>
-                        </a>
-                    </li>
-                    @can('hotel_view')
-                        <li>
-                            <a href="{{ route('hotel.index') }}">
-                                <i data-feather="home"></i>
-                                <span>Hotels</span>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('vehicle_view')
-                        <li>
-                            <a href="{{ route('vehicle.index') }}">
-                                <i data-feather="truck"></i>
-                                <span>Vehicles</span>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('airline_view')
-                        <li>
-                            <a href="{{ route('airline.index') }}">
-                                <i data-feather="navigation"></i>
-                                <span>Airlines</span>
-                            </a>
-                        </li>
-                    @endcan
-                    <li>
-                        <a href="{{ route('flight.index') }}">
-                            <i data-feather="send"></i>
-                            <span>Flights</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('route.index') }}">
-                            <i data-feather="map-pin"></i>
-                            <span>Routes</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('travel-route.index') }}">
-                            <i data-feather="map"></i>
-                            <span>Travel Routes</span>
-                        </a>
-                    </li>
-                    @can('train_view')
-                        <li>
-                            <a href="{{ route('train.index') }}">
-                                <i data-feather="layers"></i>
-                                <span>Trains</span>
-                            </a>
-                        </li>
-                    @endcan
                     @can('expense_view')
                         <li>
                             <a href="{{ route('expense.index') }}">
