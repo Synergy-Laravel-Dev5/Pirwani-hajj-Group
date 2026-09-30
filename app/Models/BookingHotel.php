@@ -14,6 +14,12 @@ class BookingHotel extends Model
         'check_in',
         'check_out',
         'room_type',
-        'no_of_rooms'
+        'no_of_rooms',
+        'hotel_voucher'
     ];
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class, 'booking_id');
+    }
 }

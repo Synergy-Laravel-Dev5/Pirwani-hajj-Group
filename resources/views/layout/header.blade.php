@@ -14,7 +14,7 @@
                                 🕋 PIRWANI HAJJ GROUP
                             </span>
                             <h5 class="mb-0 text-white fw-bold" style="font-size: 15px; letter-spacing: 0.3px;">
-                                {{ Auth::user()->name }}
+                                {{ Auth::user()->name ?? 'Admin User' }}
                             </h5>
                         </div>
                     </li>
@@ -43,7 +43,7 @@
                         <div class="dropdown-menu dropdown-menu-end profile-dropdown shadow-lg">
                             <div class="dropdown-header noti-title py-2 px-3">
                                 <small class="text-uppercase fw-bold text-muted" style="letter-spacing: 0.5px; font-size: 10.5px;">Signed in as</small>
-                                <h6 class="text-overflow m-0 fw-bold text-dark" style="font-size: 13.5px;">{{ Auth::user()->name }}</h6>
+                                <h6 class="text-overflow m-0 fw-bold text-dark" style="font-size: 13.5px;">{{ Auth::user()->name ?? 'Admin' }}</h6>
                             </div>
 
                             <div class="dropdown-divider my-1"></div>
@@ -185,6 +185,30 @@
                         </li>
                     @endcan
                     <li>
+                        <a href="{{ route('haji-group.index') }}">
+                            <i data-feather="users"></i>
+                            <span>Haji Pilgrim Groups</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('room-inventory.index') }}">
+                            <i data-feather="home"></i>
+                            <span>Rooming List & Stock</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('arrival-group.index') }}">
+                            <i data-feather="arrow-down-left"></i>
+                            <span>Arrival Groups</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('departure-group.index') }}">
+                            <i data-feather="arrow-up-right"></i>
+                            <span>Departure Groups</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('hajj-application.index') }}">
                             <i data-feather="file-text"></i>
                             <span>Hajj Applications</span>
@@ -220,6 +244,24 @@
                             </a>
                         </li>
                     @endcan
+                    <li>
+                        <a href="{{ route('flight.index') }}">
+                            <i data-feather="send"></i>
+                            <span>Flights</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('route.index') }}">
+                            <i data-feather="map-pin"></i>
+                            <span>Routes</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('travel-route.index') }}">
+                            <i data-feather="map"></i>
+                            <span>Travel Routes</span>
+                        </a>
+                    </li>
                     @can('train_view')
                         <li>
                             <a href="{{ route('train.index') }}">

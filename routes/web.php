@@ -21,6 +21,13 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\AirlineController;
 use App\Http\Controllers\TrainController;
 use App\Http\Controllers\HajjApplicationController;
+use App\Http\Controllers\FlightController;
+use App\Http\Controllers\RouteController;
+use App\Http\Controllers\TravelRouteController;
+use App\Http\Controllers\ArrivalGroupController;
+use App\Http\Controllers\DepartureGroupController;
+use App\Http\Controllers\HajiGroupController;
+use App\Http\Controllers\RoomInventoryController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -50,7 +57,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/change-password', [AuthController::class, 'changePassword'])->name('change.password');
     Route::post('/change-password', [AuthController::class, 'changePasswordPost'])->name('change.password.post');
-
 
     Route::prefix('admin')->group(function () {
         Route::controller(RoleController::class)
@@ -116,6 +122,55 @@ Route::middleware('auth')->group(function () {
                 Route::get('trash',        'trash')->name('booking.trash');
                 Route::get('restore/{id}', 'restore')->name('booking.restore');
                 Route::get('voucher/{booking}', 'voucher')->name('booking.voucher');
+            });
+
+        Route::controller(ArrivalGroupController::class)
+            ->prefix('arrival-group')
+            ->group(function () {
+                Route::get('/',            'index')->name('arrival-group.index');
+                Route::get('create',       'create')->name('arrival-group.create');
+                Route::post('store',       'store')->name('arrival-group.store');
+                Route::get('show/{id}',    'show')->name('arrival-group.show');
+                Route::get('edit/{id}',    'edit')->name('arrival-group.edit');
+                Route::put('update/{id}',  'update')->name('arrival-group.update');
+                Route::delete('delete/{id}', 'destroy')->name('arrival-group.delete');
+            });
+
+        Route::controller(DepartureGroupController::class)
+            ->prefix('departure-group')
+            ->group(function () {
+                Route::get('/',            'index')->name('departure-group.index');
+                Route::get('create',       'create')->name('departure-group.create');
+                Route::post('store',       'store')->name('departure-group.store');
+                Route::get('show/{id}',    'show')->name('departure-group.show');
+                Route::get('edit/{id}',    'edit')->name('departure-group.edit');
+                Route::put('update/{id}',  'update')->name('departure-group.update');
+                Route::delete('delete/{id}', 'destroy')->name('departure-group.delete');
+            });
+
+        Route::controller(HajiGroupController::class)
+            ->prefix('haji-group')
+            ->group(function () {
+                Route::get('/',            'index')->name('haji-group.index');
+                Route::get('create',       'create')->name('haji-group.create');
+                Route::post('store',       'store')->name('haji-group.store');
+                Route::get('show/{id}',    'show')->name('haji-group.show');
+                Route::get('edit/{id}',    'edit')->name('haji-group.edit');
+                Route::put('update/{id}',  'update')->name('haji-group.update');
+                Route::delete('delete/{id}', 'destroy')->name('haji-group.delete');
+                Route::post('smart-split/{id}', 'smartSplitBus')->name('haji-group.smart-split-bus');
+                Route::post('transfer-persons/{id}', 'transferPersons')->name('haji-group.transfer-persons');
+            });
+
+        Route::controller(RoomInventoryController::class)
+            ->prefix('room-inventory')
+            ->group(function () {
+                Route::get('/',            'index')->name('room-inventory.index');
+                Route::get('create',       'create')->name('room-inventory.create');
+                Route::post('store',       'store')->name('room-inventory.store');
+                Route::get('edit/{id}',    'edit')->name('room-inventory.edit');
+                Route::put('update/{id}',  'update')->name('room-inventory.update');
+                Route::delete('delete/{id}', 'destroy')->name('room-inventory.delete');
             });
 
         Route::controller(ExpenseController::class)
@@ -260,6 +315,44 @@ Route::middleware('auth')->group(function () {
                 Route::delete('delete/{id}', 'destroy')->name('airline.delete');
                 Route::get('trash', 'trash')->name('airline.trash');
                 Route::get('restore/{id}', 'restore')->name('airline.restore');
+            });
+
+        Route::controller(FlightController::class)
+            ->prefix('flight')->group(function () {
+                Route::get('/', 'index')->name('flight.index');
+                Route::get('create', 'create')->name('flight.create');
+                Route::post('store', 'store')->name('flight.store');
+                Route::get('show/{id}', 'show')->name('flight.show');
+                Route::get('edit/{id}', 'edit')->name('flight.edit');
+                Route::put('update/{id}', 'update')->name('flight.update');
+                Route::delete('delete/{id}', 'destroy')->name('flight.delete');
+                Route::get('trash', 'trash')->name('flight.trash');
+                Route::get('restore/{id}', 'restore')->name('flight.restore');
+            });
+
+        Route::controller(RouteController::class)
+            ->prefix('route')->group(function () {
+                Route::get('/', 'index')->name('route.index');
+                Route::get('create', 'create')->name('route.create');
+                Route::post('store', 'store')->name('route.store');
+                Route::get('edit/{id}', 'edit')->name('route.edit');
+                Route::put('update/{id}', 'update')->name('route.update');
+                Route::delete('delete/{id}', 'destroy')->name('route.delete');
+                Route::get('trash', 'trash')->name('route.trash');
+                Route::get('restore/{id}', 'restore')->name('route.restore');
+            });
+
+        Route::controller(TravelRouteController::class)
+            ->prefix('travel-route')->group(function () {
+                Route::get('/', 'index')->name('travel-route.index');
+                Route::get('create', 'create')->name('travel-route.create');
+                Route::post('store', 'store')->name('travel-route.store');
+                Route::get('show/{id}', 'show')->name('travel-route.show');
+                Route::get('edit/{id}', 'edit')->name('travel-route.edit');
+                Route::put('update/{id}', 'update')->name('travel-route.update');
+                Route::delete('delete/{id}', 'destroy')->name('travel-route.delete');
+                Route::get('trash', 'trash')->name('travel-route.trash');
+                Route::get('restore/{id}', 'restore')->name('travel-route.restore');
             });
 
         Route::controller(TrainController::class)
