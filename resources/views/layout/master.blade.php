@@ -36,14 +36,14 @@
 
     <!-- Custom Styles for Sidebar & Branding -->
     <style>
-        /* Sidebar Logo Box (Normal Open State) */
+        /* Sidebar Logo Box */
         .logo-box {
-            height: 140px !important;
+            height: 100px !important;
             width: 260px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            padding: 10px 15px !important;
+            padding: 8px 15px !important;
             background: #FFFFFF !important;
             border-bottom: 1px solid #E2E8F0 !important;
             border-right: 1px solid #E2E8F0 !important;
@@ -70,26 +70,24 @@
         }
         .logo-box .logo span.logo-lg img,
         .sidebar-logo-full {
-            height: 120px !important;
-            max-height: 120px !important;
+            height: 84px !important;
+            max-height: 84px !important;
             width: auto !important;
-            max-width: 230px !important;
+            max-width: 220px !important;
             object-fit: contain !important;
-            image-rendering: -webkit-optimize-contrast !important;
-            image-rendering: crisp-edges !important;
+            filter: drop-shadow(0 2px 6px rgba(201, 168, 76, 0.25)) !important;
             display: block !important;
             margin: 0 auto !important;
         }
         .logo-box .logo span.logo-sm img,
         .sidebar-logo-small {
-            height: 44px !important;
-            max-height: 44px !important;
-            width: 44px !important;
+            height: 40px !important;
+            max-height: 40px !important;
+            width: 40px !important;
             object-fit: contain !important;
-            image-rendering: -webkit-optimize-contrast !important;
         }
         .app-sidebar-menu {
-            padding-top: 140px !important;
+            padding-top: 100px !important;
             background: #FFFFFF !important;
             transition: all 0.2s ease-out !important;
         }
@@ -270,6 +268,142 @@
         }
         .profile-dropdown .logout-menu-btn:hover i {
             color: #FFFFFF !important;
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+           GLOBAL LUXURY BUTTON THEME (Matching Header Navy & Gold)
+        ══════════════════════════════════════════════════════════════ */
+        /* Primary / Create / Update / Submit / Next Buttons */
+        .btn-primary,
+        .btn-primary:active,
+        .btn-primary:focus,
+        .btn-next,
+        .btn-save-booking {
+            background: linear-gradient(135deg, #071527 0%, #0E233E 55%, #15325B 100%) !important;
+            color: #F3DC9B !important;
+            border: 1px solid #C9A84C !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 8px rgba(7, 21, 39, 0.25) !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-primary:hover,
+        .btn-next:hover,
+        .btn-save-booking:hover {
+            background: linear-gradient(135deg, #D4AF37 0%, #B88E28 100%) !important;
+            color: #071527 !important;
+            border-color: #D4AF37 !important;
+            box-shadow: 0 4px 14px rgba(201, 168, 76, 0.45) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Secondary / Back / Cancel Buttons */
+        .btn-secondary,
+        .btn-outline-secondary {
+            background: #F8FAFC !important;
+            border: 1px solid #CBD5E1 !important;
+            color: #334155 !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-secondary:hover,
+        .btn-outline-secondary:hover {
+            background: #0E233E !important;
+            color: #F3DC9B !important;
+            border-color: #C9A84C !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Warning / Gold Action Buttons */
+        .btn-warning,
+        .btn-outline-warning {
+            background: linear-gradient(135deg, #D4AF37 0%, #B88E28 100%) !important;
+            color: #071527 !important;
+            border: 1px solid #C9A84C !important;
+            font-weight: 700 !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3) !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-warning:hover,
+        .btn-outline-warning:hover {
+            background: #0E233E !important;
+            color: #F3DC9B !important;
+            border-color: #C9A84C !important;
+            box-shadow: 0 4px 14px rgba(7, 21, 39, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Success / Excel / Download Buttons */
+        .btn-success,
+        .btn-outline-success {
+            background: linear-gradient(135deg, #064E3B 0%, #047857 100%) !important;
+            color: #ECFDF5 !important;
+            border: 1px solid #10B981 !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 8px rgba(4, 120, 87, 0.25) !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-success:hover,
+        .btn-outline-success:hover {
+            background: #059669 !important;
+            color: #FFFFFF !important;
+            border-color: #059669 !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Info / View Buttons */
+        .btn-info,
+        .btn-outline-info {
+            background: linear-gradient(135deg, #0C4A6E 0%, #0284C7 100%) !important;
+            color: #F0F9FF !important;
+            border: 1px solid #38BDF8 !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-info:hover,
+        .btn-outline-info:hover {
+            background: #0284C7 !important;
+            color: #FFFFFF !important;
+            border-color: #0284C7 !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Danger / Delete / Trash Buttons */
+        .btn-danger,
+        .btn-outline-danger {
+            background: linear-gradient(135deg, #881337 0%, #BE123C 100%) !important;
+            color: #FFF1F2 !important;
+            border: 1px solid #F43F5E !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 8px rgba(190, 18, 60, 0.2) !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-danger:hover,
+        .btn-outline-danger:hover {
+            background: #E11D48 !important;
+            color: #FFFFFF !important;
+            border-color: #E11D48 !important;
+            box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Outlined Buttons on Dark / Table Context */
+        .btn-outline-primary {
+            background: rgba(201, 168, 76, 0.08) !important;
+            color: #0E233E !important;
+            border: 1.5px solid #0E233E !important;
+            font-weight: 600 !important;
+        }
+        .btn-outline-primary:hover {
+            background: linear-gradient(135deg, #071527 0%, #0E233E 100%) !important;
+            color: #F3DC9B !important;
+            border-color: #C9A84C !important;
         }
     </style>
 </head>

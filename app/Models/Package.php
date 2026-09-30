@@ -18,6 +18,8 @@ class Package extends Model
         'madinah_a' => 'array',
         'madinah_b' => 'array',
         'feature_icons' => 'array',
+        'package_included_points' => 'array',
+        'instructions_points' => 'array',
     ];
 
     public function accommodations()

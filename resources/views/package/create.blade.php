@@ -8,30 +8,27 @@
             position: relative;
         }
         .accommodation-row:not(:first-child) {
-            margin-top: 35px !important;
+            margin-top: 20px !important;
         }
-        .accommodation-row-divider {
-            border: none;
-            border-top: 4px solid #000 !important;
-            opacity: 1 !important;
-            position: absolute;
-            top: -20px;
-            left: 0;
-            right: 0;
-            margin: 0 !important;
-        }
-        .accommodation-row:first-child .accommodation-row-divider {
-            display: none;
+        .section-subhead {
+            font-size: 14px;
+            font-weight: 700;
+            color: #071527;
+            border-bottom: 2px solid #C59A27;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
         }
     </style>
-    <!-- Summernote Lite CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+
     <div class="content-page">
         <div class="content">
             <div class="container-fluid">
 
                 <div class="py-3 d-flex align-items-center justify-content-between">
                     <h4 class="fs-18 fw-semibold m-0">Package / <strong>Create</strong></h4>
+                    <a href="{{ route('package.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="mdi mdi-arrow-left me-1"></i> Back to List
+                    </a>
                 </div>
 
                 @if (isset($errors) && $errors->any())
@@ -47,1023 +44,466 @@
                 <form action="{{ route('package.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
-                    <ul class="nav nav-pills mb-3">
-                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill"
-                                data-bs-target="#tab-package" type="button">PACKAGE</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill"
-                                data-bs-target="#tab-accommodation" type="button">ACCOMMODATION</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-transport"
-                                type="button">TRANSPORT</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-training"
-                                type="button">TRAINING / GIFTS</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-terms"
-                                type="button">TERMS & CONDITION</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-itinerary"
-                                type="button">ITINERARY</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-maktab"
-                                type="button">MAKTAB ADDRESS</button></li>
-                        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-notes"
-                                type="button">Notes</button></li>
+                    <ul class="nav nav-pills mb-3" id="packageTab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-package" type="button">
+                                📋 PACKAGE & DURATION
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-camp" type="button">
+                                ⛺ CAMP & PRICING
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-qurbani" type="button">
+                                🐑 QURBANI
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-accommodation" type="button">
+                                🏨 ACCOMMODATION & ITINERARY
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-terms" type="button">
+                                📜 INCLUSIONS & INSTRUCTIONS
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-transport" type="button">
+                                🚌 TRANSPORT & FLIGHTS
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-training" type="button">
+                                🎁 TRAINING & GIFTS
+                            </button>
+                        </li>
                     </ul>
 
                     <div class="tab-content card">
 
-                        {{-- ================= PACKAGE ================= --}}
-                        <div class="tab-pane fade show active card" id="tab-package">
-                            <div class="card-body">
-                                <h5 class="mb-3">Package Details</h5>
-                                <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <label class="form-label">Company</label>
-                                        <select name="company_id" class="form-select">
-                                            <option value="">-- Select Company --</option>
-                                            @foreach ($companies as $company)
-                                                <option value="{{ $company->id }}"
-                                                    {{ old('company_id') == $company->id ? 'selected' : '' }}>
-                                                    {{ $company->company_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Package #</label>
-                                        <input type="text" name="package_number" class="form-control"
-                                            placeholder="e.g. PKG-001" value="{{ old('package_number') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Category</label>
-                                        <input type="text" name="category" class="form-control" placeholder="e.g. VIP"
-                                            value="{{ old('category') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Zone</label>
-                                        <input type="text" name="zone" class="form-control" placeholder="e.g. Zone A"
-                                            value="{{ old('zone') }}">
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label">Package Name</label>
-                                        <input type="text" name="package_title" class="form-control"
-                                            placeholder="e.g. Executive Platinum" value="{{ old('package_title') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Package Name</label>
-                                        <input type="text" name="name" class="form-control"
-                                            placeholder="e.g. INTERCON / FAIRMONT" value="{{ old('name') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Package Code</label>
-                                        <input type="text" name="code" class="form-control"
-                                            placeholder="e.g. HJ-2027-01" value="{{ old('code') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Days</label>
-                                        <input type="number" min="0" name="days" class="form-control"
-                                            placeholder="e.g. 21" value="{{ old('days') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Year</label>
-                                        <input type="text" name="year" class="form-control"
-                                            placeholder="e.g. 2027" value="{{ old('year', date('Y') + 1) }}">
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <label class="form-label">Maktab</label>
-                                        <input type="text" name="maktab" class="form-control"
-                                            placeholder="e.g. Maktab 5" value="{{ old('maktab') }}">
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <label class="form-label">Maktab Number</label>
-                                        <input type="text" name="maktab_number" class="form-control"
-                                            placeholder="e.g. 105" value="{{ old('maktab_number') }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label d-block">Medina Arrival</label>
-                                        @foreach (['before_hajj' => 'Before Hajj', 'after_hajj' => 'After Hajj'] as $val => $label)
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="medina_arrival"
-                                                    value="{{ $val }}"
-                                                    {{ old('medina_arrival', 'before_hajj') == $val ? 'checked' : '' }}>
-                                                <label class="form-check-label">{{ $label }}</label>
-                                            </div>
+                        {{-- ═════════════════════════════════════════
+                             TAB 1: PACKAGE & DURATION
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade show active card-body" id="tab-package">
+                            <h5 class="section-subhead">📋 Package Basic Info & Duration</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Company</label>
+                                    <select name="company_id" class="form-select">
+                                        <option value="">-- Select Company --</option>
+                                        @foreach ($companies as $company)
+                                            <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>
+                                                {{ $company->company_name }}
+                                            </option>
                                         @endforeach
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label d-block">Hajj Duration</label>
-                                        @foreach (['short' => 'Short', 'long' => 'Long'] as $val => $label)
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="hajj_duration"
-                                                    value="{{ $val }}"
-                                                    {{ old('hajj_duration', 'short') == $val ? 'checked' : '' }}>
-                                                <label class="form-check-label">{{ $label }}</label>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Package #</label>
+                                    <input type="text" name="package_number" class="form-control" placeholder="e.g. PKG-2027-01" value="{{ old('package_number') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Package Title</label>
+                                    <input type="text" name="package_title" class="form-control" placeholder="e.g. HAJJ PACKAGE 1448 - 2027" value="{{ old('package_title') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Package Code</label>
+                                    <input type="text" name="code" class="form-control" placeholder="e.g. HJ-27-LS" value="{{ old('code') }}">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Stay Type</label>
+                                    <select name="stay_type" class="form-select">
+                                        <option value="">-- Select Stay Type --</option>
+                                        <option value="LONG STAY" {{ old('stay_type') == 'LONG STAY' ? 'selected' : '' }}>LONG STAY</option>
+                                        <option value="SHORT STAY" {{ old('stay_type') == 'SHORT STAY' ? 'selected' : '' }}>SHORT STAY</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Stay Duration</label>
+                                    <input type="text" name="stay_duration" class="form-control" placeholder="e.g. 29 - 30 DAYS" value="{{ old('stay_duration') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">Total Days</label>
+                                    <input type="number" min="1" name="days" class="form-control" placeholder="e.g. 30" value="{{ old('days') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">Hijri Year</label>
+                                    <input type="text" name="hijri_year" class="form-control" placeholder="e.g. 1448" value="{{ old('hijri_year') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold">Gregorian Year</label>
+                                    <input type="text" name="gregorian_year" class="form-control" placeholder="e.g. 2027" value="{{ old('gregorian_year') }}">
+                                </div>
+                            </div>
+
+                            <h5 class="section-subhead">✈️ Flight Route & Dates (For Brochure Header)</h5>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Departure Date & Hijri</label>
+                                    <input type="text" name="departure_date_str" class="form-control" placeholder="e.g. 28-29 Apr / 21-22 Zil Qadh" value="{{ old('departure_date_str') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Departure Sector</label>
+                                    <input type="text" name="departure_sector" class="form-control" placeholder="e.g. Karachi to Jeddah" value="{{ old('departure_sector') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Arrival Date & Hijri</label>
+                                    <input type="text" name="arrival_date_str" class="form-control" placeholder="e.g. 28 May / 22 Zil Hajj" value="{{ old('arrival_date_str') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Arrival Sector</label>
+                                    <input type="text" name="arrival_sector" class="form-control" placeholder="e.g. Jeddah/Madinah to Karachi" value="{{ old('arrival_sector') }}">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-camp\']')).show()">
+                                    Next: Camp & Pricing <i class="mdi mdi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ═════════════════════════════════════════
+                             TAB 2: CAMP & MAKTAB PRICING
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade card-body" id="tab-camp">
+                            <h5 class="section-subhead">⛺ Maktab / Camp Category & Zone</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Maktab Category</label>
+                                    <input type="text" name="camp_category" class="form-control" placeholder="e.g. C, A, A & C" value="{{ old('camp_category') }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Camp Zone</label>
+                                    <input type="text" name="camp_zone" class="form-control" placeholder="e.g. ZONE 5 or ZONE 1 OR 2" value="{{ old('camp_zone') }}">
+                                </div>
+                            </div>
+
+                            <div class="row g-4 mb-4">
+                                {{-- Maktab C Rates --}}
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">📍 MAKTAB C RATES</h6>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Quad / Sharing (PKR)</label>
+                                                <input type="number" name="maktab_c_quad_pkr" class="form-control" placeholder="0" value="{{ old('maktab_c_quad_pkr') }}">
                                             </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Quad / Sharing (USD $)</label>
+                                                <input type="number" name="maktab_c_quad_usd" class="form-control" placeholder="0" value="{{ old('maktab_c_quad_usd') }}">
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Triple (PKR)</label>
+                                                <input type="number" name="maktab_c_triple_pkr" class="form-control" placeholder="0" value="{{ old('maktab_c_triple_pkr') }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Triple (USD $)</label>
+                                                <input type="number" name="maktab_c_triple_usd" class="form-control" placeholder="0" value="{{ old('maktab_c_triple_usd') }}">
+                                            </div>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Double (PKR)</label>
+                                                <input type="number" name="maktab_c_double_pkr" class="form-control" placeholder="0" value="{{ old('maktab_c_double_pkr') }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Double (USD $)</label>
+                                                <input type="number" name="maktab_c_double_usd" class="form-control" placeholder="0" value="{{ old('maktab_c_double_usd') }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Maktab A Rates (Optional Comparison) --}}
+                                <div class="col-md-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">📍 MAKTAB A RATES (Optional)</h6>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Quad / Sharing (PKR)</label>
+                                                <input type="number" name="maktab_a_quad_pkr" class="form-control" placeholder="0" value="{{ old('maktab_a_quad_pkr') }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Quad / Sharing (USD $)</label>
+                                                <input type="number" name="maktab_a_quad_usd" class="form-control" placeholder="0" value="{{ old('maktab_a_quad_usd') }}">
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Triple (PKR)</label>
+                                                <input type="number" name="maktab_a_triple_pkr" class="form-control" placeholder="0" value="{{ old('maktab_a_triple_pkr') }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Triple (USD $)</label>
+                                                <input type="number" name="maktab_a_triple_usd" class="form-control" placeholder="0" value="{{ old('maktab_a_triple_usd') }}">
+                                            </div>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Double (PKR)</label>
+                                                <input type="number" name="maktab_a_double_pkr" class="form-control" placeholder="0" value="{{ old('maktab_a_double_pkr') }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-bold">Double (USD $)</label>
+                                                <input type="number" name="maktab_a_double_usd" class="form-control" placeholder="0" value="{{ old('maktab_a_double_usd') }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Azizia Separate Room Addon --}}
+                            <h5 class="section-subhead">🏢 Azizia Separate Room Add-On Rates</h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Quad / Sharing (PKR / USD)</label>
+                                    <div class="input-group">
+                                        <input type="number" name="azizia_quad_pkr" class="form-control" placeholder="PKR" value="{{ old('azizia_quad_pkr') }}">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="azizia_quad_usd" class="form-control" placeholder="USD" value="{{ old('azizia_quad_usd') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Triple (PKR / USD)</label>
+                                    <div class="input-group">
+                                        <input type="number" name="azizia_triple_pkr" class="form-control" placeholder="PKR" value="{{ old('azizia_triple_pkr') }}">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="azizia_triple_usd" class="form-control" placeholder="USD" value="{{ old('azizia_triple_usd') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Double (PKR / USD)</label>
+                                    <div class="input-group">
+                                        <input type="number" name="azizia_double_pkr" class="form-control" placeholder="PKR" value="{{ old('azizia_double_pkr') }}">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="azizia_double_usd" class="form-control" placeholder="USD" value="{{ old('azizia_double_usd') }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-package\']')).show()">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-qurbani\']')).show()">
+                                    Next: Qurbani <i class="mdi mdi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ═════════════════════════════════════════
+                             TAB 3: QURBANI
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade card-body" id="tab-qurbani">
+                            <h5 class="section-subhead">🐑 Qurbani Policy & Charges</h5>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Qurbani Status in Package</label>
+                                    <select name="qurbani_status" class="form-select">
+                                        <option value="Not Included (Nusuk Masar System)" {{ old('qurbani_status') == 'Not Included (Nusuk Masar System)' ? 'selected' : '' }}>
+                                            Not Included (Nusuk Masar System)
+                                        </option>
+                                        <option value="Included in Package" {{ old('qurbani_status') == 'Included in Package' ? 'selected' : '' }}>
+                                            Included in Package
+                                        </option>
+                                        <option value="Separate Optional Add-on" {{ old('qurbani_status') == 'Separate Optional Add-on' ? 'selected' : '' }}>
+                                            Separate Optional Add-on
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Estimated Qurbani Charges (Per Person SAR / PKR)</label>
+                                    <input type="number" name="qurbani_charges" class="form-control" placeholder="e.g. 750" value="{{ old('qurbani_charges') }}">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold">Qurbani Notice Text (Appears in Brochure)</label>
+                                    <textarea name="qurbani_note" class="form-control" rows="3" placeholder="Enter Qurbani terms or notice">{{ old('qurbani_note') }}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-camp\']')).show()">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-accommodation\']')).show()">
+                                    Next: Accommodation <i class="mdi mdi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ═════════════════════════════════════════
+                             TAB 4: ACCOMMODATION & ITINERARY
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade card-body" id="tab-accommodation">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="section-subhead m-0">🏨 Stay Schedule (Makkah, Azizia, Hajj Days, Madinah)</h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="add-accommodation-btn">
+                                    <i class="mdi mdi-plus"></i> Add Stay Row
+                                </button>
+                            </div>
+
+                            <div id="accommodations-container">
+                                @for ($idx = 0; $idx < 5; $idx++)
+                                    <div class="accommodation-row border rounded p-3 mb-3 bg-light">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="badge bg-dark">Stay Segment #{{ $idx + 1 }}</span>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Segment / Place</label>
+                                                <input type="text" name="accommodations[{{ $idx }}][place]" class="form-control" placeholder="e.g. MAKKAH - HOTEL NAME" value="{{ old('accommodations.'.$idx.'.place') }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Hotel / Building</label>
+                                                <input type="text" name="accommodations[{{ $idx }}][package_a][hotel]" class="form-control" placeholder="e.g. Anjum Makkah Hotel" value="{{ old('accommodations.'.$idx.'.package_a.hotel') }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Arrival Date & Hijri</label>
+                                                <input type="date" name="accommodations[{{ $idx }}][check_in]" class="form-control mb-1" value="{{ old('accommodations.'.$idx.'.check_in') }}">
+                                                <input type="text" name="accommodations[{{ $idx }}][note]" class="form-control form-control-sm" placeholder="Hijri e.g. 21 - 22 Zil Qadh 1448" value="{{ old('accommodations.'.$idx.'.note') }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Departure Date & Hijri</label>
+                                                <input type="date" name="accommodations[{{ $idx }}][check_out]" class="form-control mb-1" value="{{ old('accommodations.'.$idx.'.check_out') }}">
+                                                <input type="text" name="accommodations[{{ $idx }}][sharing]" class="form-control form-control-sm" placeholder="Hijri e.g. 29 Zil Qadh 1448" value="{{ old('accommodations.'.$idx.'.sharing') }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Meal Plan</label>
+                                                <input type="text" name="accommodations[{{ $idx }}][food_package]" class="form-control" placeholder="e.g. FULL BOARD" value="{{ old('accommodations.'.$idx.'.food_package') }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Meal Detail Note</label>
+                                                <input type="text" name="accommodations[{{ $idx }}][sharing_type]" class="form-control" placeholder="e.g. Breakfast, Lunch, Dinner Asian Meal" value="{{ old('accommodations.'.$idx.'.sharing_type') }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-qurbani\']')).show()">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-terms\']')).show()">
+                                    Next: Inclusions & Terms <i class="mdi mdi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ═════════════════════════════════════════
+                             TAB 5: INCLUSIONS & INSTRUCTIONS
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade card-body" id="tab-terms">
+                            <h5 class="section-subhead">📜 Package Inclusions, Instructions & Notes</h5>
+
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Package Included (One per line)</label>
+                                    <textarea name="terms_content" class="form-control" rows="8" placeholder="• Meet & Assist Upon Arrival At Airport...&#10;• Complete Accommodation In Makkah...">{{ old('terms_content') }}</textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Instructions & Guidelines (One per line)</label>
+                                    <textarea name="instructions_content" class="form-control" rows="8" placeholder="• Haram & Kabah View Not Committed...&#10;• Azizia Sharing 5/6 Persons...">{{ old('instructions_content') }}</textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Documents Required (One per line)</label>
+                                    <textarea name="documents_required" class="form-control" rows="8" placeholder="• Passport First Page (16 NOV, 2027)&#10;• Photograph ( White Background )&#10;• ID Card Copy / NICOP (Nadra)&#10;• Next of Kin ID Card & Contact Number&#10;• Passenger Blood Group">{{ old('documents_required') }}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Important Notes & Disclaimer</label>
+                                <textarea name="notes" class="form-control" rows="4" placeholder="• The above package calculation is based on a USD Rate of @275...&#10;• Payments can only be made into a bank account.">{{ old('notes') }}</textarea>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-accommodation\']')).show()">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-transport\']')).show()">
+                                    Next: Transport <i class="mdi mdi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ═════════════════════════════════════════
+                             TAB 6: TRANSPORT & FLIGHTS
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade card-body" id="tab-transport">
+                            <h5 class="section-subhead">🚌 Transport & Flight Routes</h5>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Transport Sector</label>
+                                    <input type="text" name="transports[0][route]" class="form-control" placeholder="e.g. Karachi -> Jeddah -> Makkah -> Madinah" value="{{ old('transports.0.route') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Vehicle Type</label>
+                                    <input type="text" name="transports[0][vehicle]" class="form-control" placeholder="e.g. Air Conditioned Private Buses" value="{{ old('transports.0.vehicle') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Transport Service</label>
+                                    <input type="text" name="transports[0][type]" class="form-control" placeholder="e.g. Full Complete Hajj Transport" value="{{ old('transports.0.type') }}">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-terms\']')).show()">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-training\']')).show()">
+                                    Next: Training & Gifts <i class="mdi mdi-arrow-right ms-1"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- ═════════════════════════════════════════
+                             TAB 7: TRAINING & GIFTS
+                        ═════════════════════════════════════════ --}}
+                        <div class="tab-pane fade card-body" id="tab-training">
+                            <h5 class="section-subhead">🎁 Hajj Training Sessions & Gifts</h5>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Select Training Sessions</label>
+                                    <select name="training_sessions[]" class="form-select" multiple size="4">
+                                        @foreach ($trainingSessions as $session)
+                                            <option value="{{ $session->id }}">{{ $session->title ?? $session->name }}</option>
                                         @endforeach
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label">Hijri Start Day</label>
-                                        <input type="number" min="1" max="30" name="hijri_start_day"
-                                            class="form-control" placeholder="e.g. 1"
-                                            value="{{ old('hijri_start_day') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Hijri Start Month</label>
-                                        <select name="hijri_start_month" class="form-select">
-                                            <option value="">-- Select --</option>
-                                            @foreach ([
-            1 => 'Muharram',
-            2 => 'Safar',
-            3 => 'Rabi-ul-Awwal',
-            4 => 'Rabi-ul-Thani',
-            5 => 'Jumada-al-Awwal',
-            6 => 'Jumada-al-Thani',
-            7 => 'Rajab',
-            8 => 'Shaban',
-            9 => 'Ramadan',
-            10 => 'Shawwal',
-            11 => 'Zil Qadah',
-            12 => 'Zil Hajj',
-        ] as $val => $label)
-                                                <option value="{{ $val }}"
-                                                    {{ old('hijri_start_month', 12) == $val ? 'selected' : '' }}>
-                                                    {{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    </select>
+                                    <small class="text-muted">Hold Ctrl to select multiple sessions</small>
                                 </div>
-
-                                <hr class="my-4">
-                                <h5 class="mb-3">Package Category</h5>
-                                <div class="row g-3 mt-1">
-                                    {{-- <div class="col-md-3">
-                                        <label class="form-label">Room Type</label>
-                                        <input type="text" name="room_type" class="form-control"
-                                            placeholder="e.g. Standard" value="{{ old('room_type') }}">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Azizia Room Type</label>
-                                        <input type="text" name="azizia_room_type" class="form-control"
-                                            placeholder="e.g. Standard" value="{{ old('azizia_room_type') }}">
-                                    </div> --}}
-                                    <div class="col-md-3">
-                                        <label class="form-label">Makkah Type</label>
-                                        <select name="makkah_type" class="form-select">
-                                            <option value="">-- Select --</option>
-                                            @foreach ([1, 2, 3, 4, 5] as $val)
-                                                <option value="{{ $val }}"
-                                                    {{ old('makkah_type') == $val ? 'selected' : '' }}>{{ $val }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Medinah Type</label>
-                                        <select name="medinah_type" class="form-select">
-                                            <option value="">-- Select --</option>
-                                            @foreach ([1, 2, 3, 4, 5] as $val)
-                                                <option value="{{ $val }}"
-                                                    {{ old('medinah_type') == $val ? 'selected' : '' }}>
-                                                    {{ $val }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Azizia Type</label>
-                                        <select name="azizia_type" class="form-select">
-                                            <option value="">-- Select --</option>
-                                            @foreach ([1, 2, 3] as $val)
-                                                <option value="{{ $val }}"
-                                                    {{ old('azizia_type') == $val ? 'selected' : '' }}>{{ $val }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Mina Type</label>
-                                        <input type="text" name="mina_type" class="form-control"
-                                            placeholder="e.g. Camp A" value="{{ old('mina_type') }}">
-                                    </div>
-                                </div>
-
-                                <hr class="my-4">
-                                <h5 class="mb-3">Makkah / Madinah Sharing Breakdown</h5>
-                                <div class="row g-3">
-                                    @foreach ([
-            'makkah_a' => 'Makkah A',
-            'makkah_b' => 'Makkah B',
-            'madinah_a' => 'Madinah A',
-            'madinah_b' => 'Madinah B',
-        ] as $prefix => $heading)
-                                        <div class="col-12">
-                                            <h6 class="mt-2 mb-1">{{ $heading }}</h6>
-                                        </div>
-                                        @foreach (['double' => 'Double', 'triple' => 'Triple', 'quad' => 'Quad', 'sharing' => 'Sharing'] as $key => $label)
-                                            <div class="col-md-3">
-                                                <label class="form-label">{{ $label }}</label>
-                                                <input type="number" min="0"
-                                                    name="{{ $prefix }}[{{ $key }}]" class="form-control"
-                                                    placeholder="0" value="{{ old("$prefix.$key") }}">
-                                            </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Select Giveaways & Gifts</label>
+                                    <select name="giveaways[]" class="form-select" multiple size="4">
+                                        @foreach ($giveaways as $giveaway)
+                                            <option value="{{ $giveaway->id }}">{{ $giveaway->name }}</option>
                                         @endforeach
-                                    @endforeach
+                                    </select>
+                                    <small class="text-muted">Hold Ctrl to select multiple gifts</small>
                                 </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target=\'#tab-transport\']')).show()">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
+                                <button type="submit" class="btn btn-success px-5 fw-bold">
+                                    <i class="mdi mdi-check-circle me-1"></i> SAVE & CREATE PACKAGE
+                                </button>
                             </div>
                         </div>
 
-                        {{-- ================= ACCOMMODATION ================= --}}
-                        <div class="tab-pane fade card" id="tab-accommodation">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="m-0">Accommodation Details</h5>
-                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                        id="addAccommodationBtn">Add <i class="mdi mdi-plus"></i></button>
-                                </div>
-                                <p class="text-muted mb-3">Check In / Check Out dono packages (A &amp; B) ke liye same
-                                    rahenge. Sirf hotel A aur B alag select karein — agar dono packages ka hotel same
-                                    ho to "Same Hotel for Package A &amp; B" tick kar dein.</p>
-
-                                <div id="accommodationRows">
-                                    <div class="accommodation-row border rounded p-3 mb-3 position-relative">
-                                         <hr class="accommodation-row-divider" style="border-top: 3px solid #000; opacity: 1; margin-top: 0; margin-bottom: 15px;">
-                                        <button type="button"
-                                            class="btn btn-sm btn-outline-danger remove-accommodation-row position-absolute top-0 end-0 m-2"><i
-                                                class="mdi mdi-delete"></i></button>
-                                        <div class="row g-3">
-                                            <div class="col-md-3"><label class="form-label">Place</label>
-                                                <select name="accommodations[0][place]" class="form-select">
-                                                    <option value="">-- Select Place --</option>
-                                                    @foreach (\App\Enums\Place::options() as $val => $label)
-                                                        <option value="{{ $val }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Check In</label><input
-                                                    type="date" name="accommodations[0][check_in]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Check Out</label><input
-                                                    type="date" name="accommodations[0][check_out]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Days</label><input
-                                                    type="number" name="accommodations[0][days]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Nights</label><input
-                                                    type="number" name="accommodations[0][nights]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3 d-flex align-items-end">
-                                                <div class="form-check">
-                                                    <input class="form-check-input same-for-both-toggle" type="checkbox"
-                                                        name="accommodations[0][same_for_both]" value="1">
-                                                    <label class="form-check-label">Same Hotel for Package A &
-                                                        B</label>
-                                                </div>
-                                            </div>
-
-                                             <div class="col-12">
-                                                <hr class="my-2">
-                                                <h6 class="text-primary mb-0">Package A</h6>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Accommodation
-                                                    Type (A)</label>
-                                                <select name="accommodations[0][package_a][accommodation_type]"
-                                                    class="form-select">
-                                                    <option value="">-- Select Type --</option>
-                                                    @foreach (\App\Enums\AccommodationType::options() as $val => $label)
-                                                        <option value="{{ $val }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Saudi Star
-                                                    Rating (A)</label>
-                                                <select name="accommodations[0][package_a][saudi_star_rating]"
-                                                    class="form-select">
-                                                    <option value="">-- Select Rating --</option>
-                                                    @foreach (\App\Enums\SaudiStarRating::options() as $val => $label)
-                                                        <option value="{{ $val }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Hotel (A)</label>
-                                                <select name="accommodations[0][package_a][hotel]" class="form-select">
-                                                    <option value="">-- Select Hotel --</option>
-                                                    @foreach ($hotels as $hotelItem)
-                                                        <option value="{{ $hotelItem->name }}">{{ $hotelItem->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Food Package (A)</label>
-                                                <select name="accommodations[0][package_a][food_package]"
-                                                    class="form-select">
-                                                    <option value="">-- Select Food --</option>
-                                                    @foreach (\App\Enums\FoodPackage::options() as $val => $label)
-                                                        <option value="{{ $val }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div class="package-b-block-wrap row g-3">
-                                                <div class="col-12">
-                                                    <hr class="my-2">
-                                                    <h6 class="text-danger mb-0">Package B</h6>
-                                                </div>
-                                                <div class="col-md-3"><label class="form-label">Accommodation
-                                                        Type (B)</label>
-                                                    <select name="accommodations[0][package_b][accommodation_type]"
-                                                        class="form-select">
-                                                        <option value="">-- Select Type --</option>
-                                                        @foreach (\App\Enums\AccommodationType::options() as $val => $label)
-                                                            <option value="{{ $val }}">{{ $label }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3"><label class="form-label">Saudi Star
-                                                        Rating (B)</label>
-                                                    <select name="accommodations[0][package_b][saudi_star_rating]"
-                                                        class="form-select">
-                                                        <option value="">-- Select Rating --</option>
-                                                        @foreach (\App\Enums\SaudiStarRating::options() as $val => $label)
-                                                            <option value="{{ $val }}">{{ $label }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3"><label class="form-label">Hotel (B)</label>
-                                                    <select name="accommodations[0][package_b][hotel]"
-                                                        class="form-select">
-                                                        <option value="">-- Select Hotel --</option>
-                                                        @foreach ($hotels as $hotelItem)
-                                                            <option value="{{ $hotelItem->name }}">{{ $hotelItem->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3"><label class="form-label">Food Package (B)</label>
-                                                    <select name="accommodations[0][package_b][food_package]"
-                                                        class="form-select">
-                                                        <option value="">-- Select Food --</option>
-                                                        @foreach (\App\Enums\FoodPackage::options() as $val => $label)
-                                                            <option value="{{ $val }}">{{ $label }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-12">
-                                                <hr class="my-2">
-                                            </div>
-
-                                            <div class="col-md-3"><label class="form-label">Distance (meter)</label><input
-                                                    type="number" name="accommodations[0][distance]"
-                                                    class="form-control"></div>
-                                            {{-- <div class="col-md-3"><label class="form-label">Azizia Date</label><input
-                                                    type="date" name="accommodations[0][azizia_date]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Food Package</label>
-                                                <select name="accommodations[0][food_package]" class="form-select">
-                                                    <option value="">-- Select Package --</option>
-                                                    @foreach (\App\Enums\FoodPackage::options() as $val => $label)
-                                                        <option value="{{ $val }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div> --}}
-
-                                            <div class="col-md-4"><label class="form-label">Actual Check In
-                                                    Time</label><input type="datetime-local"
-                                                    name="accommodations[0][actual_check_in_time]" class="form-control">
-                                            </div>
-                                            <div class="col-md-4"><label class="form-label">Actual Check Out
-                                                    Time</label><input type="datetime-local"
-                                                    name="accommodations[0][actual_check_out_time]" class="form-control">
-                                            </div>
-
-                                            <div class="col-md-3"><label class="form-label">Makkah Ziarat</label>
-                                                <select name="accommodations[0][makkah_ziarat]" class="form-select">
-                                                    <option value="">-- Select --</option>
-                                                    <option value="yes">Yes</option>
-                                                    <option value="no">No</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Madinah Ziarat</label>
-                                                <select name="accommodations[0][madinah_ziarat]" class="form-select">
-                                                    <option value="">-- Select --</option>
-                                                    <option value="yes">Yes</option>
-                                                    <option value="no">No</option>
-                                                </select>
-                                            </div>
-
-                                            <div class="col-md-4"><label class="form-label">Distribution</label><input
-                                                    type="text" name="accommodations[0][distribution]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-4"><label class="form-label">Camp</label><input
-                                                    type="text" name="accommodations[0][camp]" class="form-control">
-                                            </div>
-                                            <div class="col-md-4"><label class="form-label">Arafat</label><input
-                                                    type="text" name="accommodations[0][arafat]" class="form-control">
-                                            </div>
-
-                                            <div class="col-md-4"><label class="form-label"> Azizia Shuttle</label><input
-                                                    type="text" name="accommodations[0][shuttle]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-4"><label class="form-label">Bedding (Sofa
-                                                    Mattress)</label><input type="text"
-                                                    name="accommodations[0][bedding]" class="form-control"></div>
-                                            <div class="col-md-4"><label class="form-label">Sharing (Room / Tent /
-                                                    Camp)</label><input type="text" name="accommodations[0][sharing]"
-                                                    class="form-control"></div>
-
-                                            <div class="col-md-4"><label class="form-label">Sharing Type</label><input
-                                                    type="text" name="accommodations[0][sharing_type]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-8"><label class="form-label">Note</label><input
-                                                    type="text" name="accommodations[0][note]" class="form-control">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- ================= TRANSPORT ================= --}}
-                        <div class="tab-pane fade card" id="tab-transport">
-                            <div class="card-body">
-
-                                {{-- ---- General Route (repeatable) ---- --}}
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="m-0">Transport Details</h5>
-                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                        id="addTransportBtn">Add <i class="mdi mdi-plus"></i></button>
-                                </div>
-
-                                <div id="transportRows">
-                                    <div class="transport-row border rounded p-3 mb-3 position-relative">
-                                        <button type="button"
-                                            class="btn btn-sm btn-outline-danger remove-transport-row position-absolute top-0 end-0 m-2"><i
-                                                class="mdi mdi-delete"></i></button>
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
-                                                <label class="form-label">Route</label>
-                                                <input type="text" name="transports[0][route]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label">Arrival</label>
-                                                <input type="text" name="transports[0][arrival]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label">Departure</label>
-                                                <input type="text" name="transports[0][departure]"
-                                                    class="form-control">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label">Type</label>
-                                                <input type="text" name="transports[0][type]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label">Vehicle</label>
-                                                <input type="text" name="transports[0][vehicle]" class="form-control">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr class="my-4">
-
-                                {{-- ---- Flight ---- --}}
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="m-0">Flight</h5>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" id="addFlightBtn">Add
-                                        <i class="mdi mdi-plus"></i></button>
-                                </div>
-
-                                <div id="flightRows">
-                                    <div class="flight-row border rounded p-3 mb-3 position-relative">
-                                        <button type="button"
-                                            class="btn btn-sm btn-outline-danger remove-flight-row position-absolute top-0 end-0 m-2"><i
-                                                class="mdi mdi-delete"></i></button>
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
-                                                <label class="form-label">Airline</label>
-                                                <select name="flights[0][airline]" class="form-select">
-                                                    <option value="">-- Select Airline --</option>
-                                                    @foreach ($airlines as $airlineItem)
-                                                        <option value="{{ $airlineItem->name }}">{{ $airlineItem->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Flight No.</label><input
-                                                    type="text" name="flights[0][flight_no]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Flight Class</label><input
-                                                    type="text" name="flights[0][flight_class]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Origin</label><input
-                                                    type="text" name="flights[0][origin]" class="form-control"></div>
-
-                                            <div class="col-md-3"><label class="form-label">Destination</label><input
-                                                    type="text" name="flights[0][destination]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Departure Date</label><input
-                                                    type="date" name="flights[0][departure_date]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Departure Time</label><input
-                                                    type="time" name="flights[0][departure_time]"
-                                                    class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Arrival Date</label><input
-                                                    type="date" name="flights[0][arrival_date]" class="form-control">
-                                            </div>
-
-                                            <div class="col-md-3"><label class="form-label">Arrival Time</label><input
-                                                    type="time" name="flights[0][arrival_time]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">PNR No.</label><input
-                                                    type="text" name="flights[0][pnr_no]" class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Ticket Amount
-                                                    (SAR)</label><input type="number" step="0.01"
-                                                    name="flights[0][ticket_amount]" class="form-control"></div>
-                                            <div class="col-md-3">
-                                                <label class="form-label d-block">Is Preferred</label>
-                                                @foreach (['1' => 'Yes', '0' => 'No'] as $val => $label)
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input" type="radio"
-                                                            name="flights[0][is_preferred]" value="{{ $val }}"
-                                                            {{ $val == '0' ? 'checked' : '' }}>
-                                                        <label class="form-check-label">{{ $label }}</label>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr class="my-4">
-
-                                {{-- ---- Train ---- --}}
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="m-0">Train</h5>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" id="addTrainBtn">Add <i
-                                            class="mdi mdi-plus"></i></button>
-                                </div>
-
-                                <div id="trainRows">
-                                    <div class="train-row border rounded p-3 mb-3 position-relative">
-                                        <button type="button"
-                                            class="btn btn-sm btn-outline-danger remove-train-row position-absolute top-0 end-0 m-2"><i
-                                                class="mdi mdi-delete"></i></button>
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
-                                                <label class="form-label">Railway</label>
-                                                <select name="trains[0][railway]" class="form-select">
-                                                    <option value="">-- Select Train / Railway --</option>
-                                                    @foreach ($trains as $trainItem)
-                                                        <option value="{{ $trainItem->train_name }}">
-                                                            {{ $trainItem->train_name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Train No.</label><input
-                                                    type="text" name="trains[0][train_no]" class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Train Class</label><input
-                                                    type="text" name="trains[0][train_class]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Origin</label><input
-                                                    type="text" name="trains[0][origin]" class="form-control"></div>
-
-                                            <div class="col-md-3"><label class="form-label">Destination</label><input
-                                                    type="text" name="trains[0][destination]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Departure Date</label><input
-                                                    type="date" name="trains[0][departure_date]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Departure Time</label><input
-                                                    type="time" name="trains[0][departure_time]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">Arrival Date</label><input
-                                                    type="date" name="trains[0][arrival_date]" class="form-control">
-                                            </div>
-
-                                            <div class="col-md-3"><label class="form-label">Arrival Time</label><input
-                                                    type="time" name="trains[0][arrival_time]" class="form-control">
-                                            </div>
-                                            <div class="col-md-3"><label class="form-label">PNR No.</label><input
-                                                    type="text" name="trains[0][pnr_no]" class="form-control"></div>
-                                            <div class="col-md-3"><label class="form-label">Ticket Amount
-                                                    (SAR)</label><input type="number" step="0.01"
-                                                    name="trains[0][ticket_amount]" class="form-control"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        {{-- ================= TRAINING / GIFTS ================= --}}
-                        <div class="tab-pane fade card" id="tab-training">
-                            <div class="card-body">
-                                <h5 class="mb-3">Training Session</h5>
-                                @if ($trainingSessions->isEmpty())
-                                    <p class="text-danger mb-3">No Training Sessions Exists! <a
-                                            href="{{ route('training-session.create') }}" target="_blank">Please create
-                                            training sessions first</a></p>
-                                @else
-                                    @php $selectedSessions = old('training_sessions', []); @endphp
-                                    @foreach ($trainingSessions as $session)
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="training_sessions[]"
-                                                value="{{ $session->id }}" id="session-{{ $session->id }}"
-                                                {{ in_array($session->id, $selectedSessions) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="session-{{ $session->id }}">
-                                                {{ $session->name }}
-                                                @if ($session->session_date)
-                                                    ({{ \Carbon\Carbon::parse($session->session_date)->format('d M, Y') }}
-                                                    at
-                                                    {{ $session->session_time ? \Carbon\Carbon::parse($session->session_time)->format('h:i A') : '' }})
-                                                @endif
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                @endif
-
-                                <h5 class="mb-3">Giveaways</h5>
-                                @php $selectedGiveaways = old('giveaways', []); @endphp
-                                @foreach ($giveaways->where('code', 'GW-01') as $g)
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="giveaways[]"
-                                            value="{{ $g->id }}" id="giveaway-{{ $g->id }}"
-                                            {{ in_array($g->id, $selectedGiveaways) ? 'checked' : '' }}>
-                                        <label class="form-check-label"
-                                            for="giveaway-{{ $g->id }}">{{ $g->code }} -
-                                            {{ $g->name }}</label>
-                                    </div>
-                                @endforeach
-                                <textarea name="giveaway_note" rows="3" class="form-control"
-                                    placeholder="Write here what giveaway you are giving...">{{ old('giveaway_note') }}</textarea>
-                            </div>
-                        </div>
-
-                        {{-- ================= TERMS & CONDITION ================= --}}
-                        <div class="tab-pane fade card" id="tab-terms">
-                            <div class="card-body">
-                                <h5 class="mb-3">Terms & Condition</h5>
-                                <textarea name="terms_content" rows="8" class="form-control" placeholder="Write your content here...">{{ old('terms_content') }}</textarea>
-                            </div>
-                        </div>
-
-                        {{-- ================= ITINERARY ================= --}}
-                        <div class="tab-pane fade card" id="tab-itinerary">
-                            <div class="card-body">
-                                <h5 class="mb-3">Description</h5>
-                                <textarea name="itinerary_description" rows="8" class="form-control mb-4"
-                                    placeholder="Write your content here...">{{ old('itinerary_description') }}</textarea>
-
-                                <h5 class="mb-3">Images</h5>
-                                <div class="row g-3">
-                                    @foreach ([
-            'mina_image' => 'MINA',
-            'arafat_image' => 'ARAFAT',
-            'muzdalifah_image' => 'MUZDALIFAH',
-            'makkah_mina_rami_day_one_image' => 'MAKKAH / MINA RAMI - DAY ONE',
-            'mina_rami_day_two_image' => 'MINA RAMI - DAY TWO',
-            'mina_makkah_rami_day_three_image' => 'MINA / MAKKAH RAMI - DAY THREE',
-        ] as $field => $label)
-                                        <div class="col-md-4">
-                                            <label class="form-label">{{ $label }}</label>
-                                            <input type="file" name="{{ $field }}" class="form-control">
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- ================= MAKTAB ADDRESS ================= --}}
-                        <div class="tab-pane fade card" id="tab-maktab">
-                            <div class="card-body">
-                                <h5 class="mb-3">Maktab Address</h5>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Maktab Address</label>
-                                        <input type="text" name="maktab_address" class="form-control"
-                                            value="{{ old('maktab_address') }}">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Office Address</label>
-                                        <input type="text" name="office_address" class="form-control"
-                                            value="{{ old('office_address') }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Notes --}}
-
-                        <div class="tab-pane fade card" id="tab-notes">
-                            <div class="card-body">
-                                <h5 class="mb-3">Notes & Price Disclaimer</h5>
-                                <div class="row g-3">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-semibold">Notes</label>
-                                        <textarea name="notes" id="notes-editor" class="form-control">{{ old('notes') }}</textarea>
-                                    </div>
-
-                                    <div class="col-md-12 mt-4">
-                                        <label class="form-label fw-semibold">Price Disclaimer</label>
-                                        <textarea name="price_disclaimer" id="disclaimer-editor" class="form-control">{{ old('price_disclaimer', '"Book Early, Prices and Packages Subject to Change."') }}</textarea>
-                                    </div>
-
-                                    <div class="col-md-6 mt-4">
-                                        <label class="form-label fw-semibold">Jeddah Airport Taxi Fare (SAR / Person)</label>
-                                        <input type="text" name="jeddah_taxi_fare" class="form-control"
-                                            placeholder="e.g. 600" value="{{ old('jeddah_taxi_fare', '600') }}">
-                                    </div>
-
-                                    <div class="col-md-6 mt-4">
-                                        <label class="form-label fw-semibold">Madinah Airport Taxi Fare (SAR / Person)</label>
-                                        <input type="text" name="madinah_taxi_fare" class="form-control"
-                                            placeholder="e.g. 150" value="{{ old('madinah_taxi_fare', '150') }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="text-end" style="margin: 20px">
-                            <button type="submit" class="btn btn-success">Save</button>
-                        </div>
                     </div>
                 </form>
 
             </div>
         </div>
     </div>
-    <script>
-        (function() {
-            let accIndex = 1;
-
-            function resetRowFields(clone) {
-                clone.querySelectorAll('input, textarea, select').forEach(function(el) {
-                    el.name = el.name.replace(/accommodations\[\d+\]/, 'accommodations[' + accIndex + ']');
-                    if (el.tagName === 'SELECT') {
-                        el.selectedIndex = 0;
-                    } else if (el.type === 'checkbox' || el.type === 'radio') {
-                        el.checked = false;
-                    } else if (el.type !== 'button') {
-                        el.value = '';
-                    }
-                });
-
-                // Make sure Package B is visible again on new rows
-                const bWrap = clone.querySelector('.package-b-block-wrap');
-                if (bWrap) bWrap.style.display = '';
-            }
-
-            document.getElementById('addAccommodationBtn').addEventListener('click', function() {
-                const firstRow = document.querySelector('.accommodation-row');
-                const clone = firstRow.cloneNode(true);
-
-                resetRowFields(clone);
-
-                document.getElementById('accommodationRows').appendChild(clone);
-                accIndex++;
-            });
-
-            document.getElementById('accommodationRows').addEventListener('click', function(e) {
-                if (e.target.closest('.remove-accommodation-row')) {
-                    const row = e.target.closest('.accommodation-row');
-                    if (document.querySelectorAll('.accommodation-row').length > 1) {
-                        row.remove();
-                    } else {
-                        row.querySelectorAll('input, textarea').forEach(el => {
-                            if (el.type === 'checkbox' || el.type === 'radio') {
-                                el.checked = false;
-                            } else {
-                                el.value = '';
-                            }
-                        });
-                        row.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
-                        const bWrap = row.querySelector('.package-b-block-wrap');
-                        if (bWrap) bWrap.style.display = '';
-                    }
-                }
-            });
-
-            // ---- Same Hotel for Package A & B toggle ----
-            document.getElementById('accommodationRows').addEventListener('change', function(e) {
-                if (e.target.classList.contains('same-for-both-toggle')) {
-                    const row = e.target.closest('.accommodation-row');
-                    const bWrap = row.querySelector('.package-b-block-wrap');
-                    if (!bWrap) return;
-                    bWrap.style.display = e.target.checked ? 'none' : '';
-                }
-            });
-
-            // ---- Auto calculate Days & Nights from Check In / Check Out ----
-            function calculateDaysNights(row) {
-                const checkInEl = row.querySelector('input[name*="[check_in]"]');
-                const checkOutEl = row.querySelector('input[name*="[check_out]"]');
-                const daysEl = row.querySelector('input[name*="[days]"]');
-                const nightsEl = row.querySelector('input[name*="[nights]"]');
-
-                if (!checkInEl || !checkOutEl || !daysEl || !nightsEl) return;
-
-                const checkInVal = checkInEl.value;
-                const checkOutVal = checkOutEl.value;
-
-                if (!checkInVal || !checkOutVal) return;
-
-                const checkIn = new Date(checkInVal);
-                const checkOut = new Date(checkOutVal);
-
-                const diffTime = checkOut - checkIn;
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDays > 0) {
-                    nightsEl.value = diffDays;
-                    daysEl.value = diffDays + 1;
-                } else {
-                    nightsEl.value = '';
-                    daysEl.value = '';
-                }
-            }
-
-            document.getElementById('accommodationRows').addEventListener('change', function(e) {
-                if (e.target.matches('input[name*="[check_in]"], input[name*="[check_out]"]')) {
-                    const row = e.target.closest('.accommodation-row');
-                    if (row) calculateDaysNights(row);
-                }
-            });
-
-            // ---- On submit: if "same for both" is checked, copy Package A values into Package B ----
-            const formEl = document.querySelector('form');
-            if (formEl) {
-                formEl.addEventListener('submit', function() {
-                    document.querySelectorAll('.accommodation-row').forEach(function(row) {
-                        const same = row.querySelector('.same-for-both-toggle');
-                        if (!same || !same.checked) return;
-
-                        const aType = row.querySelector(
-                            'select[name*="[package_a][accommodation_type]"]');
-                        const aStar = row.querySelector(
-                            'select[name*="[package_a][saudi_star_rating]"]');
-                        const aHotel = row.querySelector('select[name*="[package_a][hotel]"]');
-
-                        const bType = row.querySelector(
-                            'select[name*="[package_b][accommodation_type]"]');
-                        const bStar = row.querySelector(
-                            'select[name*="[package_b][saudi_star_rating]"]');
-                        const bHotel = row.querySelector('select[name*="[package_b][hotel]"]');
-
-                        if (bType && aType) bType.value = aType.value;
-                        if (bStar && aStar) bStar.value = aStar.value;
-                        if (bHotel && aHotel) bHotel.value = aHotel.value;
-                    });
-                });
-            }
-        })();
-
-        // ---- Transport repeatable rows ----
-        (function() {
-            let transportIndex = 1;
-
-            document.getElementById('addTransportBtn').addEventListener('click', function() {
-                const firstRow = document.querySelector('.transport-row');
-                const clone = firstRow.cloneNode(true);
-
-                clone.querySelectorAll('input').forEach(function(el) {
-                    el.name = el.name.replace(/transports\[\d+\]/, 'transports[' + transportIndex +
-                        ']');
-                    el.value = '';
-                });
-
-                document.getElementById('transportRows').appendChild(clone);
-                transportIndex++;
-            });
-
-            document.getElementById('transportRows').addEventListener('click', function(e) {
-                if (e.target.closest('.remove-transport-row')) {
-                    const row = e.target.closest('.transport-row');
-                    if (document.querySelectorAll('.transport-row').length > 1) {
-                        row.remove();
-                    } else {
-                        row.querySelectorAll('input').forEach(el => el.value = '');
-                    }
-                }
-            });
-        })();
-
-        // ---- Flight repeatable rows ----
-        (function() {
-            let flightIndex = 1;
-
-            document.getElementById('addFlightBtn').addEventListener('click', function() {
-                const firstRow = document.querySelector('.flight-row');
-                const clone = firstRow.cloneNode(true);
-
-                clone.querySelectorAll('input, select').forEach(function(el) {
-                    el.name = el.name.replace(/flights\[\d+\]/, 'flights[' + flightIndex + ']');
-                    if (el.tagName.toLowerCase() === 'select') {
-                        el.selectedIndex = 0;
-                    } else if (el.type === 'radio') {
-                        el.checked = el.value === '0';
-                    } else {
-                        el.value = '';
-                    }
-                });
-
-                document.getElementById('flightRows').appendChild(clone);
-                flightIndex++;
-            });
-
-            document.getElementById('flightRows').addEventListener('click', function(e) {
-                if (e.target.closest('.remove-flight-row')) {
-                    const row = e.target.closest('.flight-row');
-                    if (document.querySelectorAll('.flight-row').length > 1) {
-                        row.remove();
-                        row.querySelectorAll(
-                                'input[type="text"], input[type="date"], input[type="time"], input[type="number"], select'
-                            )
-                            .forEach(el => {
-                                if (el.tagName.toLowerCase() === 'select') {
-                                    el.selectedIndex = 0;
-                                } else {
-                                    el.value = '';
-                                }
-                            });
-                        row.querySelectorAll('input[type="radio"]').forEach(el => el.checked = el.value ===
-                            '0');
-                    }
-                }
-            });
-        })();
-
-        // ---- Train repeatable rows ----
-        (function() {
-            let trainIndex = 1;
-
-            document.getElementById('addTrainBtn').addEventListener('click', function() {
-                const firstRow = document.querySelector('.train-row');
-                const clone = firstRow.cloneNode(true);
-
-                clone.querySelectorAll('input, select').forEach(function(el) {
-                    el.name = el.name.replace(/trains\[\d+\]/, 'trains[' + trainIndex + ']');
-                    if (el.tagName.toLowerCase() === 'select') {
-                        el.selectedIndex = 0;
-                    } else {
-                        el.value = '';
-                    }
-                });
-
-                document.getElementById('trainRows').appendChild(clone);
-                trainIndex++;
-            });
-
-            document.getElementById('trainRows').addEventListener('click', function(e) {
-                if (e.target.closest('.remove-train-row')) {
-                    const row = e.target.closest('.train-row');
-                    if (document.querySelectorAll('.train-row').length > 1) {
-                        row.remove();
-                    } else {
-                        row.querySelectorAll('input').forEach(el => el.value = '');
-                    }
-                }
-            });
-        })();
-
-        // Initialize Summernote Lite
-        window.addEventListener('DOMContentLoaded', function() {
-            var checkjQuery = setInterval(function () {
-                if (typeof jQuery !== 'undefined') {
-                    clearInterval(checkjQuery);
-                    jQuery.getScript('https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js', function() {
-                        jQuery('#notes-editor').summernote({
-                            placeholder: 'Write package notes here...',
-                            tabsize: 2,
-                            height: 200,
-                            toolbar: [
-                                ['style', ['style']],
-                                ['font', ['bold', 'underline', 'clear']],
-                                ['color', ['color']],
-                                ['para', ['ul', 'ol', 'paragraph']],
-                                ['table', ['table']],
-                                ['insert', ['link', 'picture', 'video']],
-                                ['view', ['fullscreen', 'codeview', 'help']]
-                            ]
-                        });
-                        jQuery('#disclaimer-editor').summernote({
-                            placeholder: 'Write price disclaimer here...',
-                            tabsize: 2,
-                            height: 100,
-                            toolbar: [
-                                ['style', ['style']],
-                                ['font', ['bold', 'underline', 'clear']],
-                                ['color', ['color']],
-                                ['para', ['ul', 'ol', 'paragraph']],
-                                ['view', ['codeview']]
-                            ]
-                        });
-                    });
-                }
-            }, 100);
-        });
-    </script>
 @endsection

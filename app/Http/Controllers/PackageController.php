@@ -146,6 +146,48 @@ class PackageController extends Controller
             'package_number' => 'nullable|string|max:100',
             'category' => 'nullable|string|max:150',
             'zone' => 'nullable|string|max:150',
+            'camp_category' => 'nullable|string|max:150',
+            'camp_zone' => 'nullable|string|max:150',
+            'stay_type' => 'nullable|string|max:100',
+            'stay_duration' => 'nullable|string|max:100',
+            'departure_date_str' => 'nullable|string|max:150',
+            'arrival_date_str' => 'nullable|string|max:150',
+            'departure_sector' => 'nullable|string|max:150',
+            'arrival_sector' => 'nullable|string|max:150',
+            'hijri_year' => 'nullable|string|max:50',
+            'gregorian_year' => 'nullable|string|max:50',
+
+            'qurbani_status' => 'nullable|string|max:150',
+            'qurbani_charges' => 'nullable|numeric|min:0',
+            'qurbani_note' => 'nullable|string',
+
+            'maktab_c_quad_pkr' => 'nullable|numeric|min:0',
+            'maktab_c_quad_usd' => 'nullable|numeric|min:0',
+            'maktab_c_triple_pkr' => 'nullable|numeric|min:0',
+            'maktab_c_triple_usd' => 'nullable|numeric|min:0',
+            'maktab_c_double_pkr' => 'nullable|numeric|min:0',
+            'maktab_c_double_usd' => 'nullable|numeric|min:0',
+
+            'maktab_a_quad_pkr' => 'nullable|numeric|min:0',
+            'maktab_a_quad_usd' => 'nullable|numeric|min:0',
+            'maktab_a_triple_pkr' => 'nullable|numeric|min:0',
+            'maktab_a_triple_usd' => 'nullable|numeric|min:0',
+            'maktab_a_double_pkr' => 'nullable|numeric|min:0',
+            'maktab_a_double_usd' => 'nullable|numeric|min:0',
+
+            'azizia_quad_pkr' => 'nullable|numeric|min:0',
+            'azizia_quad_usd' => 'nullable|numeric|min:0',
+            'azizia_triple_pkr' => 'nullable|numeric|min:0',
+            'azizia_triple_usd' => 'nullable|numeric|min:0',
+            'azizia_double_pkr' => 'nullable|numeric|min:0',
+            'azizia_double_usd' => 'nullable|numeric|min:0',
+
+            'package_included_points' => 'nullable',
+            'instructions_points' => 'nullable',
+            'instructions_content' => 'nullable|string',
+            'documents_required' => 'nullable|string',
+            'important_note' => 'nullable|string',
+
             'package_title' => 'nullable|string|max:200',
             'name' => 'nullable|string|max:200',
             'code' => 'nullable|string|max:100',
@@ -208,6 +250,33 @@ class PackageController extends Controller
                 }
             }
             $package['feature_icons'] = $featureIcons;
+        }
+
+        // Process inclusion points from textarea if provided
+        if ($request->filled('package_included_points')) {
+            if (is_string($request->input('package_included_points'))) {
+                $package['package_included_points'] = array_values(array_filter(array_map('trim', explode("\n", $request->input('package_included_points')))));
+            }
+        } elseif ($request->filled('terms_content')) {
+            $package['package_included_points'] = array_values(array_filter(array_map('trim', explode("\n", $request->input('terms_content')))));
+        }
+
+        // Process instruction points from textarea if provided
+        if ($request->filled('instructions_points')) {
+            if (is_string($request->input('instructions_points'))) {
+                $package['instructions_points'] = array_values(array_filter(array_map('trim', explode("\n", $request->input('instructions_points')))));
+            }
+        } elseif ($request->filled('instructions_content')) {
+            $package['instructions_points'] = array_values(array_filter(array_map('trim', explode("\n", $request->input('instructions_content')))));
+        }
+
+        // Process notes & disclaimer
+        if ($request->filled('notes')) {
+            $package['notes'] = $request->input('notes');
+            $package['important_note'] = $request->input('notes');
+        } elseif ($request->filled('important_note')) {
+            $package['notes'] = $request->input('important_note');
+            $package['important_note'] = $request->input('important_note');
         }
 
         $accommodations = $request->validate([
@@ -326,48 +395,58 @@ class PackageController extends Controller
     }
     private function saveRelations(Request $request, Package $package, array $data): void
     {
-        foreach ($data['accommodations'] as $row) {
-            $sameForBoth = filter_var($row['same_for_both'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if (!empty($data['accommodations']) && is_array($data['accommodations'])) {
+            foreach ($data['accommodations'] as $row) {
+                // Skip empty accommodation rows
+                $hasContent = !empty($row['place']) || !empty($row['check_in']) || !empty($row['check_out']) 
+                    || !empty($row['package_a']['hotel']) || !empty($row['food_package']) || !empty($row['note'])
+                    || !empty($row['sharing']) || !empty($row['sharing_type']);
+                if (!$hasContent) {
+                    continue;
+                }
 
-            $packageA = $row['package_a'] ?? [];
-            $packageB = $sameForBoth ? $packageA : ($row['package_b'] ?? []);
+                $sameForBoth = filter_var($row['same_for_both'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-            $accommodationData = [
-                'place' => $row['place'] ?? null,
-                'check_in' => $row['check_in'] ?? null,
-                'check_out' => $row['check_out'] ?? null,
-                'same_for_both' => $sameForBoth,
-                'azizia_date' => $row['azizia_date'] ?? null,
+                $packageA = $row['package_a'] ?? [];
+                $packageB = $sameForBoth ? $packageA : ($row['package_b'] ?? []);
 
-                'package_a_accommodation_type' => $packageA['accommodation_type'] ?? null,
-                'package_a_saudi_star_rating' => $packageA['saudi_star_rating'] ?? null,
-                'package_a_hotel' => $packageA['hotel'] ?? null,
-                'package_a_food_package' => $packageA['food_package'] ?? ($row['food_package'] ?? null),
+                $accommodationData = [
+                    'place' => $row['place'] ?? null,
+                    'check_in' => $row['check_in'] ?? null,
+                    'check_out' => $row['check_out'] ?? null,
+                    'same_for_both' => $sameForBoth,
+                    'azizia_date' => $row['azizia_date'] ?? null,
 
-                'package_b_accommodation_type' => $packageB['accommodation_type'] ?? null,
-                'package_b_saudi_star_rating' => $packageB['saudi_star_rating'] ?? null,
-                'package_b_hotel' => $packageB['hotel'] ?? null,
-                'package_b_food_package' => $packageB['food_package'] ?? ($row['food_package'] ?? null),
+                    'package_a_accommodation_type' => $packageA['accommodation_type'] ?? null,
+                    'package_a_saudi_star_rating' => $packageA['saudi_star_rating'] ?? null,
+                    'package_a_hotel' => $packageA['hotel'] ?? null,
+                    'package_a_food_package' => $packageA['food_package'] ?? ($row['food_package'] ?? null),
 
-                'distance' => $row['distance'] ?? null,
-                'food_package' => $row['food_package'] ?? null,
-                'actual_check_in_time' => $row['actual_check_in_time'] ?? null,
-                'actual_check_out_time' => $row['actual_check_out_time'] ?? null,
-                'days' => $row['days'] ?? null,
-                'nights' => $row['nights'] ?? null,
-                'makkah_ziarat' => $row['makkah_ziarat'] ?? null,
-                'madinah_ziarat' => $row['madinah_ziarat'] ?? null,
-                'distribution' => $row['distribution'] ?? null,
-                'camp' => $row['camp'] ?? null,
-                'arafat' => $row['arafat'] ?? null,
-                'shuttle' => $row['shuttle'] ?? null,
-                'bedding' => $row['bedding'] ?? null,
-                'sharing' => $row['sharing'] ?? null,
-                'sharing_type' => $row['sharing_type'] ?? null,
-                'note' => $row['note'] ?? null,
-            ];
+                    'package_b_accommodation_type' => $packageB['accommodation_type'] ?? null,
+                    'package_b_saudi_star_rating' => $packageB['saudi_star_rating'] ?? null,
+                    'package_b_hotel' => $packageB['hotel'] ?? null,
+                    'package_b_food_package' => $packageB['food_package'] ?? ($row['food_package'] ?? null),
 
-            $package->accommodations()->create($accommodationData);
+                    'distance' => $row['distance'] ?? null,
+                    'food_package' => $row['food_package'] ?? null,
+                    'actual_check_in_time' => $row['actual_check_in_time'] ?? null,
+                    'actual_check_out_time' => $row['actual_check_out_time'] ?? null,
+                    'days' => $row['days'] ?? null,
+                    'nights' => $row['nights'] ?? null,
+                    'makkah_ziarat' => $row['makkah_ziarat'] ?? null,
+                    'madinah_ziarat' => $row['madinah_ziarat'] ?? null,
+                    'distribution' => $row['distribution'] ?? null,
+                    'camp' => $row['camp'] ?? null,
+                    'arafat' => $row['arafat'] ?? null,
+                    'shuttle' => $row['shuttle'] ?? null,
+                    'bedding' => $row['bedding'] ?? null,
+                    'sharing' => $row['sharing'] ?? null,
+                    'sharing_type' => $row['sharing_type'] ?? null,
+                    'note' => $row['note'] ?? null,
+                ];
+
+                $package->accommodations()->create($accommodationData);
+            }
         }
 
         $existingItinerary = $package->itinerary;
@@ -393,22 +472,37 @@ class PackageController extends Controller
 
         $package->itinerary()->updateOrCreate(['package_id' => $package->id], $itineraryData);
 
-        $package->terms()->updateOrCreate(
-            ['package_id' => $package->id],
-            ['content' => $data['terms']['terms_content'] ?? null]
-        );
-
-        foreach ($data['transports'] as $row) {
-            $package->transports()->create($row);
+        $termsContent = $data['terms']['terms_content'] ?? ($request->input('terms_content') ?? ($request->input('package_included_points') ?? null));
+        if ($termsContent) {
+            $package->terms()->updateOrCreate(
+                ['package_id' => $package->id],
+                ['content' => is_array($termsContent) ? implode("\n", $termsContent) : $termsContent]
+            );
         }
 
-        foreach ($data['flights'] as $row) {
-            $row['is_preferred'] = filter_var($row['is_preferred'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $package->transportFlights()->create($row);
+        if (!empty($data['transports']) && is_array($data['transports'])) {
+            foreach ($data['transports'] as $row) {
+                if (!empty($row['route']) || !empty($row['vehicle']) || !empty($row['type'])) {
+                    $package->transports()->create($row);
+                }
+            }
         }
 
-        foreach ($data['trains'] as $row) {
-            $package->transportTrains()->create($row);
+        if (!empty($data['flights']) && is_array($data['flights'])) {
+            foreach ($data['flights'] as $row) {
+                if (!empty($row['airline']) || !empty($row['flight_no'])) {
+                    $row['is_preferred'] = filter_var($row['is_preferred'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                    $package->transportFlights()->create($row);
+                }
+            }
+        }
+
+        if (!empty($data['trains']) && is_array($data['trains'])) {
+            foreach ($data['trains'] as $row) {
+                if (!empty($row['railway']) || !empty($row['train_no'])) {
+                    $package->transportTrains()->create($row);
+                }
+            }
         }
 
         $package->maktabAddress()->updateOrCreate(

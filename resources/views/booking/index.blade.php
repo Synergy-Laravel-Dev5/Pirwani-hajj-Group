@@ -79,9 +79,21 @@
                                                     </td>
 
                                                     <td>
-                                                        <span class="badge bg-primary">
-                                                            {{ ucfirst($booking->package_type) }}
-                                                        </span>
+                                                        <div>
+                                                            <span class="badge bg-primary">
+                                                                {{ $booking->package->package_title ?? $booking->package->name ?? $booking->package_name ?? ucfirst($booking->package_type) }}
+                                                            </span>
+                                                            @if ($booking->camp)
+                                                                <span class="badge bg-info-subtle text-info border border-info-subtle d-block mt-1 text-truncate" style="font-size:10.5px; max-width:180px;">
+                                                                    <i class="mdi mdi-tent"></i> {{ $booking->camp }}
+                                                                </span>
+                                                            @endif
+                                                            @if ($booking->qurbani_charges > 0 || ($booking->qurbani_option && $booking->qurbani_option !== 'not_included'))
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle d-block mt-1" style="font-size:10px;">
+                                                                    <i class="mdi mdi-sheep"></i> {{ ucfirst(str_replace('_', ' ', $booking->qurbani_option)) }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
                                                     </td>
 
                                                     <td>{{ $booking->no_of_pax ?? 0 }}</td>

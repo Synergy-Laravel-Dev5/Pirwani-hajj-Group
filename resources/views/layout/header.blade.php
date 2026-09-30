@@ -71,17 +71,17 @@
     <div class="app-sidebar-menu">
         <div class="h-100" data-simplebar>
             <div id="sidebar-menu">
-                <div class="logo-box text-center py-2">
+                <div class="logo-box text-center">
                     <a class="logo logo-dark" href="{{ route('dashboard') }}">
                         <span class="logo-lg">
-                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" alt="Pirwani Hajj Group"
+                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}" alt="Pirwani Hajj Group"
                                 class="sidebar-logo-full"
-                                style="height: 120px; width: auto; max-width: 230px; object-fit: contain;">
+                                style="height: 84px; width: auto; max-width: 220px; object-fit: contain;">
                         </span>
                         <span class="logo-sm">
-                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" alt="Pirwani Hajj Group"
+                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}" alt="Pirwani Hajj Group"
                                 class="sidebar-logo-small"
-                                style="height: 42px; width: auto; object-fit: contain;">
+                                style="height: 40px; width: auto; object-fit: contain;">
                         </span>
                     </a>
                 </div>

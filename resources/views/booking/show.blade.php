@@ -865,13 +865,18 @@
                                 'rgba(255,255,255,0.62)',
                             ];
                         @endphp
-                        <span class="bk-badge"
-                            style="background:{{ $pkgC[0] }};border:1px solid {{ $pkgC[1] }};color:{{ $pkgC[2] }}">
-                            <i class="mdi mdi-kaaba"></i>
-                            {{ ucfirst($booking->package_type) }}@if ($booking->package_year)
-                                — {{ $booking->package_year }}
-                            @endif
-                        </span>
+                        @if ($booking->camp)
+                            <span class="bk-badge"
+                                style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.45);color:#d9a441">
+                                <i class="mdi mdi-tent"></i> {{ $booking->camp }}
+                            </span>
+                        @endif
+                        @if ($booking->qurbani_charges > 0 || ($booking->qurbani_option && $booking->qurbani_option != 'not_included'))
+                            <span class="bk-badge"
+                                style="background:rgba(46,204,138,0.18);border:1px solid rgba(46,204,138,0.4);color:#12845e">
+                                <i class="mdi mdi-sheep"></i> Qurbani: {{ ucfirst(str_replace('_', ' ', $booking->qurbani_option)) }} @if($booking->qurbani_qty) ({{ $booking->qurbani_qty }}) @endif
+                            </span>
+                        @endif
                         <span class="bk-badge"
                             style="background:{{ $stC[0] }};border:1px solid {{ $stC[1] }};color:{{ $stC[2] }}">
                             {{ ucfirst($booking->status) }}
@@ -974,6 +979,22 @@
                         <td>Card #</td>
                         <td>{{ $booking->card_number ?? '—' }}</td>
                     </tr>
+                    @if ($booking->camp)
+                    <tr>
+                        <td>Camp / Maktab</td>
+                        <td><strong style="color:var(--gold-dk)">{{ $booking->camp }}</strong></td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td>Qurbani Option</td>
+                        <td>{{ ucfirst(str_replace('_', ' ', $booking->qurbani_option ?? 'Not Included')) }} @if($booking->qurbani_qty) ({{ $booking->qurbani_qty }} Pax) @endif</td>
+                    </tr>
+                    @if ($booking->qurbani_charges > 0)
+                    <tr>
+                        <td>Qurbani Charges</td>
+                        <td><strong style="color:var(--green)">{{ number_format($booking->qurbani_charges, 2) }} PKR</strong></td>
+                    </tr>
+                    @endif
                 </table>
             </div>
 
@@ -1233,6 +1254,13 @@
                     <td></td>
                     <td>PKR {{ number_format($booking->flight_charges, 0) }}</td>
                 </tr>
+                @if ($booking->qurbani_charges > 0)
+                <tr>
+                    <td>Qurbani Charges</td>
+                    <td>{{ ucfirst(str_replace('_', ' ', $booking->qurbani_option ?? '')) }} @if($booking->qurbani_qty) ({{ $booking->qurbani_qty }} heads) @endif</td>
+                    <td>PKR {{ number_format($booking->qurbani_charges, 0) }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td>Other Charges</td>
                     <td></td>

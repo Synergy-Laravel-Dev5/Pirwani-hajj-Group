@@ -10,10 +10,16 @@ class Booking extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'package_id',
         'client_id',
-        'company_id',        // ← ye add karo
-        'booking_for',        // ← ye add karo
+        'company_id',
+        'booking_for',
         'package_type',
+        'camp',
+        'room_breakdown',
+        'qurbani_option',
+        'qurbani_qty',
+        'qurbani_charges',
         'passport_number',
         'package_year',
         'cnic',
@@ -50,6 +56,15 @@ class Booking extends Model
         'status',
         'agreement_signature',
     ];
+
+    protected $casts = [
+        'room_breakdown' => 'array',
+    ];
+
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
+    }
 
     public function client()
     {
