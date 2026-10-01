@@ -49,7 +49,7 @@ class TransactionController extends Controller
             ->count();
 
         $clients   = Client::where('status', 'active')->get();
-        $companies = Company::where('status', 'active')->get();
+        $companies = Company::orderBy('company_name')->get();
 
         $clientSummary = Transaction::with('client')
             ->confirmed()
@@ -75,7 +75,7 @@ class TransactionController extends Controller
     public function create()
     {
         $clients   = Client::where('status', 'active')->get();
-        $companies = Company::where('status', 'active')->get();
+        $companies = Company::orderBy('company_name')->get();
         $bookings  = Booking::with(['client', 'company'])->latest()->get();
         return view('transaction.create', compact('clients', 'companies', 'bookings'));
     }
@@ -149,7 +149,7 @@ class TransactionController extends Controller
     {
         $transaction = Transaction::findOrFail($id);
         $clients     = Client::where('status', 'active')->get();
-        $companies   = Company::where('status', 'active')->get();
+        $companies   = Company::orderBy('company_name')->get();
         $bookings    = Booking::with(['client', 'company'])->latest()->get();
         return view('transaction.edit', compact('transaction', 'clients', 'companies', 'bookings'));
     }
@@ -360,7 +360,7 @@ class TransactionController extends Controller
 
     public function companyLedgerFilter()
     {
-        $companies = Company::where('status', 'active')->get();
+        $companies = Company::orderBy('company_name')->get();
         return view('transaction.company-ledger-filter', compact('companies'));
     }
 

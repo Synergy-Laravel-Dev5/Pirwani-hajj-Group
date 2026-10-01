@@ -23,6 +23,16 @@ class Company extends Model
         'director_cnic_expiry' => 'date',
     ];
 
+    public function getNameAttribute()
+    {
+        return $this->company_name ?? ($this->attributes['name'] ?? '');
+    }
+
+    public function getStatusAttribute()
+    {
+        return $this->current_company_status ?? ($this->attributes['status'] ?? 'active');
+    }
+
     public function addresses()
     {
         return $this->hasMany(CompanyAddress::class);
