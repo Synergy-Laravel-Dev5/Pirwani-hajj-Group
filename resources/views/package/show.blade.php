@@ -719,32 +719,64 @@
 
             {{-- 1. TOP HEADER GRID --}}
             @php
-                $stayDur = $package->stay_duration ?: ($package->days ? $package->days . ' DAYS' : '21 - 22 DAYS');
+                $depFlight = $package->transportFlights ? $package->transportFlights->first() : null;
+                $arrFlight = ($package->transportFlights && $package->transportFlights->count() > 1) ? $package->transportFlights->last() : $depFlight;
+
+                $stayDur = $package->stay_duration ?: ($package->days ? $package->days . ' DAYS' : ($package->duration_days ? $package->duration_days . ' DAYS' : '21 - 22 DAYS'));
                 $parts = explode(' ', trim($stayDur));
                 $numPart = $stayDur;
                 if (count($parts) > 1 && strtoupper(end($parts)) === 'DAYS') {
                     array_pop($parts);
                     $numPart = implode(' ', $parts);
                 }
+
+                $depDateStr = $package->departure_date_str ?: ($depFlight && $depFlight->departure_date ? \Carbon\Carbon::parse($depFlight->departure_date)->format('d M / d F') : ($package->departure_date ? \Carbon\Carbon::parse($package->departure_date)->format('d M / d F') : ''));
+                $depSectorStr = $package->departure_sector ?: ($depFlight && $depFlight->route ? $depFlight->route : 'Karachi to Jeddah');
+
+                $arrDateStr = $package->arrival_date_str ?: ($arrFlight && $arrFlight->arrival_date ? \Carbon\Carbon::parse($arrFlight->arrival_date)->format('d M / d F') : ($arrFlight && $arrFlight->departure_date ? \Carbon\Carbon::parse($arrFlight->departure_date)->format('d M / d F') : ($package->arrival_date ? \Carbon\Carbon::parse($package->arrival_date)->format('d M / d F') : '')));
+                $arrSectorStr = $package->arrival_sector ?: ($arrFlight && $arrFlight->route ? $arrFlight->route : 'Jeddah/Madinah to Karachi');
+
+                $cQuadPkr = $package->maktab_c_quad_pkr > 0 ? (float)$package->maktab_c_quad_pkr : ((float)($package->adult_pkr ?? 0));
+                $cQuadUsd = $package->maktab_c_quad_usd > 0 ? (float)$package->maktab_c_quad_usd : ((float)($package->adult_usd ?? 0));
+                $cTripPkr = (float)($package->maktab_c_triple_pkr ?? 0);
+                $cTripUsd = (float)($package->maktab_c_triple_usd ?? 0);
+                $cDoubPkr = (float)($package->maktab_c_double_pkr ?? 0);
+                $cDoubUsd = (float)($package->maktab_c_double_usd ?? 0);
+
+                $aQuadPkr = (float)($package->maktab_a_quad_pkr ?? 0);
+                $aQuadUsd = (float)($package->maktab_a_quad_usd ?? 0);
+                $aTripPkr = (float)($package->maktab_a_triple_pkr ?? 0);
+                $aTripUsd = (float)($package->maktab_a_triple_usd ?? 0);
+                $aDoubPkr = (float)($package->maktab_a_double_pkr ?? 0);
+                $aDoubUsd = (float)($package->maktab_a_double_usd ?? 0);
+
+                $azQuadPkr = (float)($package->azizia_quad_pkr ?? 0);
+                $azQuadUsd = (float)($package->azizia_quad_usd ?? 0);
+                $azTripPkr = (float)($package->azizia_triple_pkr ?? 0);
+                $azTripUsd = (float)($package->azizia_triple_usd ?? 0);
+                $azDoubPkr = (float)($package->azizia_double_pkr ?? 0);
+                $azDoubUsd = (float)($package->azizia_double_usd ?? 0);
             @endphp
 
             <div class="top-header-grid">
                 
                 {{-- Left Column --}}
                 <div class="header-left-col">
-                    <span class="stay-type-pill">{{ $package->stay_type ?: 'SHORT STAY' }}</span>
+                    <span class="stay-type-pill">{{ $package->stay_type ?: ($package->category ?: 'SHORT STAY') }}</span>
                     <div class="stay-days-large">
                         <div class="stay-num-val">{{ $numPart }}</div>
                         <div class="stay-days-text">DAYS</div>
                     </div>
-                    <div class="header-route-label">
-                        Departure Date: <i class="mdi mdi-airplane-takeoff"></i>
-                    </div>
-                    <div class="header-route-pill">
-                        {{ $package->departure_date_str ?: '07 May / 01 Zil Hajj' }}
-                    </div>
+                    @if(!empty($depDateStr))
+                        <div class="header-route-label">
+                            Departure Date: <i class="mdi mdi-airplane-takeoff"></i>
+                        </div>
+                        <div class="header-route-pill">
+                            {{ $depDateStr }}
+                        </div>
+                    @endif
                     <div class="header-route-city">
-                        {{ $package->departure_sector ?: 'Karachi to Jeddah' }}
+                        {{ $depSectorStr }}
                     </div>
                 </div>
 
@@ -753,7 +785,7 @@
                     <div class="brand-top-row">
                         <div class="brand-crest-box">
                             <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}" alt="Pirwani Crest" class="brand-crest-img">
-                            <div class="brand-gl-number">G.L. # 2990</div>
+                            <div class="brand-gl-number">{{ $package->company->gl_no ?? 'G.L. # 2990' }}</div>
                         </div>
                         <div class="brand-name-box">
                             <div class="brand-name-pirwani">Pirwani</div>
@@ -774,7 +806,7 @@
                             <circle cx="30" cy="7" r="1.5" fill="#E8C874"/>
                         </svg>
                     </div>
-                    <div class="hajj-year-text">{{ $package->hijri_year ?: '1448' }} - {{ $package->gregorian_year ?: ($package->year ?: '2027') }}</div>
+                    <div class="hajj-year-text">{{ $package->hijri_year ?: '1448' }} - {{ $package->gregorian_year ?: ($package->year ?: date('Y')) }}</div>
                 </div>
 
                 {{-- Right Column --}}
@@ -789,36 +821,22 @@
                         <div class="company-title-text">AS SALAM MUNAZZAM (Pvt.) Ltd.</div>
                     @endif
 
-                    <div class="header-route-label">
-                        Arrival Date: <i class="mdi mdi-airplane-landing"></i>
-                    </div>
-                    <div class="header-route-pill">
-                        {{ $package->arrival_date_str ?: '28 May / 22 Zil Hajj' }}
-                    </div>
+                    @if(!empty($arrDateStr))
+                        <div class="header-route-label">
+                            Arrival Date: <i class="mdi mdi-airplane-landing"></i>
+                        </div>
+                        <div class="header-route-pill">
+                            {{ $arrDateStr }}
+                        </div>
+                    @endif
                     <div class="header-route-city">
-                        {{ $package->arrival_sector ?: 'Jeddah/Madinah to Karachi' }}
+                        {{ $arrSectorStr }}
                     </div>
                 </div>
 
             </div>
 
             {{-- 2. FULL-WIDTH PRICING MATRIX --}}
-            @php
-                $cQuadPkr = $package->maktab_c_quad_pkr > 0 ? $package->maktab_c_quad_pkr : ($package->adult_pkr > 0 ? $package->adult_pkr : 1795000);
-                $cQuadUsd = $package->maktab_c_quad_usd > 0 ? $package->maktab_c_quad_usd : ($package->adult_usd > 0 ? $package->adult_usd : 6527);
-                $cTripPkr = $package->maktab_c_triple_pkr > 0 ? $package->maktab_c_triple_pkr : 1870000;
-                $cTripUsd = $package->maktab_c_triple_usd > 0 ? $package->maktab_c_triple_usd : 6800;
-                $cDoubPkr = $package->maktab_c_double_pkr > 0 ? $package->maktab_c_double_pkr : 1950000;
-                $cDoubUsd = $package->maktab_c_double_usd > 0 ? $package->maktab_c_double_usd : 7090;
-
-                $aQuadPkr = $package->maktab_a_quad_pkr > 0 ? $package->maktab_a_quad_pkr : 2395000;
-                $aQuadUsd = $package->maktab_a_quad_usd > 0 ? $package->maktab_a_quad_usd : 8709;
-                $aTripPkr = $package->maktab_a_triple_pkr > 0 ? $package->maktab_a_triple_pkr : 2470000;
-                $aTripUsd = $package->maktab_a_triple_usd > 0 ? $package->maktab_a_triple_usd : 8981;
-                $aDoubPkr = $package->maktab_a_double_pkr > 0 ? $package->maktab_a_double_pkr : 2550000;
-                $aDoubUsd = $package->maktab_a_double_usd > 0 ? $package->maktab_a_double_usd : 9272;
-            @endphp
-
             <div class="pricing-matrix-container">
                 {{-- Maktab C Section --}}
                 <div class="matrix-half">
@@ -829,18 +847,18 @@
                     <div class="matrix-rates-grid">
                         <div class="matrix-rate-col">
                             <div class="matrix-col-title">QUAD / SHARING</div>
-                            <div class="matrix-pkr-val">{{ number_format($cQuadPkr, 0) }}.</div>
-                            <div class="matrix-usd-val">$ {{ number_format($cQuadUsd, 0) }}.</div>
+                            <div class="matrix-pkr-val">{{ $cQuadPkr > 0 ? number_format($cQuadPkr, 0) . '.' : '0.00' }}</div>
+                            <div class="matrix-usd-val">{{ $cQuadUsd > 0 ? '$ ' . number_format($cQuadUsd, 0) . '.' : '$ 0.00' }}</div>
                         </div>
                         <div class="matrix-rate-col">
                             <div class="matrix-col-title">TRIPLE</div>
-                            <div class="matrix-pkr-val">{{ number_format($cTripPkr, 0) }}.</div>
-                            <div class="matrix-usd-val">$ {{ number_format($cTripUsd, 0) }}.</div>
+                            <div class="matrix-pkr-val">{{ $cTripPkr > 0 ? number_format($cTripPkr, 0) . '.' : '0.00' }}</div>
+                            <div class="matrix-usd-val">{{ $cTripUsd > 0 ? '$ ' . number_format($cTripUsd, 0) . '.' : '$ 0.00' }}</div>
                         </div>
                         <div class="matrix-rate-col">
                             <div class="matrix-col-title">DOUBLE</div>
-                            <div class="matrix-pkr-val">{{ number_format($cDoubPkr, 0) }}.</div>
-                            <div class="matrix-usd-val">$ {{ number_format($cDoubUsd, 0) }}.</div>
+                            <div class="matrix-pkr-val">{{ $cDoubPkr > 0 ? number_format($cDoubPkr, 0) . '.' : '0.00' }}</div>
+                            <div class="matrix-usd-val">{{ $cDoubUsd > 0 ? '$ ' . number_format($cDoubUsd, 0) . '.' : '$ 0.00' }}</div>
                         </div>
                     </div>
                 </div>
@@ -854,18 +872,18 @@
                     <div class="matrix-rates-grid">
                         <div class="matrix-rate-col">
                             <div class="matrix-col-title">QUAD / SHARING</div>
-                            <div class="matrix-pkr-val">{{ number_format($aQuadPkr, 0) }}.</div>
-                            <div class="matrix-usd-val">$ {{ number_format($aQuadUsd, 0) }}.</div>
+                            <div class="matrix-pkr-val">{{ $aQuadPkr > 0 ? number_format($aQuadPkr, 0) . '.' : '0.00' }}</div>
+                            <div class="matrix-usd-val">{{ $aQuadUsd > 0 ? '$ ' . number_format($aQuadUsd, 0) . '.' : '$ 0.00' }}</div>
                         </div>
                         <div class="matrix-rate-col">
                             <div class="matrix-col-title">TRIPLE</div>
-                            <div class="matrix-pkr-val">{{ number_format($aTripPkr, 0) }}.</div>
-                            <div class="matrix-usd-val">$ {{ number_format($aTripUsd, 0) }}.</div>
+                            <div class="matrix-pkr-val">{{ $aTripPkr > 0 ? number_format($aTripPkr, 0) . '.' : '0.00' }}</div>
+                            <div class="matrix-usd-val">{{ $aTripUsd > 0 ? '$ ' . number_format($aTripUsd, 0) . '.' : '$ 0.00' }}</div>
                         </div>
                         <div class="matrix-rate-col">
                             <div class="matrix-col-title">DOUBLE</div>
-                            <div class="matrix-pkr-val">{{ number_format($aDoubPkr, 0) }}.</div>
-                            <div class="matrix-usd-val">$ {{ number_format($aDoubUsd, 0) }}.</div>
+                            <div class="matrix-pkr-val">{{ $aDoubPkr > 0 ? number_format($aDoubPkr, 0) . '.' : '0.00' }}</div>
+                            <div class="matrix-usd-val">{{ $aDoubUsd > 0 ? '$ ' . number_format($aDoubUsd, 0) . '.' : '$ 0.00' }}</div>
                         </div>
                     </div>
                 </div>
@@ -874,7 +892,7 @@
             {{-- 3. MAIN MIDDLE SECTION --}}
             <div class="main-middle-grid">
 
-                {{-- Left: 5 Stay Cards --}}
+                {{-- Left: Stay Cards --}}
                 <div class="stay-cards-stack">
                     @php $accList = $package->accommodations; @endphp
 
@@ -886,21 +904,20 @@
                                         <i class="mdi mdi-kaaba"></i>
                                     @elseif(stripos($acc->place ?? '', 'madinah') !== false || stripos($acc->place ?? '', 'medina') !== false)
                                         <i class="mdi mdi-mosque"></i>
-                                    @elseif(stripos($acc->place ?? '', 'hajj') !== false || stripos($acc->place ?? '', 'mina') !== false)
+                                    @elseif(stripos($acc->place ?? '', 'hajj') !== false || stripos($acc->place ?? '', 'mina') !== false || stripos($acc->place ?? '', 'arafat') !== false)
                                         <i class="mdi mdi-tent"></i>
                                     @else
                                         <i class="mdi mdi-office-building"></i>
                                     @endif
                                     @php
-                                        $cleanPlace = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($acc->place ?? ''));
-                                        $cleanHotel = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($acc->package_a_hotel ?? ''));
-                                        $showHotel = !empty($acc->package_a_hotel) && !empty($cleanHotel) && (empty($cleanPlace) || (strpos($cleanPlace, $cleanHotel) === false && strpos($cleanHotel, $cleanPlace) === false));
+                                        $hotelDisplay = $acc->package_a_hotel ?: ($acc->hotel ?: ($acc->package_b_hotel ?: ''));
+                                        $hasHotel = !empty($hotelDisplay) && strcasecmp(trim($hotelDisplay), trim($acc->place ?? '')) !== 0;
                                     @endphp
                                     <span>
                                         @if(!empty($acc->place))
-                                            {{ $acc->place }}@if($showHotel) - {{ $acc->package_a_hotel }}@endif
-                                        @elseif(!empty($acc->package_a_hotel))
-                                            {{ $acc->package_a_hotel }}
+                                            {{ $acc->place }}@if($hasHotel) - {{ $hotelDisplay }}@endif
+                                        @elseif(!empty($hotelDisplay))
+                                            {{ $hotelDisplay }}
                                         @else
                                             ACCOMMODATION
                                         @endif
@@ -909,146 +926,26 @@
                                 <div class="stay-card-body">
                                     <div class="stay-col-item">
                                         <div class="stay-col-label">Arrival</div>
-                                        <div class="stay-col-val">{{ $acc->check_in ? \Carbon\Carbon::parse($acc->check_in)->format('d M Y') : '07 May 2027' }}</div>
-                                        <div class="stay-col-sub">{{ $acc->note ?? '01 Zil Hajj 1448' }}</div>
+                                        <div class="stay-col-val">{{ $acc->check_in ? \Carbon\Carbon::parse($acc->check_in)->format('d M Y') : '—' }}</div>
+                                        <div class="stay-col-sub">{{ $acc->note ?? '' }}</div>
                                     </div>
                                     <div class="stay-col-item">
                                         <div class="stay-col-label">Departure</div>
-                                        <div class="stay-col-val">{{ $acc->check_out ? \Carbon\Carbon::parse($acc->check_out)->format('d M Y') : '10 May 2027' }}</div>
-                                        <div class="stay-col-sub">{{ $acc->sharing ?? '04 Zil Hajj 1448' }}</div>
+                                        <div class="stay-col-val">{{ $acc->check_out ? \Carbon\Carbon::parse($acc->check_out)->format('d M Y') : '—' }}</div>
+                                        <div class="stay-col-sub">{{ $acc->sharing ?? '' }}</div>
                                     </div>
                                     <div class="stay-col-item">
                                         <div class="stay-col-label">Meal Plan</div>
                                         <div class="stay-col-val">{{ $acc->food_package ?? ($acc->package_a_food_package ?? 'FULL BOARD') }}</div>
-                                        <div class="stay-col-sub">{{ $acc->sharing_type ?? 'Breakfast, Lunch, Dinner Asian Meal' }}</div>
+                                        <div class="stay-col-sub">{{ $acc->sharing_type ?? '' }}</div>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     @else
-                        {{-- Segment 1: Makkah --}}
-                        <div class="stay-card">
-                            <div class="stay-card-head">
-                                <i class="mdi mdi-kaaba"></i>
-                                <span>MAKKAH - {{ $package->makkah_type ?: 'SWISSOTEL / SWISS AL MAQAM' }}</span>
-                            </div>
-                            <div class="stay-card-body">
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Arrival</div>
-                                    <div class="stay-col-val">07 May 2027</div>
-                                    <div class="stay-col-sub">01 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Departure</div>
-                                    <div class="stay-col-val">10 May 2027</div>
-                                    <div class="stay-col-sub">04 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Meal Plan</div>
-                                    <div class="stay-col-val">HALF BOARD</div>
-                                    <div class="stay-col-sub">Breakfast & Dinner Asian Meal</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Segment 2: Azizia --}}
-                        <div class="stay-card">
-                            <div class="stay-card-head">
-                                <i class="mdi mdi-office-building"></i>
-                                <span>AZIZIA - BUILDING</span>
-                            </div>
-                            <div class="stay-card-body">
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Arrival</div>
-                                    <div class="stay-col-val">10 May 2027</div>
-                                    <div class="stay-col-sub">04 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Departure</div>
-                                    <div class="stay-col-val">13 May 2027</div>
-                                    <div class="stay-col-sub">07 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Meal Plan</div>
-                                    <div class="stay-col-val">FULL BOARD</div>
-                                    <div class="stay-col-sub">Breakfast ,Lunch, Dinner Asian Meal</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Segment 3: Hajj Days --}}
-                        <div class="stay-card">
-                            <div class="stay-card-head">
-                                <i class="mdi mdi-tent"></i>
-                                <span>HAJJ - DAYS</span>
-                            </div>
-                            <div class="stay-card-body">
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Arrival</div>
-                                    <div class="stay-col-val">14 May 2027</div>
-                                    <div class="stay-col-sub">08 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Departure</div>
-                                    <div class="stay-col-val">18 May 2027</div>
-                                    <div class="stay-col-sub">12 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Meal Plan</div>
-                                    <div class="stay-col-val">FULL BOARD</div>
-                                    <div class="stay-col-sub">Provided By Maktab</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Segment 4: Azizia --}}
-                        <div class="stay-card">
-                            <div class="stay-card-head">
-                                <i class="mdi mdi-office-building"></i>
-                                <span>AZIZIA - BUILDING</span>
-                            </div>
-                            <div class="stay-card-body">
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Arrival</div>
-                                    <div class="stay-col-val">18 May 2027</div>
-                                    <div class="stay-col-sub">12 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Departure</div>
-                                    <div class="stay-col-val">23 May 2027</div>
-                                    <div class="stay-col-sub">17 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Meal Plan</div>
-                                    <div class="stay-col-val">FULL BOARD</div>
-                                    <div class="stay-col-sub">Breakfast ,Lunch, Dinner Asian Meal</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Segment 5: Madinah --}}
-                        <div class="stay-card">
-                            <div class="stay-card-head">
-                                <i class="mdi mdi-mosque"></i>
-                                <span>MADINAH - {{ $package->medinah_type ?: 'NUSK AL HIJRA' }}</span>
-                            </div>
-                            <div class="stay-card-body">
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Arrival</div>
-                                    <div class="stay-col-val">23 May 2027</div>
-                                    <div class="stay-col-sub">17 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Departure</div>
-                                    <div class="stay-col-val">28 May 2027</div>
-                                    <div class="stay-col-sub">22 Zil Hajj 1448</div>
-                                </div>
-                                <div class="stay-col-item">
-                                    <div class="stay-col-label">Meal Plan</div>
-                                    <div class="stay-col-val">FULL BOARD</div>
-                                    <div class="stay-col-sub">Breakfast ,Lunch, Dinner Asian Meal</div>
-                                </div>
-                            </div>
+                        <div class="stay-card p-3 text-center text-muted">
+                            <i class="mdi mdi-information-outline fs-24 mb-1 text-primary"></i>
+                            <p class="m-0" style="font-size:11px;font-weight:700;">No accommodation rows added for this package yet.</p>
                         </div>
                     @endif
                 </div>
@@ -1063,24 +960,24 @@
                         <div class="azizia-row-item">
                             <div><span class="azizia-pill-tag">QUAD / SHARING</span></div>
                             <div class="azizia-rate-col">
-                                <span class="azizia-pkr-num">{{ number_format($package->azizia_quad_pkr ?? 50000, 0) }}.</span>
-                                <span class="azizia-usd-num">Per Person $ {{ number_format($package->azizia_quad_usd ?? 181, 0) }}.</span>
+                                <span class="azizia-pkr-num">{{ $azQuadPkr > 0 ? number_format($azQuadPkr, 0) . '.' : '0.00' }}</span>
+                                <span class="azizia-usd-num">Per Person $ {{ $azQuadUsd > 0 ? number_format($azQuadUsd, 0) . '.' : '0.00' }}</span>
                             </div>
                         </div>
 
                         <div class="azizia-row-item">
                             <div><span class="azizia-pill-tag">TRIPLE</span></div>
                             <div class="azizia-rate-col">
-                                <span class="azizia-pkr-num">{{ number_format($package->azizia_triple_pkr ?? 100000, 0) }}.</span>
-                                <span class="azizia-usd-num">Per Person $ {{ number_format($package->azizia_triple_usd ?? 363, 0) }}.</span>
+                                <span class="azizia-pkr-num">{{ $azTripPkr > 0 ? number_format($azTripPkr, 0) . '.' : '0.00' }}</span>
+                                <span class="azizia-usd-num">Per Person $ {{ $azTripUsd > 0 ? number_format($azTripUsd, 0) . '.' : '0.00' }}</span>
                             </div>
                         </div>
 
                         <div class="azizia-row-item mb-0">
                             <div><span class="azizia-pill-tag">DOUBLE</span></div>
                             <div class="azizia-rate-col">
-                                <span class="azizia-pkr-num">{{ number_format($package->azizia_double_pkr ?? 200000, 0) }}.</span>
-                                <span class="azizia-usd-num">Per Person $ {{ number_format($package->azizia_double_usd ?? 727, 0) }}.</span>
+                                <span class="azizia-pkr-num">{{ $azDoubPkr > 0 ? number_format($azDoubPkr, 0) . '.' : '0.00' }}</span>
+                                <span class="azizia-usd-num">Per Person $ {{ $azDoubUsd > 0 ? number_format($azDoubUsd, 0) . '.' : '0.00' }}</span>
                             </div>
                         </div>
                     </div>
@@ -1102,8 +999,8 @@
                                     @if(!empty($cleanDoc)) <li>{{ $cleanDoc }}</li> @endif
                                 @endforeach
                             @else
-                                <li>Passport First Page (16 NOV, 2027)</li>
-                                <li>Photograph ( White Background )</li>
+                                <li>Passport First Page (Valid for 6+ months)</li>
+                                <li>Photograph (White Background)</li>
                                 <li>ID Card Copy / NICOP (Nadra)</li>
                                 <li>Next of Kin ID Card & Contact Number</li>
                                 <li>Passenger Blood Group</li>
@@ -1146,11 +1043,11 @@
                         @else
                             <li>Meet & Assist Upon Arrival At Airport.</li>
                             <li>Complete Accommodation In Makkah, Azizia, Madinah.</li>
-                            <li>Complete Transfer By Air-Conditioned Privete Buses.</li>
-                            <li>Air fare Include Indirect Flight. (Any Airline).</li>
+                            <li>Complete Transfer By Air-Conditioned Private Buses.</li>
+                            <li>Air fare Include Indirect Flight (Any Airline).</li>
                             <li>Hajj Training Programme Conducted by Renowned Religious Scholars.</li>
                             <li>Madinah Ziyarat By Bus.</li>
-                            <li>Gift items will be provided only to Hujjaj travelling from Pakistan.</li>
+                            <li>Gift items will be provided to all Hujjaj.</li>
                         @endif
                     </ul>
                 </div>
@@ -1174,11 +1071,11 @@
                             @endforeach
                         @else
                             <li>Haram & Kabah View Not Committed.</li>
-                            <li>Saperate Room Makkah & Madinah Hotel Is Applicable Of Above Package, Separate Double Room Master Beds are Not Committed in any Hotel In Makkah, Madinah, or Azizia Building.</li>
+                            <li>Separate Room Makkah & Madinah Hotel Is Applicable As Per Above Package.</li>
                             <li>Azizia Sharing 5/6 Persons Per Room.</li>
-                            <li>Transport Will Not Be Provided TAWAF-EZIYARAH.</li>
-                            <li>Company Will Not Be Responsible For Any Inconvenience, Loss, or Damage(s) Incurred During Travel.</li>
-                            <li>Ziyarat Abouve Package Only Madinah.</li>
+                            <li>Transport Will Not Be Provided For Tawaf-e-Ziyarah.</li>
+                            <li>Company Will Not Be Responsible For Any Inconvenience, Loss, or Damage Incurred During Travel.</li>
+                            <li>Ziyarat in Package Only for Madinah.</li>
                         @endif
                     </ul>
                 </div>
@@ -1203,11 +1100,11 @@
                             @if(!empty($cleanNote)) <div>{{ $cleanNote }}</div> @endif
                         @endforeach
                     @else
-                        <div>The above package calculation is based on a USD Rate of @275. If the USD Rate increases, the difference in rate will be applied.</div>
-                        <div>During Travel Between (jed-mak-med-jed Airport / med Airport) Meals are not Provided by the Hajj Company."</div>
-                        <div>From 8th to 12th Zilhajj (during Hajj days), meals will not be available at Azizia Building. Meals will be available at Maktab "C" & "A" during this period.</div>
+                        <div>The above package calculation is based on standard currency conversion rates. Any major change will be adjusted accordingly.</div>
+                        <div>During Travel Between Airports and Cities, meals are provided as per airline/transport policy.</div>
+                        <div>From 8th to 12th Zilhajj (during Hajj days), meals will be provided at Maktab camps in Mina/Arafat.</div>
                         <div>
-                            Payments can only be made into a bank account.<br>
+                            Payments can only be made into official bank accounts.<br>
                             <strong>No Cash Payments are Accepted.</strong>
                         </div>
                     @endif
@@ -1215,17 +1112,24 @@
             </div>
 
             {{-- 6. OFFICIAL FOOTER --}}
+            @php
+                $company = $package->company;
+                $compAddress = $company && $company->addresses && $company->addresses->count() ? $company->addresses->first()->address : ($company->address ?? 'Office no. 106, Balad Trade Centre, B.M.C.H.S Bahadurabad, Karachi. Pakistan');
+                $compPhones = $company && $company->contactNumbers && $company->contactNumbers->count() ? $company->contactNumbers->pluck('contact_number')->join(' | ') : ($company->phone ?? '021-34133006 | 021-34133007 | 0336-2374638');
+                $compEmail = $company && $company->emails && $company->emails->count() ? $company->emails->first()->email : ($company->email ?? 'pirwanitravel@gmail.com');
+                $compWeb = $company && $company->website ? $company->website : 'pirwanitravels.com';
+            @endphp
             <div class="brochure-footer">
                 <div class="footer-address">
-                    Office no. 106, Balad Trade Centre,B.M.C.H.S Bahadurabad, Karachi.Pakistan,
+                    {{ $compAddress }}
                 </div>
                 <div class="footer-contacts">
-                    021-34133006 | 021-34133007 | 0336-2374638
+                    {{ $compPhones }}
                 </div>
                 <div class="footer-social-row">
                     <span><i class="mdi mdi-facebook"></i> PIRWANIHAJJGROUP</span>
-                    <span><i class="mdi mdi-web"></i> pirwanitravels.com</span>
-                    <span><i class="mdi mdi-email"></i> pirwanitravel@gmail.com</span>
+                    <span><i class="mdi mdi-web"></i> {{ $compWeb }}</span>
+                    <span><i class="mdi mdi-email"></i> {{ $compEmail }}</span>
                     <span><i class="mdi mdi-instagram"></i> Pirwanitourism</span>
                 </div>
             </div>

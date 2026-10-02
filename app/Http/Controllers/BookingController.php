@@ -33,9 +33,10 @@ class BookingController extends Controller
         $companies = Company::all();
         $years     = [date('Y'), date('Y') + 1, date('Y') + 2];
         $airlines  = \App\Models\Airline::all();
+        $hotels    = \App\Models\Hotel::all();
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
 
-        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'packages'));
+        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'packages'));
     }
 
     public function store(Request $request)
@@ -85,8 +86,11 @@ class BookingController extends Controller
 
         if ($request->has('persons')) {
             foreach ($request->persons as $person) {
-                if (!empty($person['full_name'])) {
-                    $booking->persons()->create($person);
+                $name = !empty($person['full_name']) ? trim($person['full_name']) : trim(($person['given_name'] ?? '') . ' ' . ($person['surname'] ?? ''));
+                if (!empty($name) || !empty($person['passport_number'])) {
+                    $personData = $person;
+                    $personData['full_name'] = $name ?: 'Passenger';
+                    $booking->persons()->create($personData);
                 }
             }
         }
@@ -138,13 +142,14 @@ class BookingController extends Controller
         $companies = Company::all();
         $years     = [date('Y'), date('Y') + 1, date('Y') + 2];
         $airlines  = \App\Models\Airline::all();
+        $hotels    = \App\Models\Hotel::all();
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
 
         $transactionsPaid = Transaction::where('client_id', $booking->client_id)
             ->where('status', 'confirmed')
             ->sum('amount');
 
-        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'packages'));
+        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'packages'));
     }
 
     public function update(Request $request, $id)
@@ -197,7 +202,12 @@ class BookingController extends Controller
         $booking->persons()->delete();
         if ($request->has('persons')) {
             foreach ($request->persons as $p) {
-                if (!empty($p['full_name'])) $booking->persons()->create($p);
+                $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
+                if (!empty($name) || !empty($p['passport_number'])) {
+                    $pData = $p;
+                    $pData['full_name'] = $name ?: 'Passenger';
+                    $booking->persons()->create($pData);
+                }
             }
         }
 

@@ -11,7 +11,11 @@ class BookingPerson extends Model
     protected $fillable = [
         'booking_id',
         'full_name',
+        'surname',
+        'given_name',
+        'dob',
         'passport_number',
+        'passport_expiry_date',
         'cnic',
         'phone',
     ];

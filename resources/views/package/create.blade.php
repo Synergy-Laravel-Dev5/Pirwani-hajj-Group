@@ -343,44 +343,78 @@
                         ═════════════════════════════════════════ --}}
                         <div class="tab-pane fade card-body" id="tab-accommodation">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="section-subhead m-0">🏨 Stay Schedule (Makkah, Azizia, Hajj Days, Madinah)</h5>
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="add-accommodation-btn">
-                                    <i class="mdi mdi-plus"></i> Add Stay Row
+                                <div>
+                                    <h5 class="section-subhead m-0">🏨 Stay Schedule (Makkah, Azizia, Hajj Days, Madinah)</h5>
+                                    <small class="text-muted">Select place/city to automatically filter hotels from Hotel CRUD</small>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" id="add-accommodation-btn">
+                                    <i class="mdi mdi-plus me-1"></i> Add Stay Row
                                 </button>
                             </div>
 
                             <div id="accommodations-container">
                                 @for ($idx = 0; $idx < 5; $idx++)
-                                    <div class="accommodation-row border rounded p-3 mb-3 bg-light">
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="badge bg-dark">Stay Segment #{{ $idx + 1 }}</span>
+                                    @php
+                                        $defaultPlaces = [
+                                            0 => 'MAKKAH - HOTEL',
+                                            1 => 'AZIZIA - BUILDING',
+                                            2 => 'HAJJ - DAYS (MINA / ARAFAT)',
+                                            3 => 'AZIZIA - BUILDING',
+                                            4 => 'MADINAH - HOTEL'
+                                        ];
+                                        $curPlace = old('accommodations.'.$idx.'.place', $defaultPlaces[$idx] ?? '');
+                                    @endphp
+                                    <div class="accommodation-row border rounded p-3 mb-3 bg-light" data-row-index="{{ $idx }}">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                            <span class="badge bg-dark stay-segment-badge">Stay Segment #{{ $idx + 1 }}</span>
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-acc-btn py-0 px-2" style="font-size:12px;">
+                                                <i class="mdi mdi-delete-outline"></i> Remove
+                                            </button>
                                         </div>
                                         <div class="row g-3">
                                             <div class="col-md-3">
-                                                <label class="form-label fw-bold">Segment / Place</label>
-                                                <input type="text" name="accommodations[{{ $idx }}][place]" class="form-control" placeholder="e.g. MAKKAH - HOTEL NAME" value="{{ old('accommodations.'.$idx.'.place') }}">
+                                                <label class="form-label fw-bold small">Segment / Place</label>
+                                                <div class="input-group input-group-sm">
+                                                    <select class="form-select acc-place-select" style="max-width:110px;">
+                                                        <option value="">Place...</option>
+                                                        <option value="MAKKAH" {{ str_contains(strtoupper($curPlace), 'MAKKAH') ? 'selected' : '' }}>Makkah</option>
+                                                        <option value="AZIZIA" {{ str_contains(strtoupper($curPlace), 'AZIZIA') ? 'selected' : '' }}>Azizia</option>
+                                                        <option value="HAJJ - DAYS (MINA / ARAFAT)" {{ str_contains(strtoupper($curPlace), 'MINA') || str_contains(strtoupper($curPlace), 'ARAFAT') ? 'selected' : '' }}>Mina/Arafat</option>
+                                                        <option value="MADINAH" {{ str_contains(strtoupper($curPlace), 'MADINAH') ? 'selected' : '' }}>Madinah</option>
+                                                        <option value="OTHER">Other</option>
+                                                    </select>
+                                                    <input type="text" name="accommodations[{{ $idx }}][place]" class="form-control acc-place-input" placeholder="e.g. MAKKAH - HOTEL NAME" value="{{ $curPlace }}">
+                                                </div>
                                             </div>
                                             <div class="col-md-3">
-                                                <label class="form-label fw-bold">Hotel / Building</label>
-                                                <input type="text" name="accommodations[{{ $idx }}][package_a][hotel]" class="form-control" placeholder="e.g. Anjum Makkah Hotel" value="{{ old('accommodations.'.$idx.'.package_a.hotel') }}">
+                                                <label class="form-label fw-bold small">Hotel / Building</label>
+                                                <select class="form-select form-select-sm acc-hotel-select mb-1">
+                                                    <option value="">-- Select from Hotel CRUD --</option>
+                                                    @foreach ($hotels as $h)
+                                                        <option value="{{ $h->name }}" data-place="{{ strtolower($h->place ?? '') }}" {{ old('accommodations.'.$idx.'.package_a.hotel') == $h->name ? 'selected' : '' }}>
+                                                            {{ $h->name }} ({{ $h->place ?? 'Hotel' }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="text" name="accommodations[{{ $idx }}][package_a][hotel]" class="form-control form-control-sm acc-hotel-input" placeholder="Hotel / Building Name" value="{{ old('accommodations.'.$idx.'.package_a.hotel') }}">
                                             </div>
                                             <div class="col-md-3">
-                                                <label class="form-label fw-bold">Arrival Date & Hijri</label>
-                                                <input type="date" name="accommodations[{{ $idx }}][check_in]" class="form-control mb-1" value="{{ old('accommodations.'.$idx.'.check_in') }}">
+                                                <label class="form-label fw-bold small">Arrival Date & Hijri</label>
+                                                <input type="date" name="accommodations[{{ $idx }}][check_in]" class="form-control form-control-sm mb-1" value="{{ old('accommodations.'.$idx.'.check_in') }}">
                                                 <input type="text" name="accommodations[{{ $idx }}][note]" class="form-control form-control-sm" placeholder="Hijri e.g. 21 - 22 Zil Qadh 1448" value="{{ old('accommodations.'.$idx.'.note') }}">
                                             </div>
                                             <div class="col-md-3">
-                                                <label class="form-label fw-bold">Departure Date & Hijri</label>
-                                                <input type="date" name="accommodations[{{ $idx }}][check_out]" class="form-control mb-1" value="{{ old('accommodations.'.$idx.'.check_out') }}">
+                                                <label class="form-label fw-bold small">Departure Date & Hijri</label>
+                                                <input type="date" name="accommodations[{{ $idx }}][check_out]" class="form-control form-control-sm mb-1" value="{{ old('accommodations.'.$idx.'.check_out') }}">
                                                 <input type="text" name="accommodations[{{ $idx }}][sharing]" class="form-control form-control-sm" placeholder="Hijri e.g. 29 Zil Qadh 1448" value="{{ old('accommodations.'.$idx.'.sharing') }}">
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold">Meal Plan</label>
-                                                <input type="text" name="accommodations[{{ $idx }}][food_package]" class="form-control" placeholder="e.g. FULL BOARD" value="{{ old('accommodations.'.$idx.'.food_package') }}">
+                                                <label class="form-label fw-bold small">Meal Plan</label>
+                                                <input type="text" name="accommodations[{{ $idx }}][food_package]" class="form-control form-control-sm" placeholder="e.g. FULL BOARD" value="{{ old('accommodations.'.$idx.'.food_package', 'FULL BOARD') }}">
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold">Meal Detail Note</label>
-                                                <input type="text" name="accommodations[{{ $idx }}][sharing_type]" class="form-control" placeholder="e.g. Breakfast, Lunch, Dinner Asian Meal" value="{{ old('accommodations.'.$idx.'.sharing_type') }}">
+                                                <label class="form-label fw-bold small">Meal Detail Note</label>
+                                                <input type="text" name="accommodations[{{ $idx }}][sharing_type]" class="form-control form-control-sm" placeholder="e.g. Breakfast, Lunch, Dinner Asian Meal" value="{{ old('accommodations.'.$idx.'.sharing_type', 'Breakfast, Lunch, Dinner Asian Meal') }}">
                                             </div>
                                         </div>
                                     </div>
@@ -506,4 +540,160 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const allHotels = @json($hotels ?? []);
+
+        function filterHotelsForSelect(selectEl, placeVal) {
+            if (!selectEl) return;
+            const currentVal = selectEl.value;
+            const placeClean = (placeVal || '').trim().toLowerCase();
+
+            selectEl.innerHTML = '<option value="">-- Select from Hotel CRUD --</option>';
+
+            allHotels.forEach(h => {
+                const hotelPlace = (h.place || '').toLowerCase();
+                let shouldShow = true;
+
+                if (placeClean) {
+                    if (placeClean.includes('makkah') || placeClean.includes('mecca')) {
+                        shouldShow = hotelPlace.includes('makkah') || hotelPlace.includes('mecca');
+                    } else if (placeClean.includes('madinah') || placeClean.includes('medina')) {
+                        shouldShow = hotelPlace.includes('madinah') || hotelPlace.includes('medina');
+                    } else if (placeClean.includes('azizia') || placeClean.includes('aziziya')) {
+                        shouldShow = hotelPlace.includes('azizia') || hotelPlace.includes('aziziya');
+                    } else if (placeClean.includes('mina') || placeClean.includes('arafat')) {
+                        shouldShow = hotelPlace.includes('mina') || hotelPlace.includes('arafat');
+                    }
+                }
+
+                const opt = document.createElement('option');
+                opt.value = h.name;
+                opt.textContent = `${h.name} (${h.place || 'Hotel'})`;
+                opt.dataset.place = hotelPlace;
+                if (!shouldShow) {
+                    opt.style.color = '#888';
+                }
+                if (h.name === currentVal) {
+                    opt.selected = true;
+                }
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function bindAccommodationRowEvents(rowEl) {
+            const placeSel = rowEl.querySelector('.acc-place-select');
+            const placeInput = rowEl.querySelector('.acc-place-input');
+            const hotelSel = rowEl.querySelector('.acc-hotel-select');
+            const hotelInput = rowEl.querySelector('.acc-hotel-input');
+
+            if (placeSel && placeInput) {
+                placeSel.addEventListener('change', function() {
+                    if (this.value && this.value !== 'OTHER') {
+                        placeInput.value = this.value;
+                    }
+                    filterHotelsForSelect(hotelSel, placeInput.value);
+                });
+
+                placeInput.addEventListener('input', function() {
+                    filterHotelsForSelect(hotelSel, this.value);
+                });
+            }
+
+            if (hotelSel && hotelInput) {
+                hotelSel.addEventListener('change', function() {
+                    if (this.value) {
+                        hotelInput.value = this.value;
+                    }
+                });
+            }
+
+            // Initial filter if place is preset
+            if (hotelSel && placeInput && placeInput.value) {
+                filterHotelsForSelect(hotelSel, placeInput.value);
+            }
+        }
+
+        let accCounter = document.querySelectorAll('.accommodation-row').length || 5;
+
+        document.getElementById('add-accommodation-btn')?.addEventListener('click', function() {
+            const container = document.getElementById('accommodations-container');
+            const idx = accCounter++;
+            const newIndexNumber = container.querySelectorAll('.accommodation-row').length + 1;
+
+            const html = `
+            <div class="accommodation-row border rounded p-3 mb-3 bg-light" data-row-index="${idx}">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                    <span class="badge bg-dark stay-segment-badge">Stay Segment #${newIndexNumber}</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-acc-btn py-0 px-2" style="font-size:12px;">
+                        <i class="mdi mdi-delete-outline"></i> Remove
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Segment / Place</label>
+                        <div class="input-group input-group-sm">
+                            <select class="form-select acc-place-select" style="max-width:110px;">
+                                <option value="">Place...</option>
+                                <option value="MAKKAH">Makkah</option>
+                                <option value="AZIZIA">Azizia</option>
+                                <option value="HAJJ - DAYS (MINA / ARAFAT)">Mina/Arafat</option>
+                                <option value="MADINAH">Madinah</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                            <input type="text" name="accommodations[${idx}][place]" class="form-control acc-place-input" placeholder="e.g. MAKKAH - HOTEL NAME">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Hotel / Building</label>
+                        <select class="form-select form-select-sm acc-hotel-select mb-1">
+                            <option value="">-- Select from Hotel CRUD --</option>
+                        </select>
+                        <input type="text" name="accommodations[${idx}][package_a][hotel]" class="form-control form-control-sm acc-hotel-input" placeholder="Hotel / Building Name">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Arrival Date & Hijri</label>
+                        <input type="date" name="accommodations[${idx}][check_in]" class="form-control form-control-sm mb-1">
+                        <input type="text" name="accommodations[${idx}][note]" class="form-control form-control-sm" placeholder="Hijri e.g. 21 - 22 Zil Qadh 1448">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Departure Date & Hijri</label>
+                        <input type="date" name="accommodations[${idx}][check_out]" class="form-control form-control-sm mb-1">
+                        <input type="text" name="accommodations[${idx}][sharing]" class="form-control form-control-sm" placeholder="Hijri e.g. 29 Zil Qadh 1448">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small">Meal Plan</label>
+                        <input type="text" name="accommodations[${idx}][food_package]" class="form-control form-control-sm" placeholder="e.g. FULL BOARD" value="FULL BOARD">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small">Meal Detail Note</label>
+                        <input type="text" name="accommodations[${idx}][sharing_type]" class="form-control form-control-sm" placeholder="e.g. Breakfast, Lunch, Dinner Asian Meal" value="Breakfast, Lunch, Dinner Asian Meal">
+                    </div>
+                </div>
+            </div>`;
+
+            container.insertAdjacentHTML('beforeend', html);
+            const addedRow = container.lastElementChild;
+            bindAccommodationRowEvents(addedRow);
+        });
+
+        document.getElementById('accommodations-container')?.addEventListener('click', function(e) {
+            const btn = e.target.closest('.remove-acc-btn');
+            if (btn) {
+                const row = btn.closest('.accommodation-row');
+                if (row) {
+                    row.remove();
+                    // Renumber stay segment badges
+                    document.querySelectorAll('.stay-segment-badge').forEach((badge, i) => {
+                        badge.textContent = `Stay Segment #${i + 1}`;
+                    });
+                }
+            }
+        });
+
+        // Initialize existing rows
+        document.querySelectorAll('.accommodation-row').forEach(row => {
+            bindAccommodationRowEvents(row);
+        });
+    </script>
 @endsection
