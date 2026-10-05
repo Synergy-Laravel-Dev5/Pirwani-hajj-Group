@@ -1272,6 +1272,13 @@
                     <td></td>
                     <td>PKR {{ number_format($booking->other_charges, 0) }}</td>
                 </tr>
+                @if (($booking->discount ?? 0) > 0)
+                <tr style="color:var(--red);">
+                    <td><strong class="text-danger"><i class="mdi mdi-tag-minus me-1"></i>Discount Applied</strong></td>
+                    <td class="text-danger">Special Discount / Concession</td>
+                    <td><strong class="text-danger">- PKR {{ number_format($booking->discount, 0) }}</strong></td>
+                </tr>
+                @endif
                 <tr class="cost-total">
                     <td style="color:var(--gold-dk)"><strong>Total Amount</strong></td>
                     <td></td>

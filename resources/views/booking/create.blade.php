@@ -35,6 +35,8 @@
                     <span>|</span>
                     <span>Qurbani: <strong id="bar_qurbani">0.00</strong></span>
                     <span>|</span>
+                    <span class="text-danger">Discount: <strong id="bar_discount">0.00</strong></span>
+                    <span>|</span>
                     <span class="text-primary fw-semibold">Total: <strong id="bar_total">0.00</strong></span>
                     <span>|</span>
                     <span class="text-danger fw-semibold">Balance: <strong id="bar_balance">0.00</strong></span>
@@ -852,20 +854,26 @@
                                         class="form-control calc fw-semibold" placeholder="0.00" step="0.01">
                                     <small class="text-muted">Auto-calculated from Room Sharing Breakdown.</small>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Visa Charges (total)</label>
+                                <div class="col-md-2">
+                                    <label class="form-label">Visa Charges</label>
                                     <input type="number" name="visa_charges" id="visa_charges"
                                         class="form-control calc" placeholder="Enter visa charges" step="0.01" value="{{ old('visa_charges', 0) }}">
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Flight Charges (total)</label>
+                                <div class="col-md-2">
+                                    <label class="form-label">Flight Charges</label>
                                     <input type="number" name="flight_charges" id="flight_charges"
                                         class="form-control calc" placeholder="Enter flight charges" step="0.01" value="{{ old('flight_charges', 0) }}">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">Other Charges</label>
                                     <input type="number" name="other_charges" id="other_charges"
                                         class="form-control calc" placeholder="Enter other charges" step="0.01" value="{{ old('other_charges', 0) }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-danger"><i class="mdi mdi-tag-minus me-1"></i>Discount (Minus)</label>
+                                    <input type="number" name="discount" id="discount"
+                                        class="form-control calc border-danger text-danger fw-bold" placeholder="0.00" step="0.01" value="{{ old('discount', 0) }}">
+                                    <small class="text-danger">Subtracted from Total Amount</small>
                                 </div>
 
                                 <div class="col-12">
@@ -879,6 +887,7 @@
                                                     <th>Flight</th>
                                                     <th>Qurbani</th>
                                                     <th>Other</th>
+                                                    <th class="text-danger">Discount (-)</th>
                                                     <th class="text-success">Total</th>
                                                 </tr>
                                             </thead>
@@ -890,6 +899,7 @@
                                                     <td id="sum_flight">0.00</td>
                                                     <td id="sum_qurbani">0.00</td>
                                                     <td id="sum_other">0.00</td>
+                                                    <td class="text-danger fw-bold" id="sum_discount">0.00</td>
                                                     <td class="text-success fw-bold" id="sum_total">0.00</td>
                                                 </tr>
                                             </tbody>
@@ -2115,30 +2125,34 @@
             const flight = parseFloat(document.getElementById('flight_charges').value) || 0;
             const qurbani = parseFloat(document.getElementById('qurbani_charges')?.value) || 0;
             const other = parseFloat(document.getElementById('other_charges').value) || 0;
+            const discount = parseFloat(document.getElementById('discount')?.value) || 0;
             const received = parseFloat(document.getElementById('total_received').value) || 0;
 
             const pkgTotal = pkg * pax;
-            const total = pkgTotal + visa + flight + qurbani + other;
+            const subtotal = pkgTotal + visa + flight + qurbani + other;
+            const total = Math.max(0, subtotal - discount);
             const balance = total - received;
 
             document.getElementById('total_amount').value = total.toFixed(2);
             document.getElementById('balance').value = balance.toFixed(2);
 
-            document.getElementById('bar_pax').textContent = pax;
-            document.getElementById('bar_adult').textContent = pkgTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('bar_visa').textContent = visa.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('bar_flight').textContent = flight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('bar_qurbani').textContent = qurbani.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('bar_total').textContent = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('bar_balance').textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_pax')) document.getElementById('bar_pax').textContent = pax;
+            if (document.getElementById('bar_adult')) document.getElementById('bar_adult').textContent = pkgTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_visa')) document.getElementById('bar_visa').textContent = visa.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_flight')) document.getElementById('bar_flight').textContent = flight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_qurbani')) document.getElementById('bar_qurbani').textContent = qurbani.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_discount')) document.getElementById('bar_discount').textContent = discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_total')) document.getElementById('bar_total').textContent = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('bar_balance')) document.getElementById('bar_balance').textContent = balance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-            document.getElementById('sum_pax').textContent = pax;
-            document.getElementById('sum_pkg').textContent = pkgTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('sum_visa').textContent = visa.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('sum_flight').textContent = flight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('sum_qurbani').textContent = qurbani.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('sum_other').textContent = other.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('sum_total').textContent = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('sum_pax')) document.getElementById('sum_pax').textContent = pax;
+            if (document.getElementById('sum_pkg')) document.getElementById('sum_pkg').textContent = pkgTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('sum_visa')) document.getElementById('sum_visa').textContent = visa.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('sum_flight')) document.getElementById('sum_flight').textContent = flight.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('sum_qurbani')) document.getElementById('sum_qurbani').textContent = qurbani.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('sum_other')) document.getElementById('sum_other').textContent = other.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (document.getElementById('sum_discount')) document.getElementById('sum_discount').textContent = discount > 0 ? ('-' + discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})) : '0.00';
+            if (document.getElementById('sum_total')) document.getElementById('sum_total').textContent = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
         document.querySelectorAll('.calc').forEach(el => el.addEventListener('input', calcTotal));

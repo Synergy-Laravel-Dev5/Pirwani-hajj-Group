@@ -61,7 +61,8 @@ class BookingController extends Controller
             + ($request->visa_charges ?? 0)
             + ($request->flight_charges ?? 0)
             + ($request->other_charges ?? 0)
-            + ($request->qurbani_charges ?? 0);
+            + ($request->qurbani_charges ?? 0)
+            - ($request->discount ?? 0);
 
         $booking = Booking::create(array_merge(
             $request->except(['persons', 'hotels', 'transports', 'visas', 'flight_persons', '_token']),
@@ -79,6 +80,7 @@ class BookingController extends Controller
                 'visa_charges'    => $request->visa_charges ?? 0,
                 'flight_charges'  => $request->flight_charges ?? 0,
                 'other_charges'   => $request->other_charges ?? 0,
+                'discount'        => $request->discount ?? 0,
                 'total_received'  => $request->total_received ?? 0,
                 'total_amount'    => $total,
                 'balance'         => $total - ($request->total_received ?? 0),
@@ -180,7 +182,8 @@ class BookingController extends Controller
             + ($request->visa_charges ?? 0)
             + ($request->flight_charges ?? 0)
             + ($request->other_charges ?? 0)
-            + ($request->qurbani_charges ?? 0);
+            + ($request->qurbani_charges ?? 0)
+            - ($request->discount ?? 0);
 
         $booking->update(array_merge(
             $request->except(['persons', 'hotels', 'transports', 'visas', 'flight_persons', '_token', '_method']),
@@ -198,6 +201,7 @@ class BookingController extends Controller
                 'visa_charges'    => $request->visa_charges ?? 0,
                 'flight_charges'  => $request->flight_charges ?? 0,
                 'other_charges'   => $request->other_charges ?? 0,
+                'discount'        => $request->discount ?? 0,
                 'total_received'  => $request->total_received ?? 0,
                 'total_amount'    => $total,
                 'balance'         => $total - ($request->total_received ?? 0),

@@ -50,6 +50,7 @@ class Booking extends Model
         'visa_charges',
         'flight_charges',
         'other_charges',
+        'discount',
         'total_amount',
         'total_received',
         'balance',
