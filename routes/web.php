@@ -28,6 +28,7 @@ use App\Http\Controllers\ArrivalGroupController;
 use App\Http\Controllers\DepartureGroupController;
 use App\Http\Controllers\HajiGroupController;
 use App\Http\Controllers\RoomInventoryController;
+use App\Http\Controllers\RoomTypeController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -291,6 +292,18 @@ Route::middleware('auth')->group(function () {
                 Route::delete('delete/{id}', 'destroy')->name('hotel.delete');
                 Route::get('trash', 'trash')->name('hotel.trash');
                 Route::get('restore/{id}', 'restore')->name('hotel.restore');
+            });
+
+        Route::controller(RoomTypeController::class)
+            ->prefix('room-type')->group(function () {
+                Route::get('/', 'index')->name('room-type.index');
+                Route::get('create', 'create')->name('room-type.create');
+                Route::post('store', 'store')->name('room-type.store');
+                Route::get('edit/{id}', 'edit')->name('room-type.edit');
+                Route::put('update/{id}', 'update')->name('room-type.update');
+                Route::delete('delete/{id}', 'destroy')->name('room-type.delete');
+                Route::get('trash', 'trash')->name('room-type.trash');
+                Route::get('restore/{id}', 'restore')->name('room-type.restore');
             });
 
         Route::controller(VehicleController::class)

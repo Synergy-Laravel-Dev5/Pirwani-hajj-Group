@@ -57,8 +57,25 @@
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="mb-3">
-                                                <label class="form-label">Accommodation Type</label>
-                                                <input type="text" name="accommodation_type" value="{{ old('accommodation_type') }}" class="form-control" placeholder="e.g. Quad, Triple, Double">
+                                                <label class="form-label">Accommodation / Room Type</label>
+                                                <select name="accommodation_type" class="form-select">
+                                                    <option value="">-- Select Room Type --</option>
+                                                    @if(isset($roomTypes) && $roomTypes->count())
+                                                        @foreach($roomTypes as $rt)
+                                                            <option value="{{ $rt->name }}" {{ old('accommodation_type') == $rt->name ? 'selected' : '' }}>
+                                                                {{ $rt->name }} ({{ $rt->capacity }} {{ $rt->capacity > 1 ? 'Beds/Pax' : 'Bed/Pax' }})
+                                                            </option>
+                                                        @endforeach
+                                                    @else
+                                                        <option value="Single" {{ old('accommodation_type') == 'Single' ? 'selected' : '' }}>Single</option>
+                                                        <option value="Double" {{ old('accommodation_type') == 'Double' ? 'selected' : '' }}>Double</option>
+                                                        <option value="Triple" {{ old('accommodation_type') == 'Triple' ? 'selected' : '' }}>Triple</option>
+                                                        <option value="Quad" {{ old('accommodation_type') == 'Quad' ? 'selected' : '' }}>Quad</option>
+                                                        <option value="Quint" {{ old('accommodation_type') == 'Quint' ? 'selected' : '' }}>Quint</option>
+                                                        <option value="Sharing" {{ old('accommodation_type') == 'Sharing' ? 'selected' : '' }}>Sharing</option>
+                                                        <option value="Suite" {{ old('accommodation_type') == 'Suite' ? 'selected' : '' }}>Suite</option>
+                                                    @endif
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-lg-6">

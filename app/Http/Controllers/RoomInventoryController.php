@@ -115,7 +115,10 @@ class RoomInventoryController extends Controller
     {
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
-        $roomTypes = ['Double', 'Triple', 'Quad', 'Quint', 'Single', 'Sharing', 'Suite'];
+        $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->pluck('name')->toArray();
+        if (empty($roomTypes)) {
+            $roomTypes = ['Double', 'Triple', 'Quad', 'Quint', 'Single', 'Sharing', 'Suite'];
+        }
 
         return view('room_inventory.create', compact('hotels', 'companies', 'roomTypes'));
     }
@@ -230,7 +233,10 @@ class RoomInventoryController extends Controller
         $inventory = RoomInventory::findOrFail($id);
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
-        $roomTypes = ['Double', 'Triple', 'Quad', 'Quint', 'Single', 'Sharing', 'Suite'];
+        $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->pluck('name')->toArray();
+        if (empty($roomTypes)) {
+            $roomTypes = ['Double', 'Triple', 'Quad', 'Quint', 'Single', 'Sharing', 'Suite'];
+        }
 
         return view('room_inventory.edit', compact('inventory', 'hotels', 'companies', 'roomTypes'));
     }

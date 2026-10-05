@@ -34,9 +34,10 @@ class BookingController extends Controller
         $years     = [date('Y'), date('Y') + 1, date('Y') + 2];
         $airlines  = \App\Models\Airline::all();
         $hotels    = \App\Models\Hotel::all();
+        $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->get();
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
 
-        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'packages'));
+        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages'));
     }
 
     public function store(Request $request)
@@ -90,6 +91,9 @@ class BookingController extends Controller
                 if (!empty($name) || !empty($person['passport_number'])) {
                     $personData = $person;
                     $personData['full_name'] = $name ?: 'Passenger';
+                    $issueDate = !empty($person['date_of_issue']) ? $person['date_of_issue'] : (!empty($person['passport_issue_date']) ? $person['passport_issue_date'] : null);
+                    $personData['date_of_issue'] = $issueDate;
+                    $personData['passport_issue_date'] = $issueDate;
                     $booking->persons()->create($personData);
                 }
             }
@@ -143,13 +147,14 @@ class BookingController extends Controller
         $years     = [date('Y'), date('Y') + 1, date('Y') + 2];
         $airlines  = \App\Models\Airline::all();
         $hotels    = \App\Models\Hotel::all();
+        $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->get();
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
 
         $transactionsPaid = Transaction::where('client_id', $booking->client_id)
             ->where('status', 'confirmed')
             ->sum('amount');
 
-        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'packages'));
+        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'roomTypes', 'packages'));
     }
 
     public function update(Request $request, $id)
@@ -206,6 +211,9 @@ class BookingController extends Controller
                 if (!empty($name) || !empty($p['passport_number'])) {
                     $pData = $p;
                     $pData['full_name'] = $name ?: 'Passenger';
+                    $issueDate = !empty($p['date_of_issue']) ? $p['date_of_issue'] : (!empty($p['passport_issue_date']) ? $p['passport_issue_date'] : null);
+                    $pData['date_of_issue'] = $issueDate;
+                    $pData['passport_issue_date'] = $issueDate;
                     $booking->persons()->create($pData);
                 }
             }

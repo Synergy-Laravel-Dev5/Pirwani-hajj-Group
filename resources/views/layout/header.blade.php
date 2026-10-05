@@ -190,6 +190,11 @@
                                         </a>
                                     </li>
                                 @endcan
+                                <li>
+                                    <a class="tp-link" href="{{ route('room-type.index') }}">
+                                        Room Types
+                                    </a>
+                                </li>
                                 @can('airline_view')
                                     <li>
                                         <a class="tp-link" href="{{ route('airline.index') }}">

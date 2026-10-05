@@ -27,7 +27,9 @@ class HotelController extends Controller
     {
         $this->authorize('hotel_create');
 
-        return view('hotel.create');
+        $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->get();
+
+        return view('hotel.create', compact('roomTypes'));
     }
 
     public function store(Request $request)
@@ -74,8 +76,9 @@ class HotelController extends Controller
         $this->authorize('hotel_edit');
 
         $hotel = Hotel::findOrFail($id);
+        $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->get();
 
-        return view('hotel.edit', compact('hotel'));
+        return view('hotel.edit', compact('hotel', 'roomTypes'));
     }
 
     public function update(Request $request, $id)

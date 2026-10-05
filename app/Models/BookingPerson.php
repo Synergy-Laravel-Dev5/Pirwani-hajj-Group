@@ -15,6 +15,8 @@ class BookingPerson extends Model
         'given_name',
         'dob',
         'passport_number',
+        'date_of_issue',
+        'passport_issue_date',
         'passport_expiry_date',
         'cnic',
         'phone',

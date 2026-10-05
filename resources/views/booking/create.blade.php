@@ -736,11 +736,19 @@
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                                                 <select name="hotels[{{ $loop->index }}][room_type]"
                                                     class="form-select form-select-sm">
-                                                    <option value="quad">Quad</option>
-                                                    <option value="triple">Triple</option>
-                                                    <option value="double">Double</option>
-                                                    <option value="single">Single</option>
-                                                    <option value="suite">Suite</option>
+                                                    @if(isset($roomTypes) && $roomTypes->count())
+                                                        @foreach($roomTypes as $rt)
+                                                            <option value="{{ $rt->code ?? strtolower($rt->name) }}" {{ strtolower($rt->name) == 'quad' ? 'selected' : '' }}>
+                                                                {{ $rt->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    @else
+                                                        <option value="quad">Quad</option>
+                                                        <option value="triple">Triple</option>
+                                                        <option value="double">Double</option>
+                                                        <option value="single">Single</option>
+                                                        <option value="suite">Suite</option>
+                                                    @endif
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
@@ -1019,6 +1027,7 @@
         const clientsData = @json($clients);
         const packagesData = @json($packages);
         const hotelsData = @json($hotels);
+        const roomTypesData = @json($roomTypes ?? []);
 
         // ═══════════════════════════════════════
         // BOOKING FOR TOGGLE (client / company)
@@ -1440,6 +1449,26 @@
             return opts;
         }
 
+        function buildRoomTypeOptions(selectedVal = 'quad') {
+            let opts = '';
+            const cleanSel = (selectedVal || 'quad').toLowerCase().trim();
+            if (roomTypesData && roomTypesData.length > 0) {
+                roomTypesData.forEach(rt => {
+                    const val = rt.code || rt.name.toLowerCase();
+                    const isSel = (val === cleanSel || rt.name.toLowerCase() === cleanSel) ? 'selected' : '';
+                    opts += `<option value="${escapeHtml(val)}" ${isSel}>${escapeHtml(rt.name)}</option>`;
+                });
+            } else {
+                const defaults = ['Quad', 'Triple', 'Double', 'Single', 'Suite', 'Sharing'];
+                defaults.forEach(d => {
+                    const val = d.toLowerCase();
+                    const isSel = val === cleanSel ? 'selected' : '';
+                    opts += `<option value="${val}" ${isSel}>${d}</option>`;
+                });
+            }
+            return opts;
+        }
+
         // Global hotel change listener
         document.getElementById('hotelsList').addEventListener('change', function(e) {
             if (e.target.classList.contains('hotel-loc-select')) {
@@ -1537,11 +1566,7 @@
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                                 <select name="hotels[${idx}][room_type]" class="form-select form-select-sm">
-                                    <option value="quad" selected>Quad</option>
-                                    <option value="triple">Triple</option>
-                                    <option value="double">Double</option>
-                                    <option value="single">Single</option>
-                                    <option value="suite">Suite</option>
+                                    ${buildRoomTypeOptions('quad')}
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -1788,6 +1813,11 @@
                                class="form-control form-control-sm" placeholder="Passport #" oninput="onPersonPassportInput(${idx})">
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label" style="font-size:12px;">Date of Issue</label>
+                        <input type="date" name="persons[${idx}][date_of_issue]" id="person_passport_doi_${idx}"
+                               class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Passport Expiry Date</label>
                         <input type="date" name="persons[${idx}][passport_expiry_date]" id="person_passport_exp_${idx}"
                                class="form-control form-control-sm">
@@ -2011,11 +2041,7 @@
                     <div class="col-md-3">
                         <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                         <select name="hotels[${hotelIdx}][room_type]" class="form-select form-select-sm">
-                            <option value="quad" selected>Quad</option>
-                            <option value="triple">Triple</option>
-                            <option value="double">Double</option>
-                            <option value="single">Single</option>
-                            <option value="suite">Suite</option>
+                            ${buildRoomTypeOptions('quad')}
                         </select>
                     </div>
                     <div class="col-md-3">

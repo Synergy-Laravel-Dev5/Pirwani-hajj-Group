@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             $this->call([
                 PermissionTableSeeder::class,
                 HotelSeeder::class,
+                RoomTypeSeeder::class,
                 AirlineSeeder::class,
                 TrainSeeder::class,
             ]);

@@ -1077,9 +1077,12 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width:48px">#</th>
+                            <th style="width:40px">#</th>
                             <th>Full Name</th>
+                            <th>DOB</th>
                             <th>Passport #</th>
+                            <th>Issue Date</th>
+                            <th>Expiry Date</th>
                             <th>CNIC</th>
                             <th>Phone</th>
                         </tr>
@@ -1091,7 +1094,10 @@
                                         style="background:rgba(201,168,76,0.12);color:var(--gold-dk);border:1px solid rgba(201,168,76,0.28)">{{ $loop->iteration }}</span>
                                 </td>
                                 <td><strong style="color:var(--text)">{{ $person->full_name }}</strong></td>
-                                <td>{{ $person->passport_number ?? '—' }}</td>
+                                <td>{{ $person->dob ? \Carbon\Carbon::parse($person->dob)->format('d M Y') : '—' }}</td>
+                                <td><strong style="color:var(--gold-dk)">{{ $person->passport_number ?? '—' }}</strong></td>
+                                <td>{{ ($person->date_of_issue ?? $person->passport_issue_date) ? \Carbon\Carbon::parse($person->date_of_issue ?? $person->passport_issue_date)->format('d M Y') : '—' }}</td>
+                                <td>{{ $person->passport_expiry_date ? \Carbon\Carbon::parse($person->passport_expiry_date)->format('d M Y') : '—' }}</td>
                                 <td>{{ $person->cnic ?? '—' }}</td>
                                 <td>{{ $person->phone ?? '—' }}</td>
                             </tr>

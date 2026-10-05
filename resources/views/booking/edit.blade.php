@@ -629,6 +629,12 @@
                                                     value="{{ $person->passport_number }}" oninput="onPersonPassportInput({{ $i }})">
                                             </div>
                                             <div class="col-md-3">
+                                                <label class="form-label" style="font-size:12px;">Date of Issue</label>
+                                                <input type="date" name="persons[{{ $i }}][date_of_issue]" id="person_passport_doi_{{ $i }}"
+                                                    class="form-control form-control-sm"
+                                                    value="{{ $person->date_of_issue ? \Carbon\Carbon::parse($person->date_of_issue)->format('Y-m-d') : ($person->passport_issue_date ? \Carbon\Carbon::parse($person->passport_issue_date)->format('Y-m-d') : '') }}">
+                                            </div>
+                                            <div class="col-md-3">
                                                 <label class="form-label" style="font-size:12px;">Passport Expiry Date</label>
                                                 <input type="date" name="persons[{{ $i }}][passport_expiry_date]" id="person_passport_exp_{{ $i }}"
                                                     class="form-control form-control-sm"
@@ -850,11 +856,23 @@
                                             <div class="col-md-3">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                                                 <select name="hotels[{{ $loop->index }}][room_type]" class="form-select form-select-sm">
-                                                    @foreach (['quad' => 'Quad', 'triple' => 'Triple', 'double' => 'Double', 'single' => 'Single', 'suite' => 'Suite'] as $rt => $rtl)
-                                                        <option value="{{ $rt }}" {{ $hotel->room_type == $rt ? 'selected' : '' }}>
-                                                            {{ $rtl }}
-                                                        </option>
-                                                    @endforeach
+                                                    @if(isset($roomTypes) && $roomTypes->count())
+                                                        @foreach($roomTypes as $rt)
+                                                            @php
+                                                                $rtCode = $rt->code ?? strtolower($rt->name);
+                                                                $isMatch = (strtolower($hotel->room_type ?? '') === strtolower($rt->name) || strtolower($hotel->room_type ?? '') === strtolower($rtCode));
+                                                            @endphp
+                                                            <option value="{{ $rtCode }}" {{ $isMatch ? 'selected' : '' }}>
+                                                                {{ $rt->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    @else
+                                                        @foreach (['quad' => 'Quad', 'triple' => 'Triple', 'double' => 'Double', 'single' => 'Single', 'suite' => 'Suite'] as $rt => $rtl)
+                                                            <option value="{{ $rt }}" {{ $hotel->room_type == $rt ? 'selected' : '' }}>
+                                                                {{ $rtl }}
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
@@ -1313,6 +1331,7 @@
         const clientsData = @json($clients);
         const packagesData = @json($packages);
         const hotelsData = @json($hotels);
+        const roomTypesData = @json($roomTypes ?? []);
         const existingVisas = @json($booking->visas);
         const transactionsPaid = {{ $transactionsPaid ?? 0 }};
         let pkgQurbaniPerHeadRate = {{ ($booking->package && $booking->package->qurbani_charges > 0) ? (float)$booking->package->qurbani_charges : (($booking->qurbani_qty > 0 && $booking->qurbani_charges > 0) ? (float)($booking->qurbani_charges / $booking->qurbani_qty) : 0) }};
@@ -1741,6 +1760,26 @@
             return opts;
         }
 
+        function buildRoomTypeOptions(selectedVal = 'quad') {
+            let opts = '';
+            const cleanSel = (selectedVal || 'quad').toLowerCase().trim();
+            if (roomTypesData && roomTypesData.length > 0) {
+                roomTypesData.forEach(rt => {
+                    const val = rt.code || rt.name.toLowerCase();
+                    const isSel = (val === cleanSel || rt.name.toLowerCase() === cleanSel) ? 'selected' : '';
+                    opts += `<option value="${escapeHtml(val)}" ${isSel}>${escapeHtml(rt.name)}</option>`;
+                });
+            } else {
+                const defaults = ['Quad', 'Triple', 'Double', 'Single', 'Suite', 'Sharing'];
+                defaults.forEach(d => {
+                    const val = d.toLowerCase();
+                    const isSel = val === cleanSel ? 'selected' : '';
+                    opts += `<option value="${val}" ${isSel}>${d}</option>`;
+                });
+            }
+            return opts;
+        }
+
         // Global hotel change listener
         document.getElementById('hotelsList').addEventListener('change', function(e) {
             if (e.target.classList.contains('hotel-loc-select')) {
@@ -1838,11 +1877,7 @@
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                                 <select name="hotels[${idx}][room_type]" class="form-select form-select-sm">
-                                    <option value="quad" selected>Quad</option>
-                                    <option value="triple">Triple</option>
-                                    <option value="double">Double</option>
-                                    <option value="single">Single</option>
-                                    <option value="suite">Suite</option>
+                                    ${buildRoomTypeOptions('quad')}
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -2072,6 +2107,11 @@
                                class="form-control form-control-sm" placeholder="Passport #" oninput="onPersonPassportInput(${idx})">
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label" style="font-size:12px;">Date of Issue</label>
+                        <input type="date" name="persons[${idx}][date_of_issue]" id="person_passport_doi_${idx}"
+                               class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Passport Expiry Date</label>
                         <input type="date" name="persons[${idx}][passport_expiry_date]" id="person_passport_exp_${idx}"
                                class="form-control form-control-sm">
@@ -2295,11 +2335,7 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                             <select name="hotels[${hotelIdx}][room_type]" class="form-select form-select-sm">
-                                <option value="quad">Quad</option>
-                                <option value="triple">Triple</option>
-                                <option value="double">Double</option>
-                                <option value="single">Single</option>
-                                <option value="suite">Suite</option>
+                                ${buildRoomTypeOptions('quad')}
                             </select>
                         </div>
                         <div class="col-md-3">
