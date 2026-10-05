@@ -306,7 +306,20 @@ class BookingController extends Controller
 
     public function voucher(Booking $booking)
     {
-        $booking->load(['client', 'company', 'persons', 'hotels']);
+        $booking->load([
+            'client',
+            'company.addresses',
+            'company.contactNumbers',
+            'company.emails',
+            'company.licenses',
+            'package.accommodations',
+            'package.transports',
+            'package.transportFlights',
+            'persons',
+            'hotels',
+            'transports',
+            'visas'
+        ]);
         return view('booking.voucher', compact('booking'));
     }
 }
