@@ -115,8 +115,14 @@
                                     <select name="package_id" id="packageSelect" class="form-select border-primary">
                                         <option value="">-- Select Package --</option>
                                         @foreach ($packages as $pkg)
+                                            @php
+                                                $pCode = $pkg->code ?? $pkg->package_number ?? '';
+                                                $pTitle = $pkg->package_title ?? $pkg->name ?? 'Hajj Package';
+                                                $pYear = $pkg->year ?? $pkg->gregorian_year;
+                                                $pStay = $pkg->stay_type ?? $pkg->category ?? 'Package';
+                                            @endphp
                                             <option value="{{ $pkg->id }}" {{ old('package_id', $booking->package_id) == $pkg->id ? 'selected' : '' }}>
-                                                {{ $pkg->package_title ?? $pkg->name }} ({{ $pkg->year ?? $pkg->gregorian_year }}) - {{ $pkg->stay_type ?? $pkg->category ?? 'Hajj Package' }}
+                                                {{ $pCode ? '[' . $pCode . '] ' : '' }}{{ $pTitle }} ({{ $pYear }}) - {{ $pStay }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -145,7 +151,14 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold text-primary"><i class="mdi mdi-barcode me-1"></i>Package Code</label>
+                                    <input type="text" id="package_code_display" class="form-control bg-light fw-bold text-dark"
+                                        value="{{ $booking->package ? ($booking->package->code ?? $booking->package->package_number ?? '') : '' }}"
+                                        placeholder="e.g. PW001" readonly>
+                                </div>
+
+                                <div class="col-md-9">
                                     <label class="form-label fw-semibold">Package Name / Title</label>
                                     <input type="text" name="package_name" id="package_name" class="form-control"
                                         value="{{ old('package_name', $booking->package_name) }}"
@@ -160,9 +173,16 @@
                                                 <h6 class="m-0 text-primary fw-bold">
                                                     <i class="mdi mdi-information-outline me-1"></i>Package Details & Rate Matrix
                                                 </h6>
-                                                <span class="badge bg-primary px-2 py-1" id="preview_pkg_stay">LONG STAY</span>
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <span class="badge bg-dark px-2 py-1" id="preview_pkg_code">CODE: {{ $booking->package ? ($booking->package->code ?? $booking->package->package_number ?? '—') : '—' }}</span>
+                                                    <span class="badge bg-primary px-2 py-1" id="preview_pkg_stay">LONG STAY</span>
+                                                </div>
                                             </div>
                                             <div class="row g-2" style="font-size:12.5px;">
+                                                <div class="col-md-3">
+                                                    <span class="text-muted">Package Code:</span>
+                                                    <strong class="d-block text-primary fw-bold" id="preview_pkg_code_text">{{ $booking->package ? ($booking->package->code ?? $booking->package->package_number ?? '—') : '—' }}</strong>
+                                                </div>
                                                 <div class="col-md-3">
                                                     <span class="text-muted">Camp / Category:</span>
                                                     <strong class="d-block text-dark" id="preview_pkg_camp">—</strong>
@@ -175,7 +195,7 @@
                                                     <span class="text-muted">Sectors:</span>
                                                     <strong class="d-block text-dark" id="preview_pkg_sectors">—</strong>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-3 mt-2">
                                                     <span class="text-muted">Qurbani Policy:</span>
                                                     <strong class="d-block text-success" id="preview_pkg_qurbani">—</strong>
                                                 </div>
@@ -2029,6 +2049,16 @@
             const pkg = packagesData.find(p => p.id === pkgId);
 
             if (pkg) {
+                const pkgCode = pkg.code || pkg.package_number || '';
+                const codeDisplay = document.getElementById('package_code_display');
+                if (codeDisplay) codeDisplay.value = pkgCode;
+
+                const previewCodeBadge = document.getElementById('preview_pkg_code');
+                if (previewCodeBadge) previewCodeBadge.textContent = pkgCode ? 'CODE: ' + pkgCode : 'CODE: —';
+
+                const previewCodeText = document.getElementById('preview_pkg_code_text');
+                if (previewCodeText) previewCodeText.textContent = pkgCode || '—';
+
                 packageInfoCard.classList.remove('d-none');
                 packageNameInput.value = pkg.package_title || pkg.name || '';
                 packageYearInput.value = pkg.year || pkg.gregorian_year || (new Date()).getFullYear();
@@ -2059,6 +2089,15 @@
                 populateFlightsFromPackage(pkg);
                 populateTransportsFromPackage(pkg);
             } else {
+                const codeDisplay = document.getElementById('package_code_display');
+                if (codeDisplay) codeDisplay.value = '';
+
+                const previewCodeBadge = document.getElementById('preview_pkg_code');
+                if (previewCodeBadge) previewCodeBadge.textContent = 'CODE: —';
+
+                const previewCodeText = document.getElementById('preview_pkg_code_text');
+                if (previewCodeText) previewCodeText.textContent = '—';
+
                 packageInfoCard.classList.add('d-none');
                 updateBrochureRates(null);
             }
@@ -2460,6 +2499,16 @@
             if (packageSelect.value) {
                 const initialPkg = packagesData.find(p => p.id === parseInt(packageSelect.value));
                 if (initialPkg) {
+                    const pkgCode = initialPkg.code || initialPkg.package_number || '';
+                    const codeDisplay = document.getElementById('package_code_display');
+                    if (codeDisplay) codeDisplay.value = pkgCode;
+
+                    const previewCodeBadge = document.getElementById('preview_pkg_code');
+                    if (previewCodeBadge) previewCodeBadge.textContent = pkgCode ? 'CODE: ' + pkgCode : 'CODE: —';
+
+                    const previewCodeText = document.getElementById('preview_pkg_code_text');
+                    if (previewCodeText) previewCodeText.textContent = pkgCode || '—';
+
                     packageInfoCard.classList.remove('d-none');
                     document.getElementById('preview_pkg_stay').textContent = initialPkg.stay_type || 'PACKAGE';
                     document.getElementById('preview_pkg_camp').textContent = initialPkg.camp_category || initialPkg.zone || 'Maktab C / A';

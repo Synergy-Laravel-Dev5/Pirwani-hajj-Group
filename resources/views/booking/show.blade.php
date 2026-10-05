@@ -881,6 +881,12 @@
                             style="background:{{ $stC[0] }};border:1px solid {{ $stC[1] }};color:{{ $stC[2] }}">
                             {{ ucfirst($booking->status) }}
                         </span>
+                        @if ($booking->package && ($booking->package->code || $booking->package->package_number))
+                            <span class="bk-badge"
+                                style="background:rgba(201,168,76,0.22);border:1px solid rgba(201,168,76,0.5);color:#c9a84c">
+                                <i class="mdi mdi-barcode"></i> Code: {{ $booking->package->code ?? $booking->package->package_number }}
+                            </span>
+                        @endif
                         @if ($booking->package_name)
                             <span class="bk-badge"
                                 style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.52)">
@@ -979,6 +985,12 @@
                         <td>Card #</td>
                         <td>{{ $booking->card_number ?? '—' }}</td>
                     </tr>
+                    @if ($booking->package && ($booking->package->code || $booking->package->package_number))
+                    <tr>
+                        <td>Package Code</td>
+                        <td><strong style="color:var(--gold-dk)"><i class="mdi mdi-barcode me-1"></i>{{ $booking->package->code ?? $booking->package->package_number }}</strong></td>
+                    </tr>
+                    @endif
                     @if ($booking->camp)
                     <tr>
                         <td>Camp / Maktab</td>

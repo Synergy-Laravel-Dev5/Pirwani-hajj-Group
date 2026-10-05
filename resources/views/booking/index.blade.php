@@ -80,6 +80,11 @@
 
                                                     <td>
                                                         <div>
+                                                            @if ($booking->package && ($booking->package->code || $booking->package->package_number))
+                                                                <span class="badge bg-dark text-light me-1" style="font-size:10px;">
+                                                                    {{ $booking->package->code ?? $booking->package->package_number }}
+                                                                </span>
+                                                            @endif
                                                             <span class="badge bg-primary">
                                                                 {{ $booking->package->package_title ?? $booking->package->name ?? $booking->package_name ?? ucfirst($booking->package_type) }}
                                                             </span>
