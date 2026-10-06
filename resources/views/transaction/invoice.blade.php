@@ -282,7 +282,7 @@
                                 <td>{{ $hotel->hotel_name ?? '-' }}</td>
                                 <td>{{ $hotel->conf_number ?? '-' }}</td>
                                 <td>{{ $hotel->qty ?? 1 }}</td>
-                                <td>{{ $hotel->room_type ?? '-' }}</td>
+                                <td>{{ $hotel->room_type ?? '-' }}@if(!empty($hotel->room_number)) <small class="text-muted">({{ $hotel->room_number }})</small>@endif</td>
                                 <td>{{ $hotel->meal_plan ?? 'R.O' }}</td>
                                 <td>{{ $hotel->check_in ? \Carbon\Carbon::parse($hotel->check_in)->format('d/m/Y') : '-' }}
                                 </td>

@@ -10,7 +10,10 @@ class BookingPerson extends Model
 
     protected $fillable = [
         'booking_id',
+        'hajj_id',
+        'hb_number',
         'full_name',
+        'gender',
         'surname',
         'given_name',
         'dob',
@@ -20,6 +23,7 @@ class BookingPerson extends Model
         'passport_expiry_date',
         'cnic',
         'phone',
+        'photo',
     ];
 
     public function booking()

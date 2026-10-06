@@ -88,7 +88,12 @@ class BookingController extends Controller
         ));
 
         if ($request->has('persons')) {
-            foreach ($request->persons as $person) {
+            $uploadDir = public_path('uploads/booking_persons');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            foreach ($request->persons as $index => $person) {
                 $name = !empty($person['full_name']) ? trim($person['full_name']) : trim(($person['given_name'] ?? '') . ' ' . ($person['surname'] ?? ''));
                 if (!empty($name) || !empty($person['passport_number'])) {
                     $personData = $person;
@@ -96,6 +101,15 @@ class BookingController extends Controller
                     $issueDate = !empty($person['date_of_issue']) ? $person['date_of_issue'] : (!empty($person['passport_issue_date']) ? $person['passport_issue_date'] : null);
                     $personData['date_of_issue'] = $issueDate;
                     $personData['passport_issue_date'] = $issueDate;
+
+                    if ($request->hasFile("persons.{$index}.photo")) {
+                        $file = $request->file("persons.{$index}.photo");
+                        $filename = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        $file->move($uploadDir, $filename);
+                        $personData['photo'] = 'uploads/booking_persons/' . $filename;
+                    }
+
+                    unset($personData['existing_photo']);
                     $booking->persons()->create($personData);
                 }
             }
@@ -104,7 +118,16 @@ class BookingController extends Controller
         if ($request->has('hotels')) {
             foreach ($request->hotels as $hotel) {
                 if (!empty($hotel['hotel_name'])) {
-                    $booking->hotels()->create($hotel);
+                    $hotelData = $hotel;
+                    $hotelData['no_of_rooms'] = (!empty($hotel['no_of_rooms']) && is_numeric($hotel['no_of_rooms'])) ? (int)$hotel['no_of_rooms'] : 1;
+                    $hotelData['no_of_nights'] = (!empty($hotel['no_of_nights']) && is_numeric($hotel['no_of_nights'])) ? (int)$hotel['no_of_nights'] : 1;
+                    $hotelData['check_in'] = !empty($hotel['check_in']) ? $hotel['check_in'] : null;
+                    $hotelData['check_out'] = !empty($hotel['check_out']) ? $hotel['check_out'] : null;
+                    $hotelData['room_type'] = !empty($hotel['room_type']) ? $hotel['room_type'] : 'quad';
+                    $hotelData['room_number'] = !empty($hotel['room_number']) ? trim($hotel['room_number']) : null;
+                    $hotelData['gender'] = !empty($hotel['gender']) ? trim($hotel['gender']) : 'Any';
+                    $hotelData['location'] = !empty($hotel['location']) ? $hotel['location'] : 'makkah';
+                    $booking->hotels()->create($hotelData);
                 }
             }
         }
@@ -112,15 +135,20 @@ class BookingController extends Controller
         if ($request->has('transports')) {
             foreach ($request->transports as $transport) {
                 if (!empty($transport['route'])) {
-                    $booking->transports()->create($transport);
+                    $tData = $transport;
+                    $tData['transport_type'] = !empty($transport['transport_type']) ? $transport['transport_type'] : 'bus';
+                    $tData['notes'] = $transport['notes'] ?? null;
+                    $booking->transports()->create($tData);
                 }
             }
         }
 
         if ($request->has('visas')) {
             foreach ($request->visas as $visa) {
-                if (!empty($visa['passport_number'])) {
-                    $booking->visas()->create($visa);
+                if (!empty($visa['passport_number']) || !empty($visa['given_name'])) {
+                    $vData = $visa;
+                    $vData['status'] = !empty($visa['status']) ? $visa['status'] : 'pending';
+                    $booking->visas()->create($vData);
                 }
             }
         }
@@ -132,7 +160,24 @@ class BookingController extends Controller
             'Booking'
         );
 
-        return redirect()->route('booking.index')->with('success', 'Booking created successfully!');
+        $overbookedWarnings = [];
+        foreach ($booking->hotels as $bh) {
+            if (!empty($bh->room_number) && !empty($bh->hotel_name)) {
+                $occ = \App\Models\HotelRoomCapacity::getRoomOccupancy($bh->hotel_name, $bh->room_number, $bh->room_type, $bh->check_in, $bh->check_out);
+                if ($occ['is_overbooked']) {
+                    $overbookedWarnings[] = "⚠️ Room {$bh->room_number} ({$bh->hotel_name}) Overbooked hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds Allocated).";
+                } elseif ($occ['is_full']) {
+                    $overbookedWarnings[] = "🔴 Room {$bh->room_number} ({$bh->hotel_name}) 100% Full ho chuka hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds).";
+                }
+            }
+        }
+
+        $msg = 'Booking created successfully!';
+        if (!empty($overbookedWarnings)) {
+            $msg .= ' ' . implode(' ', $overbookedWarnings) . ' Mazeed person shamil karne ke liye Room Allocation Report me ja kar bed capacity barhayein.';
+        }
+
+        return redirect()->route('booking.index')->with('success', $msg);
     }
 
     public function show($id)
@@ -210,7 +255,12 @@ class BookingController extends Controller
 
         $booking->persons()->delete();
         if ($request->has('persons')) {
-            foreach ($request->persons as $p) {
+            $uploadDir = public_path('uploads/booking_persons');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            foreach ($request->persons as $index => $p) {
                 $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
                 if (!empty($name) || !empty($p['passport_number'])) {
                     $pData = $p;
@@ -218,6 +268,17 @@ class BookingController extends Controller
                     $issueDate = !empty($p['date_of_issue']) ? $p['date_of_issue'] : (!empty($p['passport_issue_date']) ? $p['passport_issue_date'] : null);
                     $pData['date_of_issue'] = $issueDate;
                     $pData['passport_issue_date'] = $issueDate;
+
+                    if ($request->hasFile("persons.{$index}.photo")) {
+                        $file = $request->file("persons.{$index}.photo");
+                        $filename = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        $file->move($uploadDir, $filename);
+                        $pData['photo'] = 'uploads/booking_persons/' . $filename;
+                    } elseif (!empty($p['existing_photo'])) {
+                        $pData['photo'] = $p['existing_photo'];
+                    }
+
+                    unset($pData['existing_photo']);
                     $booking->persons()->create($pData);
                 }
             }
@@ -226,27 +287,65 @@ class BookingController extends Controller
         $booking->hotels()->delete();
         if ($request->has('hotels')) {
             foreach ($request->hotels as $h) {
-                if (!empty($h['hotel_name'])) $booking->hotels()->create($h);
+                if (!empty($h['hotel_name'])) {
+                    $hData = $h;
+                    $hData['no_of_rooms'] = (!empty($h['no_of_rooms']) && is_numeric($h['no_of_rooms'])) ? (int)$h['no_of_rooms'] : 1;
+                    $hData['no_of_nights'] = (!empty($h['no_of_nights']) && is_numeric($h['no_of_nights'])) ? (int)$h['no_of_nights'] : 1;
+                    $hData['check_in'] = !empty($h['check_in']) ? $h['check_in'] : null;
+                    $hData['check_out'] = !empty($h['check_out']) ? $h['check_out'] : null;
+                    $hData['room_type'] = !empty($h['room_type']) ? $h['room_type'] : 'quad';
+                    $hData['room_number'] = !empty($h['room_number']) ? trim($h['room_number']) : null;
+                    $hData['gender'] = !empty($h['gender']) ? trim($h['gender']) : 'Any';
+                    $hData['location'] = !empty($h['location']) ? $h['location'] : 'makkah';
+                    $booking->hotels()->create($hData);
+                }
             }
         }
 
         $booking->transports()->delete();
         if ($request->has('transports')) {
             foreach ($request->transports as $t) {
-                if (!empty($t['route'])) $booking->transports()->create($t);
+                if (!empty($t['route'])) {
+                    $tData = $t;
+                    $tData['transport_type'] = !empty($t['transport_type']) ? $t['transport_type'] : 'bus';
+                    $tData['notes'] = $t['notes'] ?? null;
+                    $booking->transports()->create($tData);
+                }
             }
         }
 
         $booking->visas()->delete();
         if ($request->has('visas')) {
             foreach ($request->visas as $v) {
-                if (!empty($v['passport_number'])) $booking->visas()->create($v);
+                if (!empty($v['passport_number']) || !empty($v['given_name'])) {
+                    $vData = $v;
+                    $vData['status'] = !empty($v['status']) ? $v['status'] : 'pending';
+                    $booking->visas()->create($vData);
+                }
             }
         }
 
         logUserActivity('Booking Updated', 'Package: ' . $booking->package_type . ' | Total: ' . $booking->total_amount, $booking->id, 'Booking');
 
-        return redirect()->route('booking.index')->with('success', 'Booking updated!');
+        $overbookedWarnings = [];
+        $booking->load('hotels');
+        foreach ($booking->hotels as $bh) {
+            if (!empty($bh->room_number) && !empty($bh->hotel_name)) {
+                $occ = \App\Models\HotelRoomCapacity::getRoomOccupancy($bh->hotel_name, $bh->room_number, $bh->room_type, $bh->check_in, $bh->check_out);
+                if ($occ['is_overbooked']) {
+                    $overbookedWarnings[] = "⚠️ Room {$bh->room_number} ({$bh->hotel_name}) Overbooked hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds Allocated).";
+                } elseif ($occ['is_full']) {
+                    $overbookedWarnings[] = "🔴 Room {$bh->room_number} ({$bh->hotel_name}) 100% Full ho chuka hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds).";
+                }
+            }
+        }
+
+        $msg = 'Booking updated successfully!';
+        if (!empty($overbookedWarnings)) {
+            $msg .= ' ' . implode(' ', $overbookedWarnings) . ' Mazeed person shamil karne ke liye Room Allocation Report me ja kar bed capacity barhayein.';
+        }
+
+        return redirect()->route('booking.index')->with('success', $msg);
     }
 
     public function destroy($id)

@@ -1090,6 +1090,7 @@
                     <thead>
                         <tr>
                             <th style="width:40px">#</th>
+                            <th style="width:50px">Photo</th>
                             <th>Full Name</th>
                             <th>DOB</th>
                             <th>Passport #</th>
@@ -1104,6 +1105,18 @@
                             <tr>
                                 <td><span class="pill"
                                         style="background:rgba(201,168,76,0.12);color:var(--gold-dk);border:1px solid rgba(201,168,76,0.28)">{{ $loop->iteration }}</span>
+                                </td>
+                                <td>
+                                    @if (!empty($person->photo))
+                                        <a href="{{ asset($person->photo) }}" target="_blank">
+                                            <img src="{{ asset($person->photo) }}" alt="Hajji Photo"
+                                                style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--gold); box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                        </a>
+                                    @else
+                                        <div style="width:36px; height:36px; border-radius:50%; background:rgba(201,168,76,0.15); border:1px solid rgba(201,168,76,0.3); display:flex; align-items:center; justify-content:center; color:var(--gold-dk); font-weight:700; font-size:13px;">
+                                            {{ strtoupper(substr($person->full_name, 0, 1) ?: 'P') }}
+                                        </div>
+                                    @endif
                                 </td>
                                 <td><strong style="color:var(--text)">{{ $person->full_name }}</strong></td>
                                 <td>{{ $person->dob ? \Carbon\Carbon::parse($person->dob)->format('d M Y') : '—' }}</td>
@@ -1135,6 +1148,8 @@
                             <th>Hotel Name</th>
                             <th style="text-align:center">Nights</th>
                             <th>Room Type</th>
+                            <th>Room No.</th>
+                            <th>Room Gender</th>
                             <th style="text-align:center">Rooms</th>
                             <th>Check In</th>
                             <th>Check Out</th>
@@ -1148,6 +1163,13 @@
                                     'madinah' => ['rgba(46,204,138,0.12)', 'rgba(46,204,138,0.32)', '#12845e'],
                                     'other' => ['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.08)', 'var(--muted)'],
                                 ][$hotel->location] ?? ['rgba(0,0,0,0.03)', 'rgba(0,0,0,0.08)', 'var(--muted)'];
+
+                                $gc = match(strtolower($hotel->gender ?? 'any')) {
+                                    'male'   => ['#eff6ff', '#bfdbfe', '#1d4ed8'],
+                                    'female' => ['#fdf2f8', '#fbcfe8', '#be185d'],
+                                    'family' => ['#f0fdf4', '#bbf7d0', '#15803d'],
+                                    default  => ['#f8fafc', '#e2e8f0', '#475569'],
+                                };
                             @endphp
                             <tr>
                                 <td><span class="pill"
@@ -1156,6 +1178,12 @@
                                 <td><strong style="color:var(--text)">{{ $hotel->hotel_name }}</strong></td>
                                 <td style="text-align:center">{{ $hotel->no_of_nights }}</td>
                                 <td>{{ ucfirst($hotel->room_type) }}</td>
+                                <td><strong style="color:var(--gold-dk)">{{ $hotel->room_number ?: '—' }}</strong></td>
+                                <td>
+                                    <span class="pill" style="background:{{ $gc[0] }};border:1px solid {{ $gc[1] }};color:{{ $gc[2] }}">
+                                        {{ $hotel->gender ? ucfirst($hotel->gender) : 'Any / Mixed' }}
+                                    </span>
+                                </td>
                                 <td style="text-align:center">{{ $hotel->no_of_rooms }}</td>
                                 <td>{{ $hotel->check_in ? \Carbon\Carbon::parse($hotel->check_in)->format('d M Y') : '—' }}
                                 </td>

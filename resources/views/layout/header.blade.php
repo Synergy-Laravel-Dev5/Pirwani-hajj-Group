@@ -260,6 +260,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('report.rooming-list') }}">
+                            <i data-feather="grid"></i>
+                            <span>Room Allocation Report</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.check-in') }}">
+                            <i data-feather="check-square"></i>
+                            <span>Check-In Report</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('arrival-group.index') }}">
                             <i data-feather="arrow-down-left"></i>
                             <span>Arrival Groups</span>

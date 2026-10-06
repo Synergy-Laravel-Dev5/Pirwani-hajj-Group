@@ -29,6 +29,8 @@ use App\Http\Controllers\DepartureGroupController;
 use App\Http\Controllers\HajiGroupController;
 use App\Http\Controllers\RoomInventoryController;
 use App\Http\Controllers\RoomTypeController;
+use App\Http\Controllers\CheckInReportController;
+use App\Http\Controllers\RoomingListController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -379,5 +381,17 @@ Route::middleware('auth')->group(function () {
                 Route::get('trash', 'trash')->name('train.trash');
                 Route::get('restore/{id}', 'restore')->name('train.restore');
             });
+        Route::controller(CheckInReportController::class)
+            ->prefix('reports')->group(function () {
+                Route::get('check-in', 'index')->name('report.check-in');
+            });
+
+        Route::controller(RoomingListController::class)->group(function () {
+            Route::prefix('reports')->group(function () {
+                Route::get('rooming-list', 'index')->name('report.rooming-list');
+                Route::post('rooming-list/adjust-bed', 'adjustBed')->name('report.rooming-list.adjust-bed');
+            });
+            Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');
+        });
     });
 });

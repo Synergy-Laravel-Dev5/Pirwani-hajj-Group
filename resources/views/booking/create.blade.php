@@ -42,7 +42,7 @@
                     <span class="text-danger fw-semibold">Balance: <strong id="bar_balance">0.00</strong></span>
                 </div>
 
-                <form action="{{ route('booking.store') }}" method="POST" id="bookingForm">
+                <form action="{{ route('booking.store') }}" method="POST" id="bookingForm" enctype="multipart/form-data">
                     @csrf
 
                     {{-- TAB NAV --}}
@@ -753,7 +753,7 @@
                                                 <input type="number" name="hotels[{{ $loop->index }}][no_of_nights]"
                                                     class="form-control form-control-sm" value="1" min="1">
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                                                 <select name="hotels[{{ $loop->index }}][room_type]"
                                                     class="form-select form-select-sm">
@@ -772,17 +772,32 @@
                                                     @endif
                                                 </select>
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
+                                                <label class="form-label fw-semibold" style="font-size:12px;">Room Number</label>
+                                                <input type="text" name="hotels[{{ $loop->index }}][room_number]"
+                                                    class="form-control form-control-sm hotel-room-number-input" placeholder="e.g. 101, 204">
+                                                <div class="room-capacity-feedback mt-1 small"></div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label fw-semibold" style="font-size:12px;">Room Gender</label>
+                                                <select name="hotels[{{ $loop->index }}][gender]" class="form-select form-select-sm">
+                                                    <option value="Any">Any / Mixed</option>
+                                                    <option value="Male">Male Room (Men)</option>
+                                                    <option value="Female">Female Room (Women)</option>
+                                                    <option value="Family">Family / Couple</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">No. of Rooms</label>
                                                 <input type="number" name="hotels[{{ $loop->index }}][no_of_rooms]"
                                                     class="form-control form-control-sm" value="1" min="1">
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Check In</label>
                                                 <input type="date" name="hotels[{{ $loop->index }}][check_in]"
                                                     class="form-control form-control-sm">
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Check Out</label>
                                                 <input type="date" name="hotels[{{ $loop->index }}][check_out]"
                                                     class="form-control form-control-sm">
@@ -1592,23 +1607,38 @@
                                 <input type="number" name="hotels[${idx}][no_of_nights]" class="form-control form-control-sm"
                                        value="${nights}" min="1">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                                 <select name="hotels[${idx}][room_type]" class="form-select form-select-sm">
                                     ${buildRoomTypeOptions('quad')}
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold" style="font-size:12px;">Room Number</label>
+                                <input type="text" name="hotels[${idx}][room_number]" class="form-control form-control-sm hotel-room-number-input"
+                                       placeholder="e.g. 101, 204">
+                                <div class="room-capacity-feedback mt-1 small"></div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold" style="font-size:12px;">Room Gender</label>
+                                <select name="hotels[${idx}][gender]" class="form-select form-select-sm">
+                                    <option value="Any">Any / Mixed</option>
+                                    <option value="Male">Male Room (Men)</option>
+                                    <option value="Female">Female Room (Women)</option>
+                                    <option value="Family">Family / Couple</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <label class="form-label fw-semibold" style="font-size:12px;">No. of Rooms</label>
                                 <input type="number" name="hotels[${idx}][no_of_rooms]" class="form-control form-control-sm"
                                        value="1" min="1">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label fw-semibold" style="font-size:12px;">Check In</label>
                                 <input type="date" name="hotels[${idx}][check_in]" class="form-control form-control-sm"
                                        value="${checkIn}">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label fw-semibold" style="font-size:12px;">Check Out</label>
                                 <input type="date" name="hotels[${idx}][check_out]" class="form-control form-control-sm"
                                        value="${checkOut}">
@@ -1875,13 +1905,51 @@
                         <input type="text" name="persons[${idx}][cnic]" id="person_cnic_${idx}"
                                class="form-control form-control-sm" placeholder="XXXXX-XXXXXXX-X">
                     </div>
+                    <div class="col-md-2">
+                        <label class="form-label" style="font-size:12px;">Gender</label>
+                        <select name="persons[${idx}][gender]" id="person_gender_${idx}" class="form-select form-select-sm">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" style="font-size:12px;">Hajj ID</label>
+                        <input type="text" name="persons[${idx}][hajj_id]" id="person_hajj_id_${idx}"
+                               class="form-control form-control-sm" placeholder="e.g. PW26057">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" style="font-size:12px;">HB #</label>
+                        <input type="text" name="persons[${idx}][hb_number]" id="person_hb_number_${idx}"
+                               class="form-control form-control-sm" placeholder="e.g. H02081">
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Phone</label>
                         <input type="text" name="persons[${idx}][phone]" id="person_phone_${idx}"
                                class="form-control form-control-sm" placeholder="+92 300 0000000">
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size:12px;"><i class="mdi mdi-camera text-primary me-1"></i>Pilgrim Photo</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="file" name="persons[${idx}][photo]" id="person_photo_${idx}"
+                                   class="form-control form-control-sm" accept="image/*" onchange="previewPersonPhoto(this, ${idx})">
+                            <div id="person_photo_preview_${idx}" class="flex-shrink-0" style="width:34px; height:34px; border-radius:4px; border:1px dashed #ced4da; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f8f9fa;">
+                                <i class="mdi mdi-account text-muted fs-16"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>`;
+        }
+
+        function previewPersonPhoto(input, idx) {
+            const previewBox = document.getElementById(`person_photo_preview_${idx}`);
+            if (input.files && input.files[0] && previewBox) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewBox.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         function updatePersonFullName(idx) {
@@ -2086,21 +2154,35 @@
                         <label class="form-label fw-semibold" style="font-size:12px;">Nights</label>
                         <input type="number" name="hotels[${hotelIdx}][no_of_nights]" class="form-control form-control-sm" value="1" min="1">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
                         <select name="hotels[${hotelIdx}][room_type]" class="form-select form-select-sm">
                             ${buildRoomTypeOptions('quad')}
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold" style="font-size:12px;">Room Number</label>
+                        <input type="text" name="hotels[${hotelIdx}][room_number]" class="form-control form-control-sm hotel-room-number-input" placeholder="e.g. 101, 204">
+                        <div class="room-capacity-feedback mt-1 small"></div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold" style="font-size:12px;">Room Gender</label>
+                        <select name="hotels[${hotelIdx}][gender]" class="form-select form-select-sm">
+                            <option value="Any">Any / Mixed</option>
+                            <option value="Male">Male Room (Men)</option>
+                            <option value="Female">Female Room (Women)</option>
+                            <option value="Family">Family / Couple</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">No. of Rooms</label>
                         <input type="number" name="hotels[${hotelIdx}][no_of_rooms]" class="form-control form-control-sm" value="1" min="1">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">Check In</label>
                         <input type="date" name="hotels[${hotelIdx}][check_in]" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">Check Out</label>
                         <input type="date" name="hotels[${hotelIdx}][check_out]" class="form-control form-control-sm">
                     </div>
@@ -2199,5 +2281,155 @@
         syncFlightPersons();
         syncVisas();
         calcTotal();
+
+        // ═══════════════════════════════════════
+        // LIVE HOTEL ROOM CAPACITY CHECK
+        // ═══════════════════════════════════════
+        let capacityCheckTimeout = null;
+
+        function checkHotelRoomCapacity(hotelBlock) {
+            if (!hotelBlock) return;
+            const hotelNameInput = hotelBlock.querySelector('.hotel-name-input');
+            const roomNumberInput = hotelBlock.querySelector('.hotel-room-number-input');
+            const roomTypeSelect = hotelBlock.querySelector('select[name*="[room_type]"]');
+            const checkInInput = hotelBlock.querySelector('input[name*="[check_in]"]');
+            const checkOutInput = hotelBlock.querySelector('input[name*="[check_out]"]');
+            const feedbackDiv = hotelBlock.querySelector('.room-capacity-feedback');
+
+            if (!feedbackDiv || !roomNumberInput) return;
+
+            const hotelName = hotelNameInput ? hotelNameInput.value.trim() : '';
+            const roomNumber = roomNumberInput.value.trim();
+            const roomType = roomTypeSelect ? roomTypeSelect.value : '';
+            const checkIn = checkInInput ? checkInInput.value : '';
+            const checkOut = checkOutInput ? checkOutInput.value : '';
+
+            if (!hotelName || !roomNumber) {
+                feedbackDiv.innerHTML = '';
+                roomNumberInput.style.borderColor = '';
+                roomNumberInput.style.borderWidth = '';
+                roomNumberInput.style.backgroundColor = '';
+                roomNumberInput.removeAttribute('data-is-full');
+                return;
+            }
+
+            feedbackDiv.innerHTML = '<span class="text-muted small"><i class="mdi mdi-loading mdi-spin me-1"></i>Checking room status...</span>';
+
+            const params = new URLSearchParams({
+                hotel_name: hotelName,
+                room_number: roomNumber,
+                room_type: roomType,
+                check_in: checkIn,
+                check_out: checkOut
+            });
+
+            fetch(`{{ route('api.hotel-room.check-capacity') }}?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        feedbackDiv.innerHTML = '';
+                        roomNumberInput.style.borderColor = '';
+                        roomNumberInput.style.backgroundColor = '';
+                        roomNumberInput.removeAttribute('data-is-full');
+                        return;
+                    }
+
+                    if (data.is_full || data.is_overbooked) {
+                        roomNumberInput.style.borderColor = '#dc3545';
+                        roomNumberInput.style.borderWidth = '2px';
+                        roomNumberInput.style.backgroundColor = '#fff5f5';
+                        roomNumberInput.setAttribute('data-is-full', 'true');
+
+                        feedbackDiv.innerHTML = `
+                        <div class="alert alert-danger p-2 mt-2 mb-1 border-danger shadow-sm" style="font-size:12px; line-height:1.4;">
+                            <div class="fw-bold text-danger d-flex align-items-center mb-1">
+                                <i class="mdi mdi-alert-octagon fs-16 me-1"></i> YEH ROOM FULL HAI!
+                            </div>
+                            <div class="text-dark mb-2">${data.message}</div>
+                            <div class="pt-1 border-top border-danger-subtle d-flex flex-wrap justify-content-between align-items-center gap-1">
+                                <span class="text-muted small">Mazeed person add karne ke liye:</span>
+                                <a href="{{ route('report.rooming-list') }}" target="_blank" class="btn btn-xs btn-danger text-white py-0 px-2 fw-bold" style="font-size:11px;">
+                                    <i class="mdi mdi-bed-empty me-1"></i> Bed Capacity Barhayein
+                                </a>
+                            </div>
+                        </div>`;
+                    } else if (data.occupied > 0) {
+                        roomNumberInput.style.borderColor = '#ffc107';
+                        roomNumberInput.style.borderWidth = '2px';
+                        roomNumberInput.style.backgroundColor = '#fffdf0';
+                        roomNumberInput.removeAttribute('data-is-full');
+
+                        feedbackDiv.innerHTML = `
+                        <div class="alert alert-warning p-2 mt-2 mb-1 border-warning" style="font-size:12px; line-height:1.4;">
+                            <div class="fw-bold text-dark d-flex align-items-center mb-1">
+                                <i class="mdi mdi-information me-1 text-warning"></i> Room Sharing Status:
+                            </div>
+                            <div class="text-dark">${data.message}</div>
+                        </div>`;
+                    } else {
+                        roomNumberInput.style.borderColor = '#198754';
+                        roomNumberInput.style.borderWidth = '1.5px';
+                        roomNumberInput.style.backgroundColor = '#f0fff4';
+                        roomNumberInput.removeAttribute('data-is-full');
+
+                        feedbackDiv.innerHTML = `
+                        <div class="text-success small mt-1 fw-bold">
+                            <i class="mdi mdi-check-circle me-1"></i> ${data.message}
+                        </div>`;
+                    }
+                })
+                .catch(() => {
+                    feedbackDiv.innerHTML = '';
+                    roomNumberInput.removeAttribute('data-is-full');
+                });
+        }
+
+        const hotelsContainer = document.getElementById('hotelsList');
+        if (hotelsContainer) {
+            hotelsContainer.addEventListener('input', function(e) {
+                if (e.target.classList.contains('hotel-room-number-input') || 
+                    e.target.classList.contains('hotel-name-input') || 
+                    e.target.name?.includes('[check_in]') || 
+                    e.target.name?.includes('[check_out]')) {
+                    const block = e.target.closest('.hotel-block');
+                    clearTimeout(capacityCheckTimeout);
+                    capacityCheckTimeout = setTimeout(() => checkHotelRoomCapacity(block), 400);
+                }
+            });
+
+            hotelsContainer.addEventListener('change', function(e) {
+                if (e.target.classList.contains('hotel-crud-select') || 
+                    e.target.name?.includes('[room_type]')) {
+                    const block = e.target.closest('.hotel-block');
+                    clearTimeout(capacityCheckTimeout);
+                    capacityCheckTimeout = setTimeout(() => checkHotelRoomCapacity(block), 200);
+                }
+            });
+        }
+
+        // Check initial rooms on page load
+        document.querySelectorAll('#hotelsList .hotel-block').forEach(b => checkHotelRoomCapacity(b));
+
+        // Form Submit Check for Full Rooms Warning
+        const mainBookingForm = document.querySelector('form[action*="booking"]');
+        if (mainBookingForm) {
+            mainBookingForm.addEventListener('submit', function(e) {
+                const fullRoomInputs = document.querySelectorAll('.hotel-room-number-input[data-is-full="true"]');
+                if (fullRoomInputs.length > 0) {
+                    let roomList = [];
+                    fullRoomInputs.forEach(inp => {
+                        const val = inp.value.trim();
+                        if (val) roomList.push(val);
+                    });
+                    if (roomList.length > 0) {
+                        const proceed = confirm(`⚠️ Warning: Room (${roomList.join(', ')}) FULL hai!\n\nIs room ki bed capacity mukammal ho chuki hai. Mazeed pilgrims allocate karne ke liye Rooming List me ja kar Bed Capacity barhana zaroori hai.\n\nKya aap phir bhi yeh booking save karna chahte hain?`);
+                        if (!proceed) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                }
+            });
+        }
     </script>
 @endsection

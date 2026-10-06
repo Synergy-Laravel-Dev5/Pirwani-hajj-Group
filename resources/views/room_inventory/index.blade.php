@@ -62,6 +62,9 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
+                    <a href="{{ route('report.rooming-list') }}" class="btn btn-outline-info btn-sm">
+                        <i class="mdi mdi-bed-king me-1"></i> Room Allocation & Bed Report
+                    </a>
                     <a href="{{ route('room-inventory.create') }}" class="btn btn-primary btn-sm">
                         <i class="mdi mdi-plus-circle me-1"></i> + Add Room Stock Allotment
                     </a>
@@ -344,6 +347,9 @@
                                                     <span class="badge bg-soft-primary text-primary fs-11">
                                                         {{ $item->room_type }}
                                                     </span>
+                                                    @if(!empty($item->room_number))
+                                                        <br><small class="text-muted"><i class="mdi mdi-door"></i> Rm {{ $item->room_number }}</small>
+                                                    @endif
                                                 </td>
                                                 <td class="text-center">
                                                     <span class="badge bg-danger fs-12 px-2 py-1">

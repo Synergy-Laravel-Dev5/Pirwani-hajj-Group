@@ -14,6 +14,8 @@ class BookingHotel extends Model
         'check_in',
         'check_out',
         'room_type',
+        'room_number',
+        'gender',
         'no_of_rooms',
         'hotel_voucher'
     ];
