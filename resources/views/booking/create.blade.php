@@ -2446,31 +2446,118 @@
                 });
         }
 
+        // ═══════════════════════════════════════
+        // AUTOMATIC HOTEL NIGHTS & DATES RECALCULATION
+        // ═══════════════════════════════════════
+        function recalculateHotelNights(hotelBlock, source) {
+            if (!hotelBlock) return;
+            const checkInInput = hotelBlock.querySelector('input[name*="[check_in]"]');
+            const checkOutInput = hotelBlock.querySelector('input[name*="[check_out]"]');
+            const nightsInput = hotelBlock.querySelector('input[name*="[no_of_nights]"]');
+            if (!checkInInput || !checkOutInput || !nightsInput) return;
+
+            const inVal = checkInInput.value;
+            const outVal = checkOutInput.value;
+
+            if (source === 'check_in' || source === 'check_out') {
+                if (inVal && outVal) {
+                    const dIn = new Date(inVal + 'T00:00:00');
+                    const dOut = new Date(outVal + 'T00:00:00');
+                    if (!isNaN(dIn.getTime()) && !isNaN(dOut.getTime())) {
+                        const diffTime = dOut.getTime() - dIn.getTime();
+                        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                        if (diffDays > 0) {
+                            nightsInput.value = diffDays;
+                        } else if (source === 'check_in') {
+                            // If check_in is on or after check_out, advance check_out
+                            const n = Math.max(1, parseInt(nightsInput.value) || 1);
+                            const nextOut = new Date(dIn);
+                            nextOut.setDate(nextOut.getDate() + n);
+                            const yyyy = nextOut.getFullYear();
+                            const mm = String(nextOut.getMonth() + 1).padStart(2, '0');
+                            const dd = String(nextOut.getDate()).padStart(2, '0');
+                            checkOutInput.value = `${yyyy}-${mm}-${dd}`;
+                            nightsInput.value = n;
+                        } else {
+                            nightsInput.value = 1;
+                        }
+                    }
+                } else if (inVal && !outVal) {
+                    const n = Math.max(1, parseInt(nightsInput.value) || 1);
+                    const dIn = new Date(inVal + 'T00:00:00');
+                    if (!isNaN(dIn.getTime())) {
+                        dIn.setDate(dIn.getDate() + n);
+                        const yyyy = dIn.getFullYear();
+                        const mm = String(dIn.getMonth() + 1).padStart(2, '0');
+                        const dd = String(dIn.getDate()).padStart(2, '0');
+                        checkOutInput.value = `${yyyy}-${mm}-${dd}`;
+                    }
+                }
+            } else if (source === 'nights') {
+                const n = parseInt(nightsInput.value);
+                if (n && n > 0 && inVal) {
+                    const dIn = new Date(inVal + 'T00:00:00');
+                    if (!isNaN(dIn.getTime())) {
+                        dIn.setDate(dIn.getDate() + n);
+                        const yyyy = dIn.getFullYear();
+                        const mm = String(dIn.getMonth() + 1).padStart(2, '0');
+                        const dd = String(dIn.getDate()).padStart(2, '0');
+                        checkOutInput.value = `${yyyy}-${mm}-${dd}`;
+                    }
+                }
+            }
+        }
+
         const hotelsContainer = document.getElementById('hotelsList');
         if (hotelsContainer) {
             hotelsContainer.addEventListener('input', function(e) {
+                const block = e.target.closest('.hotel-block');
+                if (!block) return;
+
+                if (e.target.name?.includes('[check_in]')) {
+                    recalculateHotelNights(block, 'check_in');
+                } else if (e.target.name?.includes('[check_out]')) {
+                    recalculateHotelNights(block, 'check_out');
+                } else if (e.target.name?.includes('[no_of_nights]')) {
+                    recalculateHotelNights(block, 'nights');
+                }
+
                 if (e.target.classList.contains('hotel-room-number-input') || 
                     e.target.classList.contains('hotel-name-input') || 
                     e.target.name?.includes('[check_in]') || 
                     e.target.name?.includes('[check_out]')) {
-                    const block = e.target.closest('.hotel-block');
                     clearTimeout(capacityCheckTimeout);
                     capacityCheckTimeout = setTimeout(() => checkHotelRoomCapacity(block), 400);
                 }
             });
 
             hotelsContainer.addEventListener('change', function(e) {
+                const block = e.target.closest('.hotel-block');
+                if (!block) return;
+
+                if (e.target.name?.includes('[check_in]')) {
+                    recalculateHotelNights(block, 'check_in');
+                } else if (e.target.name?.includes('[check_out]')) {
+                    recalculateHotelNights(block, 'check_out');
+                } else if (e.target.name?.includes('[no_of_nights]')) {
+                    recalculateHotelNights(block, 'nights');
+                }
+
                 if (e.target.classList.contains('hotel-crud-select') || 
-                    e.target.name?.includes('[room_type]')) {
-                    const block = e.target.closest('.hotel-block');
+                    e.target.name?.includes('[room_type]') ||
+                    e.target.name?.includes('[check_in]') ||
+                    e.target.name?.includes('[check_out]')) {
                     clearTimeout(capacityCheckTimeout);
                     capacityCheckTimeout = setTimeout(() => checkHotelRoomCapacity(block), 200);
                 }
             });
         }
 
-        // Check initial rooms on page load
-        document.querySelectorAll('#hotelsList .hotel-block').forEach(b => checkHotelRoomCapacity(b));
+        // Initialize and check initial rooms and nights on page load
+        document.querySelectorAll('#hotelsList .hotel-block').forEach(b => {
+            recalculateHotelNights(b, 'check_in');
+            checkHotelRoomCapacity(b);
+        });
 
         // Form Submit Check for Full Rooms - STRICT HARD BLOCK
         const mainBookingForm = document.querySelector('form[action*="booking"]');

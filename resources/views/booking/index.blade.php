@@ -52,6 +52,7 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th>S:NO</th>
+                                                <th>HB #</th>
                                                 <th>Client / Company</th>
                                                 <th>Package Type</th>
                                                 <th>No of Pax</th>
@@ -67,6 +68,22 @@
                                                 <tr>
 
                                                     <td>{{ $loop->iteration }}</td>
+
+                                                    <td>
+                                                        @php
+                                                            $hbList = $booking->persons->pluck('hb_number')->filter()->values();
+                                                        @endphp
+                                                        @if($hbList->count() > 0)
+                                                            @if($hbList->count() == 1)
+                                                                <span class="badge bg-dark text-white fw-bold px-2 py-1" style="font-size:11px; letter-spacing:0.5px;">{{ $hbList->first() }}</span>
+                                                            @else
+                                                                <span class="badge bg-dark text-white fw-bold px-2 py-1" style="font-size:11px; letter-spacing:0.5px;">{{ $hbList->first() }}</span>
+                                                                <small class="d-block text-muted mt-1 fw-semibold" style="font-size:10px;">+{{ $hbList->count() - 1 }} pax</small>
+                                                            @endif
+                                                        @else
+                                                            <span class="text-muted">—</span>
+                                                        @endif
+                                                    </td>
 
                                                     <td>
                                                         <strong>

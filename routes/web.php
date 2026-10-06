@@ -392,6 +392,8 @@ Route::middleware('auth')->group(function () {
                 Route::get('rooming-list/export-pdf', 'exportPdf')->name('report.rooming-list.export-pdf');
                 Route::get('rooming-list/export-excel', 'exportExcel')->name('report.rooming-list.export-excel');
                 Route::post('rooming-list/adjust-bed', 'adjustBed')->name('report.rooming-list.adjust-bed');
+                Route::post('rooming-list/assign-room', 'assignRoom')->name('report.rooming-list.assign-room');
+                Route::post('rooming-list/unassign-room', 'unassignRoom')->name('report.rooming-list.unassign-room');
             });
             Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');
         });

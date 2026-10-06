@@ -201,10 +201,13 @@
                     $rowspan = max(1, $totalOccupants);
                     
                     $rawNum = trim($room['room_number']);
-                    $roomDisplayNo = str_starts_with(strtoupper($rawNum), 'R') ? strtoupper($rawNum) : ('R' . $rawNum);
+                    $isUnassigned = ($rawNum === 'PENDING' || $rawNum === 'UNASSIGNED' || empty($rawNum));
+                    $roomDisplayNo = $isUnassigned ? 'PENDING' : (str_starts_with(strtoupper($rawNum), 'R') ? strtoupper($rawNum) : ('R' . $rawNum));
                     
                     $roomTypeDisplay = strtoupper($room['room_type']);
-                    if (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
+                    if ($isUnassigned) {
+                        $roomTypeDisplay = 'PENDING ALLOCATION';
+                    } elseif (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
                         $roomTypeDisplay = 'SIX';
                     }
 
@@ -215,6 +218,7 @@
                         'mina'    => 'MINA',
                         'arafat'  => 'ARAFAT',
                         'madinah' => 'MADINAH',
+                        'unassigned' => 'UNASSIGNED',
                         default   => strtoupper($loc),
                     };
                 @endphp
@@ -253,7 +257,13 @@
                             <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td>
                             <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ $occ['passport'] }}</td>
                             <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase; color: #000;">
-                                {{ $occ['name'] }}
+                                <div>{{ $occ['name'] }}</div>
+                                <div style="font-size: 7.5px; color: #0d6efd; font-weight: bold; margin-top: 1px;">
+                                    Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
+                                </div>
+                                <div style="font-size: 7px; color: #666; font-weight: normal;">
+                                    {{ $occ['client_name'] }} ({{ $occ['booking_number'] }})
+                                </div>
                             </td>
 
                             @if($oIdx === 0)

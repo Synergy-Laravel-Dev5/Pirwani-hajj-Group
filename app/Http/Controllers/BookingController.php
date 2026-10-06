@@ -18,7 +18,7 @@ class BookingController extends Controller
         $package = session('dashboard_package', 'hajj');
         $year    = (int) session('dashboard_year', Carbon::now()->year);
 
-        $bookings = Booking::with(['client', 'company', 'package'])
+        $bookings = Booking::with(['client', 'company', 'package', 'persons'])
             ->latest()
             ->get();
 
