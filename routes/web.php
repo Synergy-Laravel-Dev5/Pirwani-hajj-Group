@@ -389,6 +389,8 @@ Route::middleware('auth')->group(function () {
         Route::controller(RoomingListController::class)->group(function () {
             Route::prefix('reports')->group(function () {
                 Route::get('rooming-list', 'index')->name('report.rooming-list');
+                Route::get('rooming-list/export-pdf', 'exportPdf')->name('report.rooming-list.export-pdf');
+                Route::get('rooming-list/export-excel', 'exportExcel')->name('report.rooming-list.export-excel');
                 Route::post('rooming-list/adjust-bed', 'adjustBed')->name('report.rooming-list.adjust-bed');
             });
             Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');

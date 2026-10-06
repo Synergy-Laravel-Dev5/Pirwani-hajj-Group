@@ -9,6 +9,7 @@ use App\Models\Hotel;
 use App\Models\HotelRoomCapacity;
 use App\Models\RoomType;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,6 +19,167 @@ class RoomingListController extends Controller
      * Rooming List & Bed Allocation Report (Matching Official Manifest Format)
      */
     public function index(Request $request)
+    {
+        $data = $this->getFilteredRoomingData($request);
+
+        // Dropdown Data
+        $registeredHotels = Hotel::orderBy('name')->get();
+        $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
+        $roomTypes = RoomType::where('status', 'active')->orderBy('capacity')->get();
+        if ($roomTypes->isEmpty()) {
+            $roomTypes = collect([
+                (object)['name' => 'Single', 'code' => 'single', 'capacity' => 1],
+                (object)['name' => 'Double', 'code' => 'double', 'capacity' => 2],
+                (object)['name' => 'Triple', 'code' => 'triple', 'capacity' => 3],
+                (object)['name' => 'Quad', 'code' => 'quad', 'capacity' => 4],
+                (object)['name' => 'Quint', 'code' => 'quint', 'capacity' => 5],
+                (object)['name' => 'Six', 'code' => 'six', 'capacity' => 6],
+                (object)['name' => 'Sharing', 'code' => 'sharing', 'capacity' => 4],
+                (object)['name' => 'Suite', 'code' => 'suite', 'capacity' => 2],
+            ]);
+        }
+
+        return view('reports.rooming_list', array_merge($data, compact(
+            'registeredHotels',
+            'distinctHotelNames',
+            'roomTypes'
+        )));
+    }
+
+    /**
+     * Export Official Rooming List & Manifest as PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $data = $this->getFilteredRoomingData($request);
+
+        $pdf = Pdf::loadView('reports.rooming_list_pdf', $data);
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', true);
+
+        $hotelPart = !empty($data['hotelFilter']) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $data['hotelFilter']) : '';
+        $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
+        $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Export Official Rooming List & Manifest as Excel (CSV with UTF-8 BOM for MS Excel)
+     */
+    public function exportExcel(Request $request)
+    {
+        $data = $this->getFilteredRoomingData($request);
+        $groupedRooms = $data['groupedRooms'];
+
+        $hotelPart = !empty($data['hotelFilter']) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $data['hotelFilter']) : '';
+        $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
+        $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0',
+        ];
+
+        return response()->stream(function () use ($groupedRooms) {
+            $handle = fopen('php://output', 'w');
+            
+            // Output UTF-8 BOM so Microsoft Excel cleanly renders characters
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // CSV Column Headers
+            fputcsv($handle, [
+                'SR',
+                'HAJJ ID',
+                'HB NUMBER',
+                'PASSPORT NUMBER',
+                'FULL NAME',
+                'GENDER',
+                'LOCATION',
+                'HOTEL / BUILDING',
+                'ROOM TYPE',
+                'ROOM NUMBER',
+                'TOTAL BEDS',
+                'OCCUPIED BEDS',
+                'AVAILABLE BEDS',
+                'ROOM GENDER',
+                'BOOKING NUMBER',
+                'CLIENT / GROUP NAME',
+                'PHONE NUMBER',
+                'CHECK IN',
+                'CHECK OUT',
+                'ROOM NOTES'
+            ]);
+
+            $sr = 1;
+            foreach ($groupedRooms as $room) {
+                $rNum = trim($room['room_number']);
+                $roomDisplayNo = str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum);
+                $locLabel = strtoupper($room['location'] ?? 'MAKKAH');
+
+                if (empty($room['occupants'])) {
+                    fputcsv($handle, [
+                        $sr++,
+                        '—',
+                        '—',
+                        '—',
+                        '(Empty Room)',
+                        '—',
+                        $locLabel,
+                        $room['hotel_name'],
+                        $room['room_type'],
+                        $roomDisplayNo,
+                        $room['total_capacity'],
+                        0,
+                        $room['total_capacity'],
+                        $room['room_gender'] ?? 'Any',
+                        '—',
+                        '—',
+                        '—',
+                        $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—',
+                        $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—',
+                        $room['notes'] ?? ''
+                    ]);
+                } else {
+                    foreach ($room['occupants'] as $occ) {
+                        fputcsv($handle, [
+                            $sr++,
+                            !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—',
+                            !empty($occ['hb_number']) ? $occ['hb_number'] : '—',
+                            $occ['passport'] ?? '—',
+                            $occ['name'] ?? '—',
+                            strtoupper($occ['gender'] ?? 'Male'),
+                            $locLabel,
+                            $room['hotel_name'],
+                            $room['room_type'],
+                            $roomDisplayNo,
+                            $room['total_capacity'],
+                            $room['occupied_beds'],
+                            $room['available_beds'],
+                            $room['room_gender'] ?? 'Any',
+                            $occ['booking_number'] ?? '—',
+                            $occ['client_name'] ?? '—',
+                            $occ['phone'] ?? '—',
+                            $occ['check_in'] ?? '—',
+                            $occ['check_out'] ?? '—',
+                            $room['notes'] ?? ''
+                        ]);
+                    }
+                }
+            }
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Shared filter logic for Web view, PDF export, and Excel export
+     */
+    private function getFilteredRoomingData(Request $request): array
     {
         $hotelFilter    = $request->get('hotel_name');
         $locationFilter = $request->get('location');
@@ -113,14 +275,16 @@ class RoomingListController extends Controller
             $rType = ucfirst(trim($bh->room_type ?: 'Quad'));
             $loc   = $bh->location ?: 'makkah';
 
-            $groupKey = strtolower($hName . '___' . $rNum);
+            $groupKey = strtolower($loc . '___' . $hName . '___' . $rNum);
 
             if (!isset($groupedRooms[$groupKey])) {
-                $customCap = HotelRoomCapacity::whereRaw('LOWER(TRIM(hotel_name)) = ?', [strtolower($hName)])
-                    ->whereRaw('LOWER(TRIM(room_number)) = ?', [strtolower($rNum)])
-                    ->first();
+                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $rNum, $rType, $loc);
+                $customCap = HotelRoomCapacity::where(function ($q) use ($rNum) {
+                    foreach (HotelRoomCapacity::normalizeRoomNumber($rNum) as $v) {
+                        $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                    }
+                })->first();
 
-                $baseCap = $customCap ? $customCap->bed_capacity : HotelRoomCapacity::standardTypeCapacity($rType);
                 $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;
                 $effectiveCap = max(1, $baseCap);
                 $roomGender = !empty($customCap->gender) && $customCap->gender !== 'Any' ? $customCap->gender : (!empty($bh->gender) ? $bh->gender : 'Any');
@@ -167,9 +331,9 @@ class RoomingListController extends Controller
                 foreach ($persons as $p) {
                     $groupedRooms[$groupKey]['occupied_beds']++;
 
-                    // Resolve Hajj ID, HB Number, Gender, and Photo
-                    $hajjId = !empty($p->hajj_id) ? $p->hajj_id : ('PW' . date('y') . str_pad($p->id, 4, '0', STR_PAD_LEFT));
-                    $hbNumber = !empty($p->hb_number) ? $p->hb_number : (!empty($b->voucher_number) ? $b->voucher_number : ('H' . str_pad($b->id, 5, '0', STR_PAD_LEFT)));
+                    // Resolve Hajj ID, HB Number, Gender, and Photo (Do NOT auto-generate if empty)
+                    $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
+                    $hbNumber = !empty($p->hb_number) ? trim($p->hb_number) : '';
                     $gender = !empty($p->gender) ? ucfirst(strtolower($p->gender)) : 'Male';
                     
                     // Female detection fallback if gender is default
@@ -202,13 +366,10 @@ class RoomingListController extends Controller
                 $pax = max(1, (int) ($b->no_of_pax ?: 1));
                 $groupedRooms[$groupKey]['occupied_beds'] += $pax;
                 for ($i = 1; $i <= $pax; $i++) {
-                    $hajjId = 'PW' . date('y') . str_pad($b->id * 10 + $i, 4, '0', STR_PAD_LEFT);
-                    $hbNumber = !empty($b->voucher_number) ? $b->voucher_number : ('H' . str_pad($b->id, 5, '0', STR_PAD_LEFT));
-
                     $groupedRooms[$groupKey]['occupants'][] = [
                         'person_id'      => null,
-                        'hajj_id'        => $hajjId,
-                        'hb_number'      => $hbNumber,
+                        'hajj_id'        => '',
+                        'hb_number'      => '',
                         'name'           => ($b->client->name ?? 'Guest') . ($pax > 1 ? " (#{$i})" : ''),
                         'passport'       => $b->passport_number ?: '—',
                         'gender'         => 'Male',
@@ -273,24 +434,7 @@ class RoomingListController extends Controller
             });
         }
 
-        // Dropdown Data
-        $registeredHotels = Hotel::orderBy('name')->get();
-        $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
-        $roomTypes = RoomType::where('status', 'active')->orderBy('capacity')->get();
-        if ($roomTypes->isEmpty()) {
-            $roomTypes = collect([
-                (object)['name' => 'Single', 'code' => 'single', 'capacity' => 1],
-                (object)['name' => 'Double', 'code' => 'double', 'capacity' => 2],
-                (object)['name' => 'Triple', 'code' => 'triple', 'capacity' => 3],
-                (object)['name' => 'Quad', 'code' => 'quad', 'capacity' => 4],
-                (object)['name' => 'Quint', 'code' => 'quint', 'capacity' => 5],
-                (object)['name' => 'Six', 'code' => 'six', 'capacity' => 6],
-                (object)['name' => 'Sharing', 'code' => 'sharing', 'capacity' => 4],
-                (object)['name' => 'Suite', 'code' => 'suite', 'capacity' => 2],
-            ]);
-        }
-
-        return view('reports.rooming_list', compact(
+        return compact(
             'groupedRooms',
             'totalRoomsInUse',
             'totalBedsCapacity',
@@ -299,9 +443,6 @@ class RoomingListController extends Controller
             'fullRoomsCount',
             'partialRoomsCount',
             'overbookedRoomsCount',
-            'registeredHotels',
-            'distinctHotelNames',
-            'roomTypes',
             'hotelFilter',
             'locationFilter',
             'roomTypeFilter',
@@ -310,7 +451,7 @@ class RoomingListController extends Controller
             'fromDate',
             'toDate',
             'viewMode'
-        ));
+        );
     }
 
     /**
@@ -334,20 +475,23 @@ class RoomingListController extends Controller
         $location = $request->location ? trim($request->location) : null;
         $gender = $request->gender ? trim($request->gender) : 'Any';
 
-        $record = HotelRoomCapacity::updateOrCreate(
-            [
-                'hotel_name'  => $hotelName,
-                'room_number' => $roomNumber,
-            ],
-            [
-                'room_type'    => $roomType,
-                'location'     => $location,
-                'gender'       => $gender,
-                'bed_capacity' => $bedCapacity,
-                'extra_beds'   => $extraBeds,
-                'notes'        => $request->notes,
-            ]
-        );
+        $record = HotelRoomCapacity::whereRaw('LOWER(TRIM(hotel_name)) = ?', [strtolower($hotelName)])
+            ->whereRaw('LOWER(TRIM(room_number)) = ?', [strtolower($roomNumber)])
+            ->first();
+
+        if (!$record) {
+            $record = new HotelRoomCapacity();
+            $record->hotel_name = $hotelName;
+            $record->room_number = $roomNumber;
+        }
+
+        $record->room_type = $roomType;
+        $record->location = $location;
+        $record->gender = $gender;
+        $record->bed_capacity = $bedCapacity;
+        $record->extra_beds = $extraBeds;
+        $record->notes = $request->notes;
+        $record->save();
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -371,8 +515,9 @@ class RoomingListController extends Controller
         $checkIn = $request->get('check_in');
         $checkOut = $request->get('check_out');
         $excludeBookingId = $request->get('booking_id');
+        $location = $request->get('location');
 
-        if (empty($hotelName) || empty($roomNumber)) {
+        if (empty($roomNumber) || (empty($hotelName) && empty($location))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please provide hotel name and room number.',
@@ -385,7 +530,8 @@ class RoomingListController extends Controller
             $roomType,
             $checkIn,
             $checkOut,
-            $excludeBookingId
+            $excludeBookingId,
+            $location
         );
 
         $cap = $occupancy['capacity'];
@@ -402,19 +548,31 @@ class RoomingListController extends Controller
 
         $message = '';
         if ($isOver) {
-            $message = "⚠️ YEH ROOM OVERBOOKED HAI! Room {$roomNumber} me {$occ}/{$cap} Beds bhare hue hain ({$summaryNames}). Is room me mazeed person add nahi ho sakta.";
+            $message = "⚠️ OVERBOOKED: Room {$roomNumber} has {$occ}/{$cap} beds allocated ({$summaryNames}). No more pilgrims can be assigned to this room.";
         } elseif ($isFull) {
-            $message = "🔴 YEH ROOM FULL HAI! Room {$roomNumber} ki capacity ({$cap} Beds) mukammal ho chuki hai ({$occ}/{$cap} Occupied - {$summaryNames}). Mazeed person shamil karne ke liye Rooming List me ja kar Bed Capacity barhayein.";
+            $message = "🔴 ROOM IS FULL: Room {$roomNumber} is at maximum capacity ({$occ}/{$cap} beds occupied by {$summaryNames}). You cannot add more pilgrims to this room unless bed capacity is increased in the Rooming List.";
         } elseif ($occ > 0) {
-            $message = "🟡 Room {$roomNumber}: {$occ}/{$cap} Beds Occupied ({$avail} Khali Beds Available). Mojooda Pilgrims: {$summaryNames}.";
+            $message = "🟡 Room {$roomNumber}: {$occ}/{$cap} beds occupied ({$avail} beds available). Current occupants: {$summaryNames}.";
         } else {
-            $message = "🟢 Room {$roomNumber}: Bilkul Khali & Available Hai ({$cap} Total Beds).";
+            // Check if current booking itself occupies this room (Edit Mode clarity)
+            if ($excludeBookingId) {
+                $selfOcc = HotelRoomCapacity::getRoomOccupancy($hotelName, $roomNumber, $roomType, $checkIn, $checkOut, null, $location);
+                if ($selfOcc['occupied_beds'] > 0) {
+                    $selfNames = implode(', ', array_slice(array_column($selfOcc['occupants'], 'name'), 0, 3));
+                    $message = "🔵 Room {$roomNumber}: {$selfOcc['occupied_beds']}/{$cap} beds assigned to this current booking ({$selfNames}).";
+                } else {
+                    $message = "🟢 Room {$roomNumber}: Fully available ({$cap} total beds).";
+                }
+            } else {
+                $message = "🟢 Room {$roomNumber}: Fully available ({$cap} total beds).";
+            }
         }
 
         return response()->json([
             'success'           => true,
             'room_number'       => $roomNumber,
             'hotel_name'        => $hotelName,
+            'location'          => $location,
             'room_type'         => $roomType,
             'capacity'          => $cap,
             'occupied'          => $occ,

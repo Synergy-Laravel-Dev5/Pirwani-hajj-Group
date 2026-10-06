@@ -54,6 +54,43 @@ class BookingController extends Controller
             'qurbani_charges' => 'nullable|numeric|min:0',
         ]);
 
+        // Calculate actual booking pax count
+        $paxCount = 0;
+        if ($request->has('persons') && is_array($request->persons)) {
+            foreach ($request->persons as $p) {
+                $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
+                if (!empty($name) || !empty($p['passport_number'])) {
+                    $paxCount++;
+                }
+            }
+        }
+        if ($paxCount === 0) {
+            $paxCount = max(1, (int) ($request->no_of_pax ?: 1));
+        }
+
+        // Validate Room Capacities - Block if room is full
+        if ($request->has('hotels') && is_array($request->hotels)) {
+            foreach ($request->hotels as $hotel) {
+                $hotelName = trim($hotel['hotel_name'] ?? '');
+                $roomNumber = trim($hotel['room_number'] ?? '');
+                $roomType = $hotel['room_type'] ?? null;
+                $checkIn = $hotel['check_in'] ?? null;
+                $checkOut = $hotel['check_out'] ?? null;
+
+                $location = $hotel['location'] ?? null;
+
+                if (!empty($hotelName) && !empty($roomNumber)) {
+                    $occ = \App\Models\HotelRoomCapacity::getRoomOccupancy($hotelName, $roomNumber, $roomType, $checkIn, $checkOut, null, $location);
+
+                    if (($occ['occupied_beds'] + $paxCount) > $occ['capacity']) {
+                        $available = max(0, $occ['capacity'] - $occ['occupied_beds']);
+                        $errorMsg = "Cannot create booking: Room {$roomNumber} at {$hotelName} is FULL! (Capacity: {$occ['capacity']} beds, Already Booked: {$occ['occupied_beds']} beds, Available: {$available} beds, Booking Pax: {$paxCount}). Please select a different room or increase bed capacity in the Rooming List report.";
+                        return back()->withInput()->with('error', $errorMsg);
+                    }
+                }
+            }
+        }
+
         $clientId  = $request->booking_for === 'client'  ? $request->client_id  : null;
         $companyId = $request->booking_for === 'company' ? $request->company_id : null;
 
@@ -160,24 +197,7 @@ class BookingController extends Controller
             'Booking'
         );
 
-        $overbookedWarnings = [];
-        foreach ($booking->hotels as $bh) {
-            if (!empty($bh->room_number) && !empty($bh->hotel_name)) {
-                $occ = \App\Models\HotelRoomCapacity::getRoomOccupancy($bh->hotel_name, $bh->room_number, $bh->room_type, $bh->check_in, $bh->check_out);
-                if ($occ['is_overbooked']) {
-                    $overbookedWarnings[] = "⚠️ Room {$bh->room_number} ({$bh->hotel_name}) Overbooked hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds Allocated).";
-                } elseif ($occ['is_full']) {
-                    $overbookedWarnings[] = "🔴 Room {$bh->room_number} ({$bh->hotel_name}) 100% Full ho chuka hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds).";
-                }
-            }
-        }
-
-        $msg = 'Booking created successfully!';
-        if (!empty($overbookedWarnings)) {
-            $msg .= ' ' . implode(' ', $overbookedWarnings) . ' Mazeed person shamil karne ke liye Room Allocation Report me ja kar bed capacity barhayein.';
-        }
-
-        return redirect()->route('booking.index')->with('success', $msg);
+        return redirect()->route('booking.index')->with('success', 'Booking created successfully!');
     }
 
     public function show($id)
@@ -219,6 +239,43 @@ class BookingController extends Controller
             'qurbani_qty'     => 'nullable|integer|min:0',
             'qurbani_charges' => 'nullable|numeric|min:0',
         ]);
+
+        // Calculate actual booking pax count
+        $paxCount = 0;
+        if ($request->has('persons') && is_array($request->persons)) {
+            foreach ($request->persons as $p) {
+                $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
+                if (!empty($name) || !empty($p['passport_number'])) {
+                    $paxCount++;
+                }
+            }
+        }
+        if ($paxCount === 0) {
+            $paxCount = max(1, (int) ($request->no_of_pax ?: 1));
+        }
+
+        // Validate Room Capacities - Block if room is full
+        if ($request->has('hotels') && is_array($request->hotels)) {
+            foreach ($request->hotels as $h) {
+                $hotelName = trim($h['hotel_name'] ?? '');
+                $roomNumber = trim($h['room_number'] ?? '');
+                $roomType = $h['room_type'] ?? null;
+                $checkIn = $h['check_in'] ?? null;
+                $checkOut = $h['check_out'] ?? null;
+
+                $location = $h['location'] ?? null;
+
+                if (!empty($hotelName) && !empty($roomNumber)) {
+                    $occ = \App\Models\HotelRoomCapacity::getRoomOccupancy($hotelName, $roomNumber, $roomType, $checkIn, $checkOut, $booking->id, $location);
+
+                    if (($occ['occupied_beds'] + $paxCount) > $occ['capacity']) {
+                        $available = max(0, $occ['capacity'] - $occ['occupied_beds']);
+                        $errorMsg = "Cannot update booking: Room {$roomNumber} at {$hotelName} is FULL! (Capacity: {$occ['capacity']} beds, Already Booked: {$occ['occupied_beds']} beds, Available: {$available} beds, Booking Pax: {$paxCount}). Please select a different room or increase bed capacity in the Rooming List report.";
+                        return back()->withInput()->with('error', $errorMsg);
+                    }
+                }
+            }
+        }
 
         $clientId  = $request->booking_for === 'client'  ? $request->client_id  : null;
         $companyId = $request->booking_for === 'company' ? $request->company_id : null;
@@ -327,25 +384,7 @@ class BookingController extends Controller
 
         logUserActivity('Booking Updated', 'Package: ' . $booking->package_type . ' | Total: ' . $booking->total_amount, $booking->id, 'Booking');
 
-        $overbookedWarnings = [];
-        $booking->load('hotels');
-        foreach ($booking->hotels as $bh) {
-            if (!empty($bh->room_number) && !empty($bh->hotel_name)) {
-                $occ = \App\Models\HotelRoomCapacity::getRoomOccupancy($bh->hotel_name, $bh->room_number, $bh->room_type, $bh->check_in, $bh->check_out);
-                if ($occ['is_overbooked']) {
-                    $overbookedWarnings[] = "⚠️ Room {$bh->room_number} ({$bh->hotel_name}) Overbooked hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds Allocated).";
-                } elseif ($occ['is_full']) {
-                    $overbookedWarnings[] = "🔴 Room {$bh->room_number} ({$bh->hotel_name}) 100% Full ho chuka hai ({$occ['occupied_beds']}/{$occ['capacity']} Beds).";
-                }
-            }
-        }
-
-        $msg = 'Booking updated successfully!';
-        if (!empty($overbookedWarnings)) {
-            $msg .= ' ' . implode(' ', $overbookedWarnings) . ' Mazeed person shamil karne ke liye Room Allocation Report me ja kar bed capacity barhayein.';
-        }
-
-        return redirect()->route('booking.index')->with('success', $msg);
+        return redirect()->route('booking.index')->with('success', 'Booking updated successfully!');
     }
 
     public function destroy($id)

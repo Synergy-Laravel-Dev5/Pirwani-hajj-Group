@@ -29,6 +29,13 @@
                     </div>
                 @endif
 
+                @if (session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="mdi mdi-alert-circle me-1"></i> {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
                 {{-- Summary Bar --}}
                 <div class="booking-summary-bar mb-3 px-3 py-2 d-flex flex-wrap gap-3 align-items-center rounded"
                     style="background:#f0f4ff; border:1px solid #d0d9f0; font-size:13px;">
@@ -1731,6 +1738,7 @@
                 } else if (hasC) {
                     campSelect.value = 'Maktab C (Zone 5)';
                 }
+                syncCampCategoryPreview();
 
                 if (qurbaniOption.value !== 'not_included' && pkgQurbaniPerHeadRate > 0) {
                     qurbaniQty.value = totalMainPax;
@@ -1740,9 +1748,58 @@
                 rebuildPersonsList(totalMainPax);
                 syncFlightPersons();
                 syncVisas();
+            } else {
+                syncCampCategoryPreview();
             }
 
             calcTotal();
+        }
+
+        function syncCampCategoryPreview() {
+            const previewCampEl = document.getElementById('preview_pkg_camp');
+            if (!previewCampEl) return;
+
+            const selectedCampVal = (campSelect ? campSelect.value : '').trim();
+
+            const cq = parseInt(document.getElementById('c_quad_pax')?.value) || 0;
+            const ct = parseInt(document.getElementById('c_triple_pax')?.value) || 0;
+            const cd = parseInt(document.getElementById('c_double_pax')?.value) || 0;
+            const aq = parseInt(document.getElementById('a_quad_pax')?.value) || 0;
+            const at = parseInt(document.getElementById('a_triple_pax')?.value) || 0;
+            const ad = parseInt(document.getElementById('a_double_pax')?.value) || 0;
+
+            const hasC = (cq + ct + cd) > 0;
+            const hasA = (aq + at + ad) > 0;
+
+            if (selectedCampVal) {
+                if (selectedCampVal.toLowerCase().includes('combo') || (hasC && hasA)) {
+                    previewCampEl.textContent = 'Maktab A & C (Combo)';
+                } else if (selectedCampVal.toLowerCase().includes('maktab a') || selectedCampVal.toLowerCase().includes('zone 1') || (hasA && !hasC)) {
+                    previewCampEl.textContent = 'Maktab A (Zone 1/2)';
+                } else if (selectedCampVal.toLowerCase().includes('maktab c') || selectedCampVal.toLowerCase().includes('zone 5') || (hasC && !hasA)) {
+                    previewCampEl.textContent = 'Maktab C (Zone 5)';
+                } else {
+                    previewCampEl.textContent = selectedCampVal;
+                }
+            } else if (hasC && hasA) {
+                previewCampEl.textContent = 'Maktab A & C (Combo)';
+            } else if (hasA) {
+                previewCampEl.textContent = 'Maktab A (Zone 1/2)';
+            } else if (hasC) {
+                previewCampEl.textContent = 'Maktab C (Zone 5)';
+            } else {
+                const pkgId = parseInt(packageSelect?.value);
+                const pkg = (typeof packagesData !== 'undefined') ? packagesData.find(p => p.id === pkgId) : null;
+                if (pkg && pkg.camp_category) {
+                    previewCampEl.textContent = 'Maktab ' + pkg.camp_category;
+                } else {
+                    previewCampEl.textContent = '—';
+                }
+            }
+        }
+
+        if (campSelect) {
+            campSelect.addEventListener('change', syncCampCategoryPreview);
         }
 
         // Stepper buttons
@@ -2144,7 +2201,7 @@
                 packageYearInput.value = pkg.year || pkg.gregorian_year || (new Date()).getFullYear();
 
                 document.getElementById('preview_pkg_stay').textContent = pkg.stay_type || 'PACKAGE';
-                document.getElementById('preview_pkg_camp').textContent = pkg.camp_category || pkg.zone || 'Maktab C / A';
+                syncCampCategoryPreview();
                 document.getElementById('preview_pkg_duration').textContent = pkg.stay_duration || (pkg.days ? pkg.days + ' Days' : '—');
                 document.getElementById('preview_pkg_sectors').textContent = (pkg.departure_sector || 'KHI') + ' ➔ ' + (pkg.arrival_sector || 'JED/MED');
                 document.getElementById('preview_pkg_qurbani').textContent = pkg.qurbani_status || 'Not Included (Nusuk Masar)';
@@ -2643,7 +2700,7 @@
 
                     packageInfoCard.classList.remove('d-none');
                     document.getElementById('preview_pkg_stay').textContent = initialPkg.stay_type || 'PACKAGE';
-                    document.getElementById('preview_pkg_camp').textContent = initialPkg.camp_category || initialPkg.zone || 'Maktab C / A';
+                    syncCampCategoryPreview();
                     document.getElementById('preview_pkg_duration').textContent = initialPkg.stay_duration || (initialPkg.days ? initialPkg.days + ' Days' : '—');
                     document.getElementById('preview_pkg_sectors').textContent = (initialPkg.departure_sector || 'KHI') + ' ➔ ' + (initialPkg.arrival_sector || 'JED/MED');
                     document.getElementById('preview_pkg_qurbani').textContent = initialPkg.qurbani_status || 'Not Included (Nusuk Masar)';
@@ -2674,16 +2731,20 @@
             const checkOutInput = hotelBlock.querySelector('input[name*="[check_out]"]');
             const feedbackDiv = hotelBlock.querySelector('.room-capacity-feedback');
 
-            if (!feedbackDiv || !roomNumberInput) return;
-
-            const hotelName = hotelNameInput ? hotelNameInput.value.trim() : '';
+            const locationSelect = hotelBlock.querySelector('select[name*="[location]"]');
+            const location = locationSelect ? locationSelect.value : '';
+            const hotelSelect = hotelBlock.querySelector('.hotel-crud-select');
+            let hotelName = hotelNameInput ? hotelNameInput.value.trim() : '';
+            if (!hotelName && hotelSelect && hotelSelect.value) {
+                hotelName = hotelSelect.options[hotelSelect.selectedIndex]?.text?.split('(')[0]?.trim() || hotelSelect.value;
+            }
             const roomNumber = roomNumberInput.value.trim();
             const roomType = roomTypeSelect ? roomTypeSelect.value : '';
             const checkIn = checkInInput ? checkInInput.value : '';
             const checkOut = checkOutInput ? checkOutInput.value : '';
             const bookingId = '{{ $booking->id ?? '' }}';
 
-            if (!hotelName || !roomNumber) {
+            if (!roomNumber || (!hotelName && !location)) {
                 feedbackDiv.innerHTML = '';
                 roomNumberInput.style.borderColor = '';
                 roomNumberInput.style.borderWidth = '';
@@ -2697,6 +2758,7 @@
             const params = new URLSearchParams({
                 hotel_name: hotelName,
                 room_number: roomNumber,
+                location: location,
                 room_type: roomType,
                 check_in: checkIn,
                 check_out: checkOut,
@@ -2723,13 +2785,13 @@
                         feedbackDiv.innerHTML = `
                         <div class="alert alert-danger p-2 mt-2 mb-1 border-danger shadow-sm" style="font-size:12px; line-height:1.4;">
                             <div class="fw-bold text-danger d-flex align-items-center mb-1">
-                                <i class="mdi mdi-alert-octagon fs-16 me-1"></i> YEH ROOM FULL HAI!
+                                <i class="mdi mdi-alert-octagon fs-16 me-1"></i> ROOM IS FULL!
                             </div>
                             <div class="text-dark mb-2">${data.message}</div>
                             <div class="pt-1 border-top border-danger-subtle d-flex flex-wrap justify-content-between align-items-center gap-1">
-                                <span class="text-muted small">Mazeed person add karne ke liye:</span>
+                                <span class="text-muted small">To assign more pilgrims to this room:</span>
                                 <a href="{{ route('report.rooming-list') }}" target="_blank" class="btn btn-xs btn-danger text-white py-0 px-2 fw-bold" style="font-size:11px;">
-                                    <i class="mdi mdi-bed-empty me-1"></i> Bed Capacity Barhayein
+                                    <i class="mdi mdi-bed-empty me-1"></i> Increase Bed Capacity
                                 </a>
                             </div>
                         </div>`;
@@ -2790,24 +2852,34 @@
         // Check initial rooms on page load
         document.querySelectorAll('#hotelsList .hotel-block').forEach(b => checkHotelRoomCapacity(b));
 
-        // Form Submit Check for Full Rooms Warning
+        // Form Submit Check for Full Rooms - STRICT HARD BLOCK
         const mainBookingForm = document.querySelector('form[action*="booking"]');
         if (mainBookingForm) {
             mainBookingForm.addEventListener('submit', function(e) {
                 const fullRoomInputs = document.querySelectorAll('.hotel-room-number-input[data-is-full="true"]');
                 if (fullRoomInputs.length > 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
                     let roomList = [];
                     fullRoomInputs.forEach(inp => {
                         const val = inp.value.trim();
                         if (val) roomList.push(val);
                     });
-                    if (roomList.length > 0) {
-                        const proceed = confirm(`⚠️ Warning: Room (${roomList.join(', ')}) FULL hai!\n\nIs room ki bed capacity mukammal ho chuki hai. Mazeed pilgrims allocate karne ke liye Rooming List me ja kar Bed Capacity barhana zaroori hai.\n\nKya aap phir bhi yeh booking save karna chahte hain?`);
-                        if (!proceed) {
-                            e.preventDefault();
-                            return false;
+                    
+                    alert(`⛔ BOOKING BLOCKED: Room ${roomList.join(', ')} is FULL!\n\nYou cannot save this booking because the selected room has reached maximum bed capacity.\n\nPlease choose a different room or increase the bed capacity in the Rooming List report before proceeding.`);
+                    
+                    // Switch to Hotel tab
+                    const hotelTabLink = document.querySelector('a[href="#tab-hotel"], a[data-bs-target="#tab-hotel"]');
+                    if (hotelTabLink) {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                            bootstrap.Tab.getOrCreateInstance(hotelTabLink).show();
+                        } else {
+                            hotelTabLink.click();
                         }
                     }
+                    
+                    fullRoomInputs[0].focus();
+                    return false;
                 }
             });
         }

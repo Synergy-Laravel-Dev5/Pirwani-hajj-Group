@@ -118,24 +118,34 @@
                     </h4>
                     <p class="text-muted mb-0 small">Official multi-pilgrim room allocation manifest matching airline/hotel printout format.</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <div class="btn-group btn-group-sm">
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['view' => 'manifest'])) }}" 
-                           class="btn {{ ($viewMode ?? 'manifest') === 'manifest' ? 'btn-primary' : 'btn-outline-primary' }}">
-                            <i class="mdi mdi-table me-1"></i> Official Manifest View
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['view' => 'manifest'])) }}" 
+                               class="btn {{ ($viewMode ?? 'manifest') === 'manifest' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                <i class="mdi mdi-table me-1"></i> Official Manifest View
+                            </a>
+                            <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['view' => 'cards'])) }}" 
+                               class="btn {{ ($viewMode ?? '') === 'cards' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                <i class="mdi mdi-view-grid-outline me-1"></i> Room Cards View
+                            </a>
+                        </div>
+                        <a href="{{ route('report.rooming-list.export-excel', request()->query()) }}" 
+                           class="btn btn-success btn-sm"
+                           title="Download official room manifest as Excel spreadsheet">
+                            <i class="mdi mdi-file-excel me-1"></i> Download Excel
                         </a>
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['view' => 'cards'])) }}" 
-                           class="btn {{ ($viewMode ?? '') === 'cards' ? 'btn-primary' : 'btn-outline-primary' }}">
-                            <i class="mdi mdi-view-grid-outline me-1"></i> Room Cards View
+                        <a href="{{ route('report.rooming-list.export-pdf', request()->query()) }}" 
+                           class="btn btn-danger btn-sm"
+                           title="Download official room manifest as PDF document">
+                            <i class="mdi mdi-file-pdf-box me-1"></i> Download PDF
+                        </a>
+                        <button onclick="window.print()" class="btn btn-dark btn-sm">
+                            <i class="mdi mdi-printer me-1"></i> Print Manifest
+                        </button>
+                        <a href="{{ route('report.rooming-list') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
+                            <i class="mdi mdi-refresh"></i>
                         </a>
                     </div>
-                    <button onclick="window.print()" class="btn btn-dark btn-sm">
-                        <i class="mdi mdi-printer me-1"></i> Print Manifest
-                    </button>
-                    <a href="{{ route('report.rooming-list') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
-                        <i class="mdi mdi-refresh"></i>
-                    </a>
-                </div>
             </div>
 
             {{-- Flash Messages --}}
@@ -308,6 +318,23 @@
                                             if (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
                                                 $roomTypeDisplay = 'SIX';
                                             }
+
+                                            $loc = strtolower(trim($room['location'] ?? 'makkah'));
+                                            $locLabel = match($loc) {
+                                                'makkah'  => 'MAKKAH HOTEL',
+                                                'azizia'  => 'AZIZIA BUILDING',
+                                                'mina'    => 'MINA / ARAFAT',
+                                                'arafat'  => 'ARAFAT CAMP',
+                                                'madinah' => 'MADINAH HOTEL',
+                                                default   => strtoupper($loc),
+                                            };
+                                            $locBadgeClass = match($loc) {
+                                                'makkah'  => 'bg-success text-white',
+                                                'azizia'  => 'bg-warning text-dark',
+                                                'mina', 'arafat' => 'bg-dark text-white',
+                                                'madinah' => 'bg-info text-dark',
+                                                default   => 'bg-secondary text-white',
+                                            };
                                         @endphp
 
                                         @if($totalOccupants === 0)
@@ -318,8 +345,19 @@
                                                 <td class="text-center text-muted">—</td>
                                                 <td class="text-center text-muted">—</td>
                                                 <td class="text-muted fst-italic"><em>(Empty Room - {{ $room['total_capacity'] }} Beds Available)</em></td>
-                                                <td class="room-typ-cell">{{ $roomTypeDisplay }}</td>
-                                                <td class="room-no-cell">{{ $roomDisplayNo }}</td>
+                                                <td class="room-typ-cell">
+                                                    <div class="mb-1">
+                                                        <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700;">
+                                                            {{ $locLabel }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="fw-bold text-dark mb-1" style="font-size: 11px;">{{ $room['hotel_name'] }}</div>
+                                                    <div class="fw-bold text-primary">{{ $roomTypeDisplay }} ({{ $room['total_capacity'] }} Beds)</div>
+                                                </td>
+                                                <td class="room-no-cell">
+                                                    <span class="fs-14 fw-bold text-danger">{{ $roomDisplayNo }}</span>
+                                                    <small class="d-block text-muted" style="font-size: 10px;">0/{{ $room['total_capacity'] }} Beds</small>
+                                                </td>
                                                 <td class="text-center text-muted">—</td>
                                                 <td class="text-center text-muted">—</td>
                                             </tr>
@@ -327,8 +365,8 @@
                                             @foreach($occupants as $oIdx => $occ)
                                                 <tr class="{{ $oIdx === 0 ? 'room-divider-row' : '' }}">
                                                     <td class="text-center fw-bold">{{ $globalSr++ }}</td>
-                                                    <td class="text-center fw-semibold text-uppercase">{{ $occ['hajj_id'] }}</td>
-                                                    <td class="text-center fw-semibold text-uppercase">{{ $occ['hb_number'] }}</td>
+                                                    <td class="text-center fw-semibold text-uppercase">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
+                                                    <td class="text-center fw-semibold text-uppercase">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td>
                                                     <td class="text-center fw-bold text-uppercase">{{ $occ['passport'] }}</td>
                                                     <td style="text-align: left; padding-left: 10px;" class="fw-bold text-uppercase text-dark">
                                                         {{ $occ['name'] }}
@@ -336,11 +374,21 @@
                                                     
                                                     @if($oIdx === 0)
                                                         <td rowspan="{{ $rowspan }}" class="room-typ-cell">
-                                                            {{ $roomTypeDisplay }}
+                                                            <div class="mb-1">
+                                                                <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+                                                                    <i class="mdi mdi-map-marker me-1"></i>{{ $locLabel }}
+                                                                </span>
+                                                            </div>
+                                                            <div class="fw-bold text-dark mb-1" style="font-size: 11px; line-height: 1.2;">
+                                                                {{ $room['hotel_name'] }}
+                                                            </div>
+                                                            <div class="fw-bold text-primary" style="font-size: 12px;">
+                                                                {{ $roomTypeDisplay }} <span class="text-muted" style="font-size: 10px;">({{ $room['total_capacity'] }} Beds)</span>
+                                                            </div>
                                                             @if(!empty($room['room_gender']) && $room['room_gender'] !== 'Any')
                                                                 <div class="mt-1">
                                                                     <span class="badge {{ strtolower($room['room_gender']) === 'female' ? 'bg-danger text-white' : (strtolower($room['room_gender']) === 'male' ? 'bg-primary text-white' : 'bg-success text-white') }}" style="font-size: 9px; letter-spacing: 0.5px;">
-                                                                        {{ strtoupper($room['room_gender']) }}
+                                                                        {{ strtoupper($room['room_gender']) }} ROOM
                                                                     </span>
                                                                 </div>
                                                             @endif
@@ -357,12 +405,13 @@
                                                                         data-extra="{{ $room['extra_beds'] }}"
                                                                         data-notes="{{ $room['notes'] }}"
                                                                         title="Adjust/Increase Bed Capacity & Gender">
-                                                                    <i class="mdi mdi-pencil"></i> Beds / Gender
+                                                                    <i class="mdi mdi-pencil"></i> Adjust Beds
                                                                 </button>
                                                             </div>
                                                         </td>
                                                         <td rowspan="{{ $rowspan }}" class="room-no-cell">
-                                                            {{ $roomDisplayNo }}
+                                                            <span class="fs-14 fw-bold text-danger">{{ $roomDisplayNo }}</span>
+                                                            <small class="d-block text-muted fw-semibold" style="font-size: 10px;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }} Booked</small>
                                                         </td>
                                                     @endif
 
@@ -458,7 +507,7 @@
                                                                 <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-18"></i>
                                                             @endif
                                                         </td>
-                                                        <td class="fw-semibold">{{ $occ['hajj_id'] }}</td>
+                                                        <td class="fw-semibold">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
                                                         <td class="fw-bold">{{ $occ['passport'] }}</td>
                                                         <td class="fw-bold text-dark">{{ $occ['name'] }}</td>
                                                         <td class="{{ strtoupper($occ['gender']) === 'FEMALE' ? 'text-danger' : 'text-primary' }} fw-semibold">{{ strtoupper($occ['gender']) }}</td>
