@@ -36,8 +36,9 @@ class BookingController extends Controller
         $hotels    = \App\Models\Hotel::all();
         $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->get();
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
+        $nextHbNumber = \App\Models\BookingPerson::generateNextHbNumber();
 
-        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages'));
+        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages', 'nextHbNumber'));
     }
 
     public function store(Request $request)
@@ -130,11 +131,26 @@ class BookingController extends Controller
                 mkdir($uploadDir, 0777, true);
             }
 
+            // Determine unified HB number for all persons in this booking
+            $bookingHbNumber = null;
+            if (is_array($request->persons)) {
+                foreach ($request->persons as $p) {
+                    if (!empty($p['hb_number'])) {
+                        $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($p['hb_number']);
+                        break;
+                    }
+                }
+            }
+            if (empty($bookingHbNumber)) {
+                $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber();
+            }
+
             foreach ($request->persons as $index => $person) {
                 $name = !empty($person['full_name']) ? trim($person['full_name']) : trim(($person['given_name'] ?? '') . ' ' . ($person['surname'] ?? ''));
                 if (!empty($name) || !empty($person['passport_number'])) {
                     $personData = $person;
                     $personData['full_name'] = $name ?: 'Passenger';
+                    $personData['hb_number'] = $bookingHbNumber;
                     $issueDate = !empty($person['date_of_issue']) ? $person['date_of_issue'] : (!empty($person['passport_issue_date']) ? $person['passport_issue_date'] : null);
                     $personData['date_of_issue'] = $issueDate;
                     $personData['passport_issue_date'] = $issueDate;
@@ -221,7 +237,13 @@ class BookingController extends Controller
             ->where('status', 'confirmed')
             ->sum('amount');
 
-        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'roomTypes', 'packages'));
+        $bookingHbNumber = $booking->persons->pluck('hb_number')->filter()->first();
+        if (empty($bookingHbNumber)) {
+            $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber($booking->id);
+        }
+        $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($bookingHbNumber);
+
+        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'roomTypes', 'packages', 'bookingHbNumber'));
     }
 
     public function update(Request $request, $id)
@@ -317,11 +339,30 @@ class BookingController extends Controller
                 mkdir($uploadDir, 0777, true);
             }
 
+            // Determine unified HB number for all persons in this booking
+            $bookingHbNumber = null;
+            if (is_array($request->persons)) {
+                foreach ($request->persons as $p) {
+                    if (!empty($p['hb_number'])) {
+                        $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($p['hb_number']);
+                        break;
+                    }
+                }
+            }
+            if (empty($bookingHbNumber)) {
+                $bookingHbNumber = $booking->persons()->whereNotNull('hb_number')->where('hb_number', '!=', '')->value('hb_number');
+            }
+            if (empty($bookingHbNumber)) {
+                $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber($booking->id);
+            }
+            $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($bookingHbNumber);
+
             foreach ($request->persons as $index => $p) {
                 $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
                 if (!empty($name) || !empty($p['passport_number'])) {
                     $pData = $p;
                     $pData['full_name'] = $name ?: 'Passenger';
+                    $pData['hb_number'] = $bookingHbNumber;
                     $issueDate = !empty($p['date_of_issue']) ? $p['date_of_issue'] : (!empty($p['passport_issue_date']) ? $p['passport_issue_date'] : null);
                     $pData['date_of_issue'] = $issueDate;
                     $pData['passport_issue_date'] = $issueDate;

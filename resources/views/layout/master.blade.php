@@ -33,6 +33,8 @@
         rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/libs/datatables.net-select-bs5/css/select.bootstrap5.min.css') }}" rel="stylesheet"
         type="text/css" />
+    <link href="{{ asset('assets/libs/select2/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/libs/select2/css/select2-bootstrap-5-theme.min.css') }}" rel="stylesheet" type="text/css" />
 
     <!-- Custom Styles for Sidebar & Branding -->
     <style>
@@ -405,6 +407,45 @@
             color: #F3DC9B !important;
             border-color: #C9A84C !important;
         }
+
+        /* ── GLOBAL INPUT FOCUS & TAB NAVIGATION HIGHLIGHT (Active Blue Accent) ── */
+        .form-control:focus,
+        .form-select:focus,
+        input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):focus,
+        textarea:focus {
+            border-color: #0d6efd !important;
+            background-color: #f0f7ff !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25), 0 0 8px rgba(13, 110, 253, 0.3) !important;
+            outline: 0 !important;
+            transition: all 0.15s ease-in-out !important;
+        }
+
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection,
+        .select2-container--default.select2-container--focus .select2-selection,
+        .select2-container--default.select2-container--open .select2-selection {
+            border-color: #0d6efd !important;
+            background-color: #f0f7ff !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25), 0 0 8px rgba(13, 110, 253, 0.3) !important;
+            outline: 0 !important;
+        }
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        div:focus-within > label.form-label,
+        .col-md-2:focus-within > label.form-label,
+        .col-md-3:focus-within > label.form-label,
+        .col-md-4:focus-within > label.form-label,
+        .col-md-6:focus-within > label.form-label,
+        .col-md-12:focus-within > label.form-label,
+        .mb-2:focus-within > label.form-label,
+        .mb-3:focus-within > label.form-label {
+            color: #0d6efd !important;
+            font-weight: 700 !important;
+            transition: color 0.15s ease-in-out !important;
+        }
     </style>
 </head>
 
@@ -422,6 +463,7 @@
 
         <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
         <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+        <script src="{{ asset('assets/libs/select2/js/select2.min.js') }}"></script>
         <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
         <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
         <script src="{{ asset('assets/libs/waypoints/lib/jquery.waypoints.min.js') }}"></script>
@@ -458,6 +500,21 @@
                 if (typeof feather !== "undefined") {
                     feather.replace();
                 }
+            });
+
+            // Auto-focus search input when Select2 dropdown opens
+            $(document).on('select2:open', function() {
+                setTimeout(function() {
+                    const searchInput = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 10);
+            });
+
+            // Ensure Select2 selection dispatches native change event for vanilla event listeners
+            $(document).on('select2:select select2:unselect select2:clear', 'select', function() {
+                this.dispatchEvent(new Event('change', { bubbles: true }));
             });
         </script>
 </body>

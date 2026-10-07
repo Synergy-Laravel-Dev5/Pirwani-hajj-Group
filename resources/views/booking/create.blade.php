@@ -989,18 +989,33 @@
 
     <style>
         .booking-tabs .nav-link {
-            color: #555;
+            color: #64748b;
             font-size: 13px;
-            padding: 8px 14px;
-            border-bottom: none;
+            padding: 10px 16px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .booking-tabs .nav-link:hover {
+            color: #0d6efd;
+            background: rgba(13, 110, 253, 0.05);
         }
         .booking-tabs .nav-link.active {
-            color: #0d6efd;
-            font-weight: 600;
-            border-color: #dee2e6 #dee2e6 #fff;
-            background: #fff;
+            color: #0d6efd !important;
+            font-weight: 700 !important;
+            border-color: #cbd5e1 #cbd5e1 #fff !important;
+            border-top: 3px solid #0d6efd !important;
+            background: #fff !important;
+            box-shadow: 0 -2px 6px rgba(13, 110, 253, 0.08);
         }
         .tab-content { min-height: 380px; }
+
+        /* Focused Card and Enclosing Block Highlight */
+        .person-card:focus-within,
+        .hotel-block:focus-within,
+        .visa-card:focus-within {
+            border-color: #93c5fd !important;
+            box-shadow: 0 0 0 1px #93c5fd, 0 4px 12px rgba(13, 110, 253, 0.08) !important;
+        }
 
         /* Brochure Style Gold Cards */
         .pkg-pricing-card {
@@ -1084,6 +1099,40 @@
         const roomTypesData = @json($roomTypes ?? []);
 
         // ═══════════════════════════════════════
+        // HB NUMBER SYNCHRONIZATION (Requirement #1)
+        // ═══════════════════════════════════════
+        let currentHbNumber = '{{ $nextHbNumber ?? "" }}';
+
+        function syncAllHbNumbers(val) {
+            currentHbNumber = (val || '').trim();
+            document.querySelectorAll('.person-hb-input').forEach(input => {
+                if (input.value !== currentHbNumber) {
+                    input.value = currentHbNumber;
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════
+        // SEARCHABLE DROPDOWNS (SELECT2) INITIALIZER (Requirement #2)
+        // ═══════════════════════════════════════
+        function initSearchableSelects(container) {
+            const $root = container ? $(container) : $('#bookingForm');
+            $root.find('select').each(function() {
+                const $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                $el.select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    dropdownAutoWidth: true,
+                    placeholder: $el.data('placeholder') || ($el.find('option[value=""]').first().text() || '-- Select --'),
+                    allowClear: false
+                });
+            });
+        }
+
+        // ═══════════════════════════════════════
         // BOOKING FOR TOGGLE (client / company)
         // ═══════════════════════════════════════
         const forClient = document.getElementById('for_client');
@@ -1105,6 +1154,7 @@
                 clientSelect.setAttribute('required', 'required');
                 companySelect.removeAttribute('required');
                 companySelect.value = '';
+                $(companySelect).val('').trigger('change.select2');
                 personsNote.classList.add('d-none');
             } else {
                 companyBlock.classList.remove('d-none');
@@ -1112,6 +1162,7 @@
                 companySelect.setAttribute('required', 'required');
                 clientSelect.removeAttribute('required');
                 clientSelect.value = '';
+                $(clientSelect).val('').trigger('change.select2');
                 document.getElementById('fill_passport').value = '';
                 document.getElementById('fill_cnic').value = '';
                 document.getElementById('fill_phone').value = '';
@@ -1298,12 +1349,6 @@
             document.getElementById('disp_az_triple_usd').textContent = azTripleUsd > 0 ? ('Per Person $ ' + formatPkr(azTripleUsd)) : '$ 0.00';
             document.getElementById('disp_az_double_usd').textContent = azDoubleUsd > 0 ? ('Per Person $ ' + formatPkr(azDoubleUsd)) : '$ 0.00';
 
-            // Default 1 pax into Maktab C Quad if all 0
-            const currentTotalPax = getTotalAssignedPax();
-            if (currentTotalPax === 0) {
-                document.getElementById('c_quad_pax').value = 1;
-            }
-
             calculateMultiRoomCost();
         }
 
@@ -1376,6 +1421,7 @@
                 } else if (hasC) {
                     campSelect.value = 'Maktab C (Zone 5)';
                 }
+                $(campSelect).trigger('change.select2');
                 syncCampCategoryPreview();
 
                 // Sync Qurbani with new Pax
@@ -1528,6 +1574,7 @@
                 const newOpt = new Option(airlineName.trim(), airlineName.trim(), true, true);
                 selectEl.add(newOpt);
             }
+            $(selectEl).trigger('change.select2');
         }
 
         // ═══════════════════════════════════════
@@ -1581,7 +1628,11 @@
                 if (crudSel) {
                     const loc = e.target.value;
                     const curVal = crudSel.value;
+                    if ($(crudSel).hasClass('select2-hidden-accessible')) {
+                        $(crudSel).select2('destroy');
+                    }
                     crudSel.innerHTML = buildHotelOptions(loc, curVal);
+                    initSearchableSelects($(crudSel).parent());
                 }
             } else if (e.target.classList.contains('hotel-crud-select')) {
                 const block = e.target.closest('.hotel-block');
@@ -1708,6 +1759,7 @@
                     list.insertAdjacentHTML('beforeend', html);
                 });
                 hotelIdx = pkg.accommodations.length;
+                initSearchableSelects('#hotelsList');
             }
         }
 
@@ -1817,6 +1869,7 @@
                     list.insertAdjacentHTML('beforeend', html);
                 });
                 routeIdx = transports.length;
+                initSearchableSelects('#routesList');
             }
         }
 
@@ -1847,6 +1900,7 @@
 
                 if (pkg.qurbani_status && pkg.qurbani_status.toLowerCase().includes('included')) {
                     qurbaniOption.value = 'included';
+                    $(qurbaniOption).trigger('change.select2');
                 }
 
                 if (pkg.qurbani_charges && Number(pkg.qurbani_charges) > 0) {
@@ -1980,7 +2034,8 @@
                     <div class="col-md-2">
                         <label class="form-label" style="font-size:12px;">HB #</label>
                         <input type="text" name="persons[${idx}][hb_number]" id="person_hb_number_${idx}"
-                               class="form-control form-control-sm" placeholder="e.g. HB0001">
+                               class="form-control form-control-sm person-hb-input" placeholder="e.g. HB0001"
+                               value="${currentHbNumber || ''}" oninput="syncAllHbNumbers(this.value)">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Phone</label>
@@ -2065,10 +2120,12 @@
                     const firstSel = document.querySelector('.person-client-select[data-idx="0"]');
                     if (firstSel) {
                         firstSel.value = clientId;
+                        $(firstSel).val(clientId).trigger('change.select2');
                         fillPersonFromClient(firstSel, 0);
                     }
                 }
             }
+            initSearchableSelects('#personsList');
             calcTotal();
         }
 
@@ -2176,6 +2233,7 @@
                     </div>
                 </div>`);
             }
+            initSearchableSelects('#visasList');
         }
 
         document.querySelector('a[href="#tab-visa"]').addEventListener('click', syncVisas);
@@ -2249,6 +2307,7 @@
                 </div>
             </div>`);
             hotelIdx++;
+            initSearchableSelects('#hotelsList');
         });
 
         document.getElementById('hotelsList').addEventListener('click', function(e) {
@@ -2289,6 +2348,7 @@
                 </div>
             </div>`);
             routeIdx++;
+            initSearchableSelects('#routesList');
         });
 
         document.getElementById('routesList').addEventListener('click', function(e) {
@@ -2593,5 +2653,16 @@
                 }
             });
         }
+
+        // Tab switch handler: ensure Select2 adjusts properly inside the activated tab
+        $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+            const target = $(e.target).attr('href');
+            if (target) {
+                initSearchableSelects(target);
+            }
+        });
+
+        // Initialize searchable Select2 dropdowns on entire form
+        initSearchableSelects('#bookingForm');
     </script>
 @endsection

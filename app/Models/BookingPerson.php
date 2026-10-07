@@ -34,6 +34,18 @@ class BookingPerson extends Model
     protected static function booted()
     {
         static::creating(function ($person) {
+            // If booking_id is provided, check if an HB number already exists for that booking
+            if (!empty($person->booking_id)) {
+                $existing = self::where('booking_id', $person->booking_id)
+                    ->whereNotNull('hb_number')
+                    ->where('hb_number', '!=', '')
+                    ->value('hb_number');
+                if (!empty($existing)) {
+                    $person->hb_number = self::formatHbNumber($existing);
+                    return;
+                }
+            }
+
             if (empty($person->hb_number)) {
                 $person->hb_number = self::generateNextHbNumber($person->booking_id);
             } else {
