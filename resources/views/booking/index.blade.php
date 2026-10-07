@@ -71,7 +71,9 @@
 
                                                     <td>
                                                         @php
-                                                            $hbList = $booking->persons->pluck('hb_number')->filter()->values();
+                                                            $hbList = $booking->persons->pluck('hb_number')->filter()->map(function($val) {
+                                                                return \App\Models\BookingPerson::formatHbNumber($val);
+                                                            })->filter()->values();
                                                         @endphp
                                                         @if($hbList->count() > 0)
                                                             @if($hbList->count() == 1)

@@ -19,7 +19,7 @@ class BookingController extends Controller
         $year    = (int) session('dashboard_year', Carbon::now()->year);
 
         $bookings = Booking::with(['client', 'company', 'package', 'persons'])
-            ->latest()
+            ->orderBy('id', 'asc')
             ->get();
 
         $trashCount = Booking::onlyTrashed()->count();

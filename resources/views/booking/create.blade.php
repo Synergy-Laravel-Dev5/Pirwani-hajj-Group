@@ -55,18 +55,18 @@
                     {{-- TAB NAV --}}
                     <ul class="nav nav-tabs booking-tabs mb-0" id="bookingTabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#tab-package">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#tab-details">
+                                <i class="mdi mdi-account me-1"></i>Booking Details
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#tab-package">
                                 <i class="mdi mdi-cube-outline me-1"></i>Package
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" data-bs-toggle="tab" href="#tab-camp-qurbani">
                                 <i class="mdi mdi-tent me-1"></i>Camp & Qurbani
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#tab-details">
-                                <i class="mdi mdi-account me-1"></i>Booking Details
                             </a>
                         </li>
                         <li class="nav-item">
@@ -103,8 +103,106 @@
 
                     <div class="tab-content border border-top-0 rounded-bottom p-4 bg-white" id="bookingTabsContent">
 
-                        {{-- TAB 1: Package Selection & Details --}}
-                        <div class="tab-pane fade show active" id="tab-package">
+                        {{-- TAB 1: Booking Details --}}
+                        <div class="tab-pane fade show active" id="tab-details">
+
+                            <div class="row g-3">
+
+                                {{-- BOOKING FOR TOGGLE --}}
+                                <div class="col-md-12 mb-2">
+                                    <label class="form-label d-block">Booking For <span
+                                            class="text-danger">*</span></label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="booking_for"
+                                                id="for_client" value="client" checked>
+                                            <label class="form-check-label" for="for_client">Client</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="booking_for"
+                                                id="for_company" value="company">
+                                            <label class="form-check-label" for="for_company">Company</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- CLIENT BLOCK --}}
+                                <div class="col-md-6" id="clientBlock">
+                                    <label class="form-label">Client <span class="text-danger">*</span></label>
+                                    <select name="client_id" id="clientSelect" class="form-select" required>
+                                        <option value="">-- Select Client --</option>
+                                        @foreach ($clients as $c)
+                                            <option value="{{ $c->id }}">
+                                                {{ $c->name }}
+                                                {{ $c->company_name ? '(' . $c->company_name . ')' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                {{-- COMPANY BLOCK --}}
+                                <div class="col-md-6 d-none" id="companyBlock">
+                                    <label class="form-label">Company <span class="text-danger">*</span></label>
+                                    <select name="company_id" id="companySelect" class="form-select">
+                                        <option value="">-- Select Company --</option>
+                                        @foreach ($companies as $co)
+                                            <option value="{{ $co->id }}">{{ $co->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">No of Pax <span class="text-danger">*</span></label>
+                                    <input type="number" name="no_of_pax" id="no_of_pax" class="form-control"
+                                        value="1" min="1" required>
+                                    <small class="text-muted">Auto-calculated from Room Sharing Pax</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Care Of</label>
+                                    <input type="text" name="care_of" class="form-control"
+                                        placeholder="Guardian / Agent">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Passport Number</label>
+                                    <input type="text" name="passport_number" id="fill_passport" class="form-control"
+                                        placeholder="Auto-filled from client">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">CNIC Number</label>
+                                    <input type="text" name="cnic" id="fill_cnic" class="form-control"
+                                        placeholder="Auto-filled from client">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="text" name="phone" id="fill_phone" class="form-control"
+                                        placeholder="Auto-filled from client">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Emergency Phone</label>
+                                    <input type="text" name="emergency_phone" class="form-control"
+                                        placeholder="+92 300 0000000">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Voucher Number</label>
+                                    <input type="text" name="voucher_number" class="form-control"
+                                        placeholder="VCH-XXXX">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Card Number</label>
+                                    <input type="text" name="card_number" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary btn-next">Next <i
+                                        class="mdi mdi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        {{-- TAB 2: Package Selection & Details --}}
+                        <div class="tab-pane fade" id="tab-package">
                             <input type="hidden" name="package_type" value="hajj">
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -196,7 +294,10 @@
                                 </div>
 
                             </div>
-                            <div class="d-flex justify-content-end mt-4">
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary btn-prev">
+                                    <i class="mdi mdi-arrow-left me-1"></i> Prev
+                                </button>
                                 <button type="button" class="btn btn-primary btn-next">
                                     Next <i class="mdi mdi-arrow-right ms-1"></i>
                                 </button>
@@ -468,105 +569,7 @@
                             </div>
                         </div>
 
-                        {{-- TAB 3: Booking Details --}}
-                        <div class="tab-pane fade" id="tab-details">
 
-                            <div class="row g-3">
-
-                                {{-- BOOKING FOR TOGGLE --}}
-                                <div class="col-md-12 mb-2">
-                                    <label class="form-label d-block">Booking For <span
-                                            class="text-danger">*</span></label>
-                                    <div class="d-flex gap-3">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="booking_for"
-                                                id="for_client" value="client" checked>
-                                            <label class="form-check-label" for="for_client">Client</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="booking_for"
-                                                id="for_company" value="company">
-                                            <label class="form-check-label" for="for_company">Company</label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- CLIENT BLOCK --}}
-                                <div class="col-md-6" id="clientBlock">
-                                    <label class="form-label">Client <span class="text-danger">*</span></label>
-                                    <select name="client_id" id="clientSelect" class="form-select" required>
-                                        <option value="">-- Select Client --</option>
-                                        @foreach ($clients as $c)
-                                            <option value="{{ $c->id }}">
-                                                {{ $c->name }}
-                                                {{ $c->company_name ? '(' . $c->company_name . ')' : '' }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                {{-- COMPANY BLOCK --}}
-                                <div class="col-md-6 d-none" id="companyBlock">
-                                    <label class="form-label">Company <span class="text-danger">*</span></label>
-                                    <select name="company_id" id="companySelect" class="form-select">
-                                        <option value="">-- Select Company --</option>
-                                        @foreach ($companies as $co)
-                                            <option value="{{ $co->id }}">{{ $co->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="form-label">No of Pax <span class="text-danger">*</span></label>
-                                    <input type="number" name="no_of_pax" id="no_of_pax" class="form-control"
-                                        value="1" min="1" required>
-                                    <small class="text-muted">Auto-calculated from Room Sharing Pax</small>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">Care Of</label>
-                                    <input type="text" name="care_of" class="form-control"
-                                        placeholder="Guardian / Agent">
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label">Passport Number</label>
-                                    <input type="text" name="passport_number" id="fill_passport" class="form-control"
-                                        placeholder="Auto-filled from client">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">CNIC Number</label>
-                                    <input type="text" name="cnic" id="fill_cnic" class="form-control"
-                                        placeholder="Auto-filled from client">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Phone Number</label>
-                                    <input type="text" name="phone" id="fill_phone" class="form-control"
-                                        placeholder="Auto-filled from client">
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label">Emergency Phone</label>
-                                    <input type="text" name="emergency_phone" class="form-control"
-                                        placeholder="+92 300 0000000">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Voucher Number</label>
-                                    <input type="text" name="voucher_number" class="form-control"
-                                        placeholder="VCH-XXXX">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Card Number</label>
-                                    <input type="text" name="card_number" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary btn-prev"><i
-                                        class="mdi mdi-arrow-left me-1"></i> Prev</button>
-                                <button type="button" class="btn btn-primary btn-next">Next <i
-                                        class="mdi mdi-arrow-right ms-1"></i></button>
-                            </div>
-                        </div>
 
                         {{-- TAB 4: Persons --}}
                         <div class="tab-pane fade" id="tab-persons">
@@ -1977,7 +1980,7 @@
                     <div class="col-md-2">
                         <label class="form-label" style="font-size:12px;">HB #</label>
                         <input type="text" name="persons[${idx}][hb_number]" id="person_hb_number_${idx}"
-                               class="form-control form-control-sm" placeholder="e.g. H02081">
+                               class="form-control form-control-sm" placeholder="e.g. HB0001">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Phone</label>

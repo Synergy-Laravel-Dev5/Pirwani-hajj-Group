@@ -448,6 +448,14 @@
                                                                 <i class="mdi mdi-tag-outline me-1"></i>Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
                                                             </span>
                                                             <small class="text-muted fw-normal" style="font-size: 10px;">{{ $occ['client_name'] }} ({{ $occ['booking_number'] }})</small>
+                                                            @if(!$isPending && !empty($occ['real_person_id']))
+                                                                <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
+                                                                        data-id="{{ $occ['real_person_id'] }}"
+                                                                        data-name="{{ $occ['name'] }}"
+                                                                        title="Unassign this pilgrim from room" style="font-size: 9.5px; border-radius: 4px;">
+                                                                    <i class="mdi mdi-close-circle-outline"></i> Unassign
+                                                                </button>
+                                                            @endif
                                                         </div>
                                                     </td>
                                                     
@@ -475,7 +483,7 @@
                                                                 </div>
                                                             @endif
                                                             @if(!$isPending)
-                                                                <div class="no-print mt-1">
+                                                                <div class="no-print mt-1 d-flex gap-1 flex-wrap">
                                                                     <button type="button" 
                                                                             class="btn btn-xs btn-outline-secondary btn-adjust-bed py-0 px-1"
                                                                             style="font-size: 10px;"
@@ -490,6 +498,20 @@
                                                                             title="Adjust/Increase Bed Capacity & Gender">
                                                                         <i class="mdi mdi-pencil"></i> Adjust Beds
                                                                     </button>
+                                                                    @php
+                                                                        $realRoomIds = array_filter(array_column($room['occupants'], 'real_person_id'));
+                                                                    @endphp
+                                                                    @if(!empty($realRoomIds))
+                                                                        <button type="button" 
+                                                                                class="btn btn-xs btn-outline-danger btn-unassign-room-all py-0 px-1"
+                                                                                style="font-size: 10px;"
+                                                                                data-room="{{ $room['room_number'] }}"
+                                                                                data-hotel="{{ $room['hotel_name'] }}"
+                                                                                data-ids="{{ implode(',', $realRoomIds) }}"
+                                                                                title="Unassign all pilgrims in Room {{ $room['room_number'] }}">
+                                                                            <i class="mdi mdi-close-circle-outline"></i> Unassign All
+                                                                        </button>
+                                                                    @endif
                                                                 </div>
                                                             @endif
                                                         </td>
@@ -578,6 +600,19 @@
                                                     data-notes="{{ $room['notes'] }}">
                                                 + Adjust Beds
                                             </button>
+                                            @php
+                                                $cardRealRoomIds = array_filter(array_column($room['occupants'], 'real_person_id'));
+                                            @endphp
+                                            @if(!empty($cardRealRoomIds))
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger btn-xs ms-1 btn-unassign-room-all py-0 px-2"
+                                                        data-room="{{ $room['room_number'] }}"
+                                                        data-hotel="{{ $room['hotel_name'] }}"
+                                                        data-ids="{{ implode(',', $cardRealRoomIds) }}"
+                                                        title="Unassign all pilgrims in Room {{ $room['room_number'] }}">
+                                                    <i class="mdi mdi-close-circle-outline"></i> Unassign Room
+                                                </button>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -628,10 +663,18 @@
                                                         <td class="fw-bold">{{ $occ['passport'] }}</td>
                                                         <td class="fw-bold text-dark">
                                                             <span class="d-block">{{ $occ['name'] }}</span>
-                                                            <div class="mt-1">
+                                                            <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
                                                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1 py-0" style="font-size: 9px; font-weight: 700;">
                                                                     <i class="mdi mdi-tag-outline me-1"></i>Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
                                                                 </span>
+                                                                @if(!$isPending && !empty($occ['real_person_id']))
+                                                                    <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
+                                                                            data-id="{{ $occ['real_person_id'] }}"
+                                                                            data-name="{{ $occ['name'] }}"
+                                                                            title="Unassign this pilgrim from room" style="font-size: 9px; border-radius: 4px;">
+                                                                        <i class="mdi mdi-close-circle-outline"></i> Unassign
+                                                                    </button>
+                                                                @endif
                                                             </div>
                                                         </td>
                                                         <td class="{{ strtoupper($occ['gender']) === 'FEMALE' ? 'gender-female' : 'gender-male' }} fw-semibold">{{ strtoupper($occ['gender']) }}</td>
@@ -1074,10 +1117,13 @@
             const checked = document.querySelectorAll('.pilgrim-check:checked');
             if (checked.length === 0) return;
 
-            if (confirm(`Are you sure you want to unassign ${checked.length} selected pilgrims from their rooms and move them back to Pending Room Allocation?`)) {
+            const assignedChecked = Array.from(checked).filter(cb => cb.getAttribute('data-status') !== 'pending');
+            const targetList = assignedChecked.length > 0 ? assignedChecked : Array.from(checked);
+
+            if (confirm(`Are you sure you want to unassign ${targetList.length} selected pilgrims from their rooms and move them back to Pending Room Allocation?`)) {
                 const unassignInputs = document.getElementById('unassignHiddenInputs');
                 unassignInputs.innerHTML = '';
-                checked.forEach(cb => {
+                targetList.forEach(cb => {
                     const inp = document.createElement('input');
                     inp.type = 'hidden';
                     inp.name = 'person_ids[]';
@@ -1086,6 +1132,49 @@
                 });
                 document.getElementById('bulkUnassignForm').submit();
             }
+        });
+
+        // Single Pilgrim Unassign Button
+        document.querySelectorAll('.btn-single-unassign').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const pid = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                if (confirm(`Are you sure you want to unassign "${name}" from room and move back to Pending Room Allocation?`)) {
+                    const unassignInputs = document.getElementById('unassignHiddenInputs');
+                    unassignInputs.innerHTML = '';
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden';
+                    inp.name = 'person_ids[]';
+                    inp.value = pid;
+                    unassignInputs.appendChild(inp);
+                    document.getElementById('bulkUnassignForm').submit();
+                }
+            });
+        });
+
+        // Unassign Entire Room Button
+        document.querySelectorAll('.btn-unassign-room-all').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const roomNo = this.getAttribute('data-room');
+                const rawIds = this.getAttribute('data-ids') || '';
+                const ids = rawIds.split(',').map(x => x.trim()).filter(x => x.length > 0);
+                if (ids.length === 0) return;
+
+                if (confirm(`Are you sure you want to unassign all ${ids.length} pilgrims from Room ${roomNo} and move them to Pending Room Allocation?`)) {
+                    const unassignInputs = document.getElementById('unassignHiddenInputs');
+                    unassignInputs.innerHTML = '';
+                    ids.forEach(id => {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'person_ids[]';
+                        inp.value = id;
+                        unassignInputs.appendChild(inp);
+                    });
+                    document.getElementById('bulkUnassignForm').submit();
+                }
+            });
         });
     });
 </script>

@@ -286,17 +286,38 @@ class RoomingListController extends Controller
 
         $personIds = $request->person_ids;
         $unassignedCount = 0;
+        $affectedBookings = [];
 
         foreach ($personIds as $pid) {
             if (is_numeric($pid)) {
                 $person = BookingPerson::find($pid);
                 if ($person) {
+                    $bId = $person->booking_id;
                     $person->room_number = null;
                     $person->room_type = null;
                     $person->hotel_name = null;
+                    $person->room_gender = null;
                     $person->save();
                     $unassignedCount++;
+
+                    if ($bId) {
+                        $affectedBookings[$bId] = true;
+                    }
                 }
+            }
+        }
+
+        // For affected bookings: if no person in this booking has an assigned room, clear room_number on BookingHotel
+        foreach (array_keys($affectedBookings) as $bId) {
+            $hasAssignedPersons = BookingPerson::where('booking_id', $bId)
+                ->whereNotNull('room_number')
+                ->where('room_number', '!=', '')
+                ->where('room_number', '!=', 'PENDING')
+                ->where('room_number', '!=', 'UNASSIGNED')
+                ->exists();
+
+            if (!$hasAssignedPersons) {
+                BookingHotel::where('booking_id', $bId)->update(['room_number' => null]);
             }
         }
 
@@ -376,7 +397,7 @@ class RoomingListController extends Controller
                         'full_name'       => ($b->client->name ?? 'Guest') . ($pax > 1 ? " (#{$i})" : ''),
                         'passport_number' => $b->passport_number ?: '—',
                         'gender'          => 'Male',
-                        'hb_number'       => 'HB' . str_pad($b->id * 10 + $i, 6, '0', STR_PAD_LEFT),
+                        'hb_number'       => 'HB' . str_pad($b->id, 4, '0', STR_PAD_LEFT),
                     ]);
                     $p->id = 'temp_' . $b->id . '_' . $i;
                     $persons->push($p);
@@ -385,7 +406,7 @@ class RoomingListController extends Controller
 
             foreach ($persons as $p) {
                 $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
-                $hbNumber = !empty($p->hb_number) ? trim($p->hb_number) : '';
+                $hbNumber = !empty($p->hb_number) ? BookingPerson::formatHbNumber($p->hb_number) : '';
                 $gender = !empty($p->gender) ? ucfirst(strtolower($p->gender)) : 'Male';
 
                 if (empty($p->gender) || $p->gender === 'Male') {
@@ -397,6 +418,9 @@ class RoomingListController extends Controller
 
                 // Check person level room or booking hotel level room
                 $rNum = !empty($p->room_number) ? trim($p->room_number) : null;
+                if (in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
+                    $rNum = null;
+                }
                 $rType = !empty($p->room_type) ? trim($p->room_type) : null;
                 $hName = !empty($p->hotel_name) ? trim($p->hotel_name) : null;
                 $loc = !empty($p->location) ? trim($p->location) : null;
@@ -404,25 +428,33 @@ class RoomingListController extends Controller
                 $cIn = null;
                 $cOut = null;
 
-                if (empty($rNum) && $b->hotels && $b->hotels->count() > 0) {
+                if ($b->hotels && $b->hotels->count() > 0) {
                     $matchedHotel = null;
                     if (!empty($locationFilter) && $locationFilter !== 'all') {
                         $matchedHotel = $b->hotels->firstWhere('location', $locationFilter);
                     }
-                    if (!$matchedHotel) {
-                        $matchedHotel = $b->hotels->first(fn($h) => !empty($h->room_number));
+                    if (!$matchedHotel && !empty($loc)) {
+                        $matchedHotel = $b->hotels->firstWhere('location', $loc);
+                    }
+                    if (!$matchedHotel && !empty($hName)) {
+                        $matchedHotel = $b->hotels->firstWhere('hotel_name', $hName);
                     }
                     if (!$matchedHotel) {
                         $matchedHotel = $b->hotels->first();
                     }
 
                     if ($matchedHotel) {
-                        $rNum = !empty($matchedHotel->room_number) ? trim($matchedHotel->room_number) : null;
                         $rType = $rType ?: $matchedHotel->room_type;
                         $hName = $hName ?: $matchedHotel->hotel_name;
                         $loc = $loc ?: $matchedHotel->location;
                         $cIn = $matchedHotel->check_in;
                         $cOut = $matchedHotel->check_out;
+
+                        // Only for virtual temporary pilgrims without real DB record can room_number fall back to booking hotel.
+                        // For real pilgrims (BookingPerson model), room assignment is strictly controlled on the person.
+                        if (!is_numeric($p->id) && empty($rNum) && !empty($matchedHotel->room_number)) {
+                            $rNum = trim($matchedHotel->room_number);
+                        }
                     }
                 }
 
@@ -516,6 +548,7 @@ class RoomingListController extends Controller
                             'check_in_min'    => $cIn,
                             'check_out_max'   => $cOut,
                             'booking_ids'     => [],
+                            'latest_activity' => 0,
                         ];
                     }
 
@@ -524,6 +557,11 @@ class RoomingListController extends Controller
                         $groupedRooms[$groupKey]['booking_ids'][] = $b->id;
                     }
                     $groupedRooms[$groupKey]['occupants'][] = $occData;
+
+                    $pActivity = $p->updated_at ? $p->updated_at->timestamp : ($p->created_at ? $p->created_at->timestamp : 0);
+                    if ($pActivity > ($groupedRooms[$groupKey]['latest_activity'] ?? 0)) {
+                        $groupedRooms[$groupKey]['latest_activity'] = $pActivity;
+                    }
                 }
             }
         }
@@ -594,9 +632,19 @@ class RoomingListController extends Controller
             }
         }
 
+        // Sort assigned rooms so the most recently assigned room is at the TOP
+        uasort($groupedRooms, function ($a, $b) {
+            $actA = $a['latest_activity'] ?? 0;
+            $actB = $b['latest_activity'] ?? 0;
+            if ($actA !== $actB) {
+                return $actB <=> $actA;
+            }
+            return strcmp($a['room_number'] ?? '', $b['room_number'] ?? '');
+        });
+
         $unassignedPilgrimsCount = count($unassignedOccupants);
 
-        // If there are unassigned pilgrims, append them as a special section at the beginning/end
+        // If there are unassigned pilgrims, append them after assigned rooms so assigned rooms stay on TOP
         if ($unassignedPilgrimsCount > 0 && (empty($statusFilter) || $statusFilter === 'all' || $statusFilter === 'unassigned')) {
             $groupedRooms['__pending_allocation__'] = [
                 'hotel_name'      => 'Pending Room Allocation',
@@ -617,6 +665,7 @@ class RoomingListController extends Controller
                 'check_in_min'    => null,
                 'check_out_max'   => null,
                 'booking_ids'     => array_unique(array_column($unassignedOccupants, 'booking_id')),
+                'latest_activity' => 0,
             ];
             $totalBedsOccupied += $unassignedPilgrimsCount;
         }

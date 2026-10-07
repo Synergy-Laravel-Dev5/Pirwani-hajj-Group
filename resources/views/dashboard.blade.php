@@ -561,13 +561,12 @@
                             </div>
                             {{-- SAR amount bada --}}
                             <div class="stat-value">
-                                {{ number_format($totalExpensesSar) }}
-                                <span style="font-size:14px;font-weight:600;color:var(--text-muted);">SAR</span>
+                                <span style="font-size:18px;font-weight:600;">{{ number_format($totalExpensesSar) }} SAR ≈
+                                    {{ number_format($totalExpensesSarInPkr) }} PKR</span>
                             </div>
                             {{-- PKR equivalent chota --}}
-                            <div style="font-size:12.5px;font-weight:600;color:#B45309;margin-bottom:6px;">
-                                ≈ PKR {{ number_format($totalExpensesSarInPkr) }}
-                            </div>
+                            {{-- <div style="font-size:12.5px;font-weight:600;color:#B45309;margin-bottom:6px;">
+                            </div> --}}
                             <span class="badge-trend {{ $expensesTrend >= 0 ? 'up' : 'down' }}">
                                 <i class="mdi mdi-trending-{{ $expensesTrend >= 0 ? 'up' : 'down' }}"></i>
                                 {{ abs($expensesTrend) }}%
