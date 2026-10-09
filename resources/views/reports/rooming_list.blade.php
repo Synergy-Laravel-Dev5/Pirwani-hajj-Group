@@ -172,6 +172,9 @@
                         <button type="button" class="btn btn-primary btn-sm px-3 fw-bold" id="btnOpenAssignModal">
                             <i class="mdi mdi-door-open me-1"></i> 🏨 Assign Selected to Room
                         </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-bold" id="btnOpenAssignByHajiId">
+                            <i class="mdi mdi-account-search me-1"></i> 🆔 Assign by Haji ID
+                        </button>
                         <button type="button" class="btn btn-outline-danger btn-sm" id="btnBulkUnassign">
                             <i class="mdi mdi-close-circle-outline me-1"></i> Unassign from Room
                         </button>
@@ -729,8 +732,23 @@
                             </label>
                             <span class="badge bg-info-subtle text-info border border-info-subtle small px-2" id="modalTypesSummary"></span>
                         </div>
-                        <div id="selectedPilgrimsPills" class="p-2 border rounded bg-light d-flex flex-wrap gap-1" style="max-height: 130px; overflow-y: auto;">
+                        <div id="selectedPilgrimsPills" class="p-2 border rounded bg-light d-flex flex-wrap gap-1" style="max-height: 100px; overflow-y: auto;">
                         </div>
+                    </div>
+
+                    {{-- Assign by Haji ID Input --}}
+                    <div class="mb-3 p-2 bg-primary-subtle border border-primary-subtle rounded">
+                        <label class="form-label fw-bold text-dark small mb-1">
+                            <i class="mdi mdi-card-account-details-outline text-primary me-1"></i>Assign by Haji ID / HB Number <span class="text-muted fw-normal">(Optional if pilgrims are selected above)</span>
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white fw-bold text-primary"><i class="mdi mdi-magnify"></i></span>
+                            <input type="text" name="haji_ids" id="assignModalHajiIds" class="form-control" 
+                                   placeholder="Type Haji ID (e.g. 10245) or comma-separated IDs (10245, 10246)...">
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            Enter one or more Haji IDs to assign without checking boxes.
+                        </small>
                     </div>
 
                     <div class="row g-3">
@@ -774,12 +792,14 @@
 
                         {{-- Room Number --}}
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small text-dark">Room Number <span class="text-muted fw-normal">(Optional)</span></label>
+                            <label class="form-label fw-bold small text-dark">
+                                Room Number <span class="badge bg-light text-muted border fw-normal">Optional</span>
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text fw-bold text-danger">R</span>
-                                <input type="text" name="room_number" id="assignModalRoomNumber" class="form-control fw-bold fs-16 text-danger" placeholder="e.g. 101, 204 (Leave blank if pending)">
+                                <input type="text" name="room_number" id="assignModalRoomNumber" class="form-control fw-bold fs-16 text-danger" placeholder="e.g. 101 (Leave blank if pending)">
                             </div>
-                            <small class="text-muted">Enter room number or leave blank if not yet allotted</small>
+                            <small class="text-muted">Optional: Leave blank to assign to hotel with Room as Pending</small>
                         </div>
 
                         {{-- Room Gender --}}
@@ -1099,6 +1119,38 @@
             else if (maleCount > 0 && femaleCount > 0) genderSelect.value = 'Family';
 
             if (assignModal) assignModal.show();
+        });
+
+        // Open Assign by Haji ID Modal
+        document.getElementById('btnOpenAssignByHajiId')?.addEventListener('click', function() {
+            const hiddenInputs = document.getElementById('hiddenPersonInputs');
+            const pillsContainer = document.getElementById('selectedPilgrimsPills');
+            const modalCount = document.getElementById('modalSelectedCount');
+            const modalTypesSummary = document.getElementById('modalTypesSummary');
+
+            hiddenInputs.innerHTML = '';
+            pillsContainer.innerHTML = '<span class="text-muted small">Enter Haji ID(s) below to assign</span>';
+            modalCount.innerText = '0';
+            if (modalTypesSummary) modalTypesSummary.innerText = 'Assign by Haji ID';
+
+            if (assignModal) {
+                assignModal.show();
+                setTimeout(() => {
+                    const hInp = document.getElementById('assignModalHajiIds');
+                    if (hInp) hInp.focus();
+                }, 350);
+            }
+        });
+
+        // Validate form submit: Must have either selected pilgrims or Haji ID
+        document.getElementById('assignRoomForm')?.addEventListener('submit', function(e) {
+            const hajiInput = (document.getElementById('assignModalHajiIds')?.value || '').trim();
+            const personInputs = document.querySelectorAll('#hiddenPersonInputs input');
+            if (personInputs.length === 0 && !hajiInput) {
+                e.preventDefault();
+                alert('Please select at least one pilgrim checkbox or enter a Haji ID to assign.');
+                return false;
+            }
         });
 
         // Hotel Select Sync in Modal

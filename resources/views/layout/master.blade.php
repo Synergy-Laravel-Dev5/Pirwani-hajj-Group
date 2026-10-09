@@ -36,6 +36,10 @@
     <link href="{{ asset('assets/libs/select2/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/libs/select2/css/select2-bootstrap-5-theme.min.css') }}" rel="stylesheet" type="text/css" />
 
+    <!-- Core Scripts needed early by inline view scripts -->
+    <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/select2/js/select2.min.js') }}"></script>
+
     <!-- Custom Styles for Sidebar & Branding -->
     <style>
         /* Sidebar Logo Box */
@@ -420,18 +424,101 @@
             transition: all 0.15s ease-in-out !important;
         }
 
+        /* Select2 Bootstrap 5 Crisp Styling */
+        /* In-page control: must fill 100% width of parent column/card */
+        .select2.select2-container,
+        .select2.select2-container--bootstrap-5,
+        .select2.select2-container--default {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection,
+        .select2-container--default .select2-selection--single {
+            min-height: 38px !important;
+            height: 38px !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.375rem !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+            display: flex !important;
+            align-items: center !important;
+            background-color: #fff !important;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered,
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #212529 !important;
+            line-height: 34px !important;
+            padding-left: 6px !important;
+            font-size: 13.5px !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow,
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+            top: 1px !important;
+            right: 8px !important;
+        }
         .select2-container--bootstrap-5.select2-container--focus .select2-selection,
         .select2-container--bootstrap-5.select2-container--open .select2-selection,
         .select2-container--default.select2-container--focus .select2-selection,
         .select2-container--default.select2-container--open .select2-selection {
             border-color: #0d6efd !important;
-            background-color: #f0f7ff !important;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25), 0 0 8px rgba(13, 110, 253, 0.3) !important;
+            background-color: #fff !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
             outline: 0 !important;
         }
 
-        .select2-container {
-            width: 100% !important;
+        /* Small select variants for table/repeater rows (sm) */
+        .form-select-sm + .select2-container .select2-selection,
+        .select2-container--bootstrap-5.select2-container--sm .select2-selection {
+            min-height: 31px !important;
+            height: 31px !important;
+            padding: 0.15rem 0.4rem !important;
+            font-size: 0.8125rem !important;
+        }
+        .form-select-sm + .select2-container .select2-selection .select2-selection__rendered,
+        .select2-container--bootstrap-5.select2-container--sm .select2-selection .select2-selection__rendered {
+            line-height: 28px !important;
+            font-size: 12.5px !important;
+        }
+        .form-select-sm + .select2-container .select2-selection .select2-selection__arrow,
+        .select2-container--bootstrap-5.select2-container--sm .select2-selection .select2-selection__arrow {
+            height: 29px !important;
+        }
+
+        /* Open dropdown popup container: must use Select2 calculated width and NEVER collapse to 0 */
+        .select2-container--open {
+            z-index: 99999 !important;
+        }
+        .select2-container.select2-container--open:not(.select2) {
+            max-width: 100vw !important;
+        }
+        .select2-container--open .select2-dropdown {
+            box-sizing: border-box !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            background-color: #ffffff !important;
+            z-index: 99999 !important;
+        }
+        .select2-search--dropdown .select2-search__field {
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.25rem !important;
+            padding: 6px 10px !important;
+            font-size: 13px !important;
+        }
+        .select2-results__option {
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+            color: #212529 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+        }
+        .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: #fff !important;
         }
 
         div:focus-within > label.form-label,
@@ -461,9 +548,7 @@
 
         @include('layout.footer')
 
-        <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
         <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-        <script src="{{ asset('assets/libs/select2/js/select2.min.js') }}"></script>
         <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
         <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
         <script src="{{ asset('assets/libs/waypoints/lib/jquery.waypoints.min.js') }}"></script>

@@ -138,14 +138,14 @@
                                 {{-- CLIENT BLOCK --}}
                                 <div class="col-md-6" id="clientBlock">
                                     <label class="form-label">Client <span class="text-danger">*</span></label>
-                                    <select name="client_id" id="clientSelect" class="form-select">
-                                        <option value="">-- Select Client --</option>
+                                    <select name="client_id" id="clientSelect" class="form-select" data-placeholder="-- Search & Select Client --">
+                                        <option value="">-- Search & Select Client --</option>
                                         @foreach ($clients as $c)
                                             <option value="{{ $c->id }}"
                                                 data-passport="{{ $c->passport_number }}"
                                                 data-cnic="{{ $c->cnic }}" data-phone="{{ $c->phone }}"
                                                 {{ $booking->client_id == $c->id ? 'selected' : '' }}>
-                                                {{ $c->name }}{{ $c->company_name ? ' (' . $c->company_name . ')' : '' }}
+                                                {{ $c->name }}{{ $c->company_name ? ' (' . $c->company_name . ')' : '' }}{{ $c->phone ? ' - ' . $c->phone : '' }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -154,12 +154,12 @@
                                 {{-- COMPANY BLOCK --}}
                                 <div class="col-md-6 d-none" id="companyBlock">
                                     <label class="form-label">Company <span class="text-danger">*</span></label>
-                                    <select name="company_id" id="companySelect" class="form-select">
-                                        <option value="">-- Select Company --</option>
+                                    <select name="company_id" id="companySelect" class="form-select" data-placeholder="-- Search & Select Company --">
+                                        <option value="">-- Search & Select Company --</option>
                                         @foreach ($companies as $co)
                                             <option value="{{ $co->id }}"
                                                 {{ $booking->company_id == $co->id ? 'selected' : '' }}>
-                                                {{ $co->name }}
+                                                {{ $co->company_name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -221,7 +221,7 @@
                                     <label class="form-label fw-bold">
                                         <i class="mdi mdi-cube-send me-1 text-primary"></i>Select Package
                                     </label>
-                                    <select name="package_id" id="packageSelect" class="form-select border-primary">
+                                    <select name="package_id" id="packageSelect" class="form-select border-primary" data-placeholder="-- Select Package --">
                                         <option value="">-- Select Package --</option>
                                         @foreach ($packages as $pkg)
                                             @php
@@ -253,7 +253,7 @@
 
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Booking Status</label>
-                                    <select name="status" class="form-select">
+                                    <select name="status" class="form-select" data-placeholder="Booking Status">
                                         <option value="pending" {{ old('status', $booking->status) == 'pending' ? 'selected' : '' }}>Pending</option>
                                         <option value="confirmed" {{ old('status', $booking->status) == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                                         <option value="cancelled" {{ old('status', $booking->status) == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
@@ -1480,12 +1480,15 @@
                 if ($el.hasClass('select2-hidden-accessible')) {
                     return;
                 }
+                const optCount = $el.find('option').length;
+                const isShort = optCount <= 5;
                 $el.select2({
                     theme: 'bootstrap-5',
                     width: '100%',
-                    dropdownAutoWidth: true,
+                    dropdownAutoWidth: false,
+                    minimumResultsForSearch: isShort ? Infinity : 0,
                     placeholder: $el.data('placeholder') || ($el.find('option[value=""]').first().text() || '-- Select --'),
-                    allowClear: false
+                    allowClear: ($el.attr('id') === 'clientSelect' || $el.attr('id') === 'companySelect')
                 });
             });
         }
@@ -1595,19 +1598,27 @@
         // ═══════════════════════════════════════
         // CLIENT SELECT → AUTO FILL
         // ═══════════════════════════════════════
-        clientSelectEl.addEventListener('change', function() {
-            const opt = this.options[this.selectedIndex];
-            document.getElementById('fill_passport').value = opt.dataset.passport || '';
-            document.getElementById('fill_cnic').value = opt.dataset.cnic || '';
-            document.getElementById('fill_phone').value = opt.dataset.phone || '';
+        function handleClientChange() {
+            const opt = clientSelectEl.options[clientSelectEl.selectedIndex];
+            if (opt) {
+                document.getElementById('fill_passport').value = opt.dataset.passport || '';
+                document.getElementById('fill_cnic').value = opt.dataset.cnic || '';
+                document.getElementById('fill_phone').value = opt.dataset.phone || '';
+            } else {
+                document.getElementById('fill_passport').value = '';
+                document.getElementById('fill_cnic').value = '';
+                document.getElementById('fill_phone').value = '';
+            }
 
             const firstSel = document.querySelector('.person-client-select[data-idx="0"]');
-            if (firstSel && this.value) {
-                firstSel.value = this.value;
-                $(firstSel).val(this.value).trigger('change.select2');
+            if (firstSel && clientSelectEl.value) {
+                firstSel.value = clientSelectEl.value;
+                $(firstSel).val(clientSelectEl.value).trigger('change.select2');
                 fillPersonFromClient(firstSel, 0);
             }
-        });
+        }
+        clientSelectEl.addEventListener('change', handleClientChange);
+        $(clientSelectEl).on('select2:select select2:clear change', handleClientChange);
 
         // ═══════════════════════════════════════
         // PACKAGE SELECTION & BROCHURE RATE CARDS
@@ -3043,10 +3054,13 @@
             const target = $(e.target).attr('href');
             if (target) {
                 initSearchableSelects(target);
+                $(target).find('.select2.select2-container').css('width', '100%');
             }
         });
 
         // Initialize searchable Select2 dropdowns on entire form
-        initSearchableSelects('#bookingForm');
+        $(document).ready(function() {
+            initSearchableSelects('#bookingForm');
+        });
     </script>
 @endsection

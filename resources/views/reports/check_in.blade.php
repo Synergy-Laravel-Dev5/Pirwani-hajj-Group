@@ -149,7 +149,7 @@
                             <div class="row g-3">
                                 {{-- Hotel Name --}}
                                 <div class="col-lg-3 col-md-6">
-                                    <label class="form-label small fw-bold">Hotel Name</label>
+                                    <label class="form-label small fw-bold mb-1">Hotel Name</label>
                                     <input type="text" name="hotel_name" class="form-control form-control-sm" list="hotelList" 
                                            placeholder="Type or select hotel..." value="{{ $hotelFilter }}">
                                     <datalist id="hotelList">
@@ -164,7 +164,7 @@
 
                                 {{-- City / Location --}}
                                 <div class="col-lg-2 col-md-6">
-                                    <label class="form-label small fw-bold">City / Location</label>
+                                    <label class="form-label small fw-bold mb-1">City / Location</label>
                                     <select name="location" class="form-select form-select-sm">
                                         <option value="all" {{ ($locationFilter == 'all' || empty($locationFilter)) ? 'selected' : '' }}>All Locations</option>
                                         <option value="makkah" {{ $locationFilter == 'makkah' ? 'selected' : '' }}>🕋 Makkah</option>
@@ -177,19 +177,19 @@
 
                                 {{-- Check-In Date From --}}
                                 <div class="col-lg-2 col-md-3 col-6">
-                                    <label class="form-label small fw-bold">Check-In From</label>
+                                    <label class="form-label small fw-bold mb-1">Check-In From</label>
                                     <input type="date" name="from_date" class="form-control form-control-sm" value="{{ $fromDate }}">
                                 </div>
 
                                 {{-- Check-In Date To --}}
                                 <div class="col-lg-2 col-md-3 col-6">
-                                    <label class="form-label small fw-bold">Check-In To</label>
+                                    <label class="form-label small fw-bold mb-1">Check-In To</label>
                                     <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}">
                                 </div>
 
                                 {{-- Package --}}
                                 <div class="col-lg-3 col-md-6">
-                                    <label class="form-label small fw-bold">Package</label>
+                                    <label class="form-label small fw-bold mb-1">Package</label>
                                     <select name="package_id" class="form-select form-select-sm">
                                         <option value="">-- All Packages --</option>
                                         @foreach ($packages as $pkg)
@@ -200,22 +200,35 @@
                                     </select>
                                 </div>
 
-                                {{-- Search keyword --}}
-                                <div class="col-lg-9 col-md-8">
+                                {{-- Maktab / Camp Category Filter --}}
+                                <div class="col-lg-3 col-md-4">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-light"><i class="mdi mdi-magnify"></i></span>
-                                        <input type="text" name="search" class="form-control" 
-                                               placeholder="Search by Pilgrim Name, Passport #, CNIC, Voucher Ref (UB...), or Client..." 
+                                        <span class="input-group-text bg-light"><i class="mdi mdi-tent text-warning"></i></span>
+                                        <select name="maktab" class="form-select form-select-sm">
+                                            <option value="all" {{ ($maktabFilter == 'all' || empty($maktabFilter)) ? 'selected' : '' }}>All Maktabs / Camps</option>
+                                            <option value="maktab_a" {{ $maktabFilter == 'maktab_a' ? 'selected' : '' }}>⛺ Maktab A (VIP)</option>
+                                            <option value="maktab_c" {{ $maktabFilter == 'maktab_c' ? 'selected' : '' }}>⛺ Maktab C (Standard)</option>
+                                            <option value="combo" {{ $maktabFilter == 'combo' ? 'selected' : '' }}>⛺ Maktab A & C (Combo)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- Search keyword --}}
+                                <div class="col-lg-6 col-md-5">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light"><i class="mdi mdi-magnify text-muted"></i></span>
+                                        <input type="text" name="search" class="form-control form-control-sm" 
+                                               placeholder="Search by Pilgrim Name, Passport #, CNIC, Phone, Haji ID, Voucher (UB...)..." 
                                                value="{{ $search }}">
                                     </div>
                                 </div>
 
                                 {{-- Filter Action Buttons --}}
-                                <div class="col-lg-3 col-md-4 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                                <div class="col-lg-3 col-md-3 d-flex gap-2">
+                                    <button type="submit" class="btn btn-sm fw-semibold flex-grow-1 text-white shadow-sm" style="background-color: #071527; border-color: #071527;">
                                         <i class="mdi mdi-filter me-1"></i> Apply Filter
                                     </button>
-                                    <a href="{{ route('report.check-in') }}" class="btn btn-light btn-sm border">
+                                    <a href="{{ route('report.check-in') }}" class="btn btn-light btn-sm border px-3 d-inline-flex align-items-center justify-content-center">
                                         Reset
                                     </a>
                                 </div>
@@ -249,7 +262,7 @@
                             <h6 class="m-0 fw-bold text-dark">
                                 Check-In Records ({{ $hotelStays->count() }})
                             </h6>
-                            @if (!empty($fromDate) || !empty($toDate) || !empty($hotelFilter) || !empty($locationFilter) || !empty($search) || !empty($packageFilter))
+                            @if (!empty($fromDate) || !empty($toDate) || !empty($hotelFilter) || !empty($locationFilter) || !empty($search) || !empty($packageFilter) || (!empty($maktabFilter) && $maktabFilter !== 'all'))
                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Filtered</span>
                             @endif
                         </div>
@@ -319,16 +332,38 @@
                                         <tr>
                                             <td class="text-center fw-bold text-muted">{{ $idx + 1 }}</td>
 
-                                            {{-- Pilgrim / Hajji Details with Photo --}}
+                                            {{-- Pilgrim / Hajji Details with Photo (Main Pax & All Accompanying Persons) --}}
                                             <td>
+                                                @php
+                                                    $mainPerson = $persons->first();
+                                                    $otherPersons = $persons->slice(1);
+                                                @endphp
+
+                                                {{-- Main Pilgrim --}}
                                                 <div class="d-flex align-items-start gap-2">
                                                     {{-- Photo Thumbnail --}}
                                                     <div class="flex-shrink-0">
-                                                        @if ($mainPerson && !empty($mainPerson->photo))
-                                                            <a href="{{ asset($mainPerson->photo) }}" target="_blank" title="View Full Photo">
-                                                                <img src="{{ asset($mainPerson->photo) }}" alt="{{ $mainPerson->full_name }}" 
+                                                        @php
+                                                            $photoPath = $mainPerson?->photo;
+                                                            $photoUrl = null;
+                                                            if (!empty($photoPath)) {
+                                                                if (file_exists(public_path($photoPath))) {
+                                                                    $photoUrl = asset($photoPath);
+                                                                } else {
+                                                                    $photoUrl = 'https://pirwanitravels.com.pk/' . ltrim($photoPath, '/');
+                                                                }
+                                                            }
+                                                        @endphp
+                                                        @if ($photoUrl)
+                                                            <a href="{{ $photoUrl }}" target="_blank" title="View Full Photo">
+                                                                <img src="{{ $photoUrl }}" alt="" 
                                                                      class="rounded shadow-sm border" 
-                                                                     style="width: 42px; height: 42px; object-fit: cover; border-color: #c9a84c !important;">
+                                                                     style="width: 42px; height: 42px; object-fit: cover; border-color: #c9a84c !important;"
+                                                                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                                                <div class="rounded d-none align-items-center justify-content-center fw-bold text-primary border" 
+                                                                     style="width: 42px; height: 42px; background: #eef2ff; font-size: 14px;">
+                                                                    {{ strtoupper(substr($mainPerson->full_name ?? ($booking->client->name ?? 'G'), 0, 1)) }}
+                                                                </div>
                                                             </a>
                                                         @else
                                                             <div class="rounded d-flex align-items-center justify-content-center fw-bold text-primary border" 
@@ -341,7 +376,7 @@
                                                     {{-- Pilgrim Info --}}
                                                     <div class="flex-grow-1" style="line-height: 1.3;">
                                                         <strong class="text-dark d-block" style="font-size: 13.5px;">
-                                                            {{ $mainPerson->full_name ?? ($booking?->client?->name ?? ($booking?->company?->name ?? 'N/A')) }}
+                                                            {{ $mainPerson->full_name ?? ($booking?->client?->name ?? ($booking?->company?->company_name ?? 'N/A')) }}
                                                         </strong>
                                                         <div class="text-muted small mt-1">
                                                             @if ($mainPerson && $mainPerson->passport_number)
@@ -354,27 +389,92 @@
                                                                 </span>
                                                             @endif
 
+                                                            @if (!empty($mainPerson->hajj_id))
+                                                                <span class="badge bg-info-subtle text-info border border-info-subtle px-1 py-0 me-1">
+                                                                    ID: {{ $mainPerson->hajj_id }}
+                                                                </span>
+                                                            @endif
+
                                                             @if ($paxCount > 1)
-                                                                <span class="badge bg-primary-subtle text-primary px-1 py-0" title="Total Pilgrims in Booking">
+                                                                <span class="badge bg-success-subtle text-success px-1 py-0" title="Total Pilgrims in Booking">
                                                                     +{{ $paxCount - 1 }} more (Total {{ $paxCount }})
                                                                 </span>
                                                             @endif
                                                         </div>
-
-                                                        {{-- Other Pilgrims in Booking tooltip / popup details --}}
-                                                        @if ($persons->count() > 1)
-                                                            <div class="mt-1" style="font-size: 11px;">
-                                                                <span class="text-muted">Other Pax: </span>
-                                                                @foreach ($persons->slice(1, 3) as $otherP)
-                                                                    <span class="text-secondary fw-semibold">{{ $otherP->full_name }}</span>{{ !$loop->last ? ', ' : '' }}
-                                                                @endforeach
-                                                                @if ($persons->count() > 4)
-                                                                    <span class="text-muted">+{{ $persons->count() - 4 }} more</span>
-                                                                @endif
-                                                            </div>
-                                                        @endif
                                                     </div>
                                                 </div>
+
+                                                {{-- Other Pilgrims in Booking (Rendered in Same Style Directly Underneath) --}}
+                                                @if ($otherPersons->count() > 0)
+                                                    <div class="mt-2 pt-2 border-top border-light-subtle d-flex flex-column gap-2">
+                                                        @foreach ($otherPersons as $oIdx => $otherP)
+                                                            @php
+                                                                $oPhotoPath = $otherP->photo;
+                                                                $oPhotoUrl = null;
+                                                                if (!empty($oPhotoPath)) {
+                                                                    if (file_exists(public_path($oPhotoPath))) {
+                                                                        $oPhotoUrl = asset($oPhotoPath);
+                                                                    } else {
+                                                                        $oPhotoUrl = 'https://pirwanitravels.com.pk/' . ltrim($oPhotoPath, '/');
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            <div class="d-flex align-items-start gap-2">
+                                                                {{-- Other Pax Photo --}}
+                                                                <div class="flex-shrink-0">
+                                                                    @if ($oPhotoUrl)
+                                                                        <a href="{{ $oPhotoUrl }}" target="_blank" title="View Full Photo">
+                                                                            <img src="{{ $oPhotoUrl }}" alt="" 
+                                                                                 class="rounded shadow-sm border" 
+                                                                                 style="width: 36px; height: 36px; object-fit: cover; border-color: #dee2e6 !important;"
+                                                                                 onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                                                            <div class="rounded d-none align-items-center justify-content-center fw-bold text-secondary border" 
+                                                                                 style="width: 36px; height: 36px; background: #f8fafc; font-size: 13px;">
+                                                                                {{ strtoupper(substr($otherP->full_name ?: 'P', 0, 1)) }}
+                                                                            </div>
+                                                                        </a>
+                                                                    @else
+                                                                        <div class="rounded d-flex align-items-center justify-content-center fw-bold text-secondary border" 
+                                                                             style="width: 36px; height: 36px; background: #f8fafc; font-size: 13px;">
+                                                                            {{ strtoupper(substr($otherP->full_name ?: 'P', 0, 1)) }}
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+
+                                                                {{-- Other Pax Info --}}
+                                                                <div class="flex-grow-1" style="line-height: 1.3;">
+                                                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                                        <strong class="text-dark" style="font-size: 12.5px;">
+                                                                            {{ $otherP->full_name }}
+                                                                        </strong>
+                                                                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 9.5px; padding: 2px 4px;">
+                                                                            Pax {{ $oIdx + 2 }}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div class="text-muted small mt-1 d-flex flex-wrap gap-1 align-items-center">
+                                                                        @if ($otherP->passport_number)
+                                                                            <span class="badge bg-light text-dark border px-1 py-0">
+                                                                                <i class="mdi mdi-passport me-1"></i>{{ $otherP->passport_number }}
+                                                                            </span>
+                                                                        @endif
+
+                                                                        @if (!empty($otherP->hajj_id))
+                                                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-1 py-0">
+                                                                                ID: {{ $otherP->hajj_id }}
+                                                                            </span>
+                                                                        @endif
+
+                                                                        @if (!empty($otherP->gender))
+                                                                            <span class="badge bg-light text-muted border px-1 py-0" style="font-size: 10px;">
+                                                                                {{ ucfirst($otherP->gender) }}
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
                                             </td>
 
                                             {{-- Hotel & Location --}}
@@ -457,6 +557,17 @@
                                                 @if ($booking && $booking->client)
                                                     <div class="text-muted" style="font-size: 11px;">
                                                         Client: {{ $booking->client->name }}
+                                                    </div>
+                                                @endif
+
+                                                @php
+                                                    $campVal = $booking?->camp ?: ($booking?->package?->camp_category ? 'Maktab ' . $booking->package->camp_category : null);
+                                                @endphp
+                                                @if($campVal)
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-warning-subtle text-dark border border-warning px-2 py-0" style="font-size: 10.5px; font-weight: 600;">
+                                                            <i class="mdi mdi-tent me-1 text-primary"></i>{{ $campVal }}
+                                                        </span>
                                                     </div>
                                                 @endif
                                             </td>

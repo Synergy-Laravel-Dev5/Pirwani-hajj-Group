@@ -183,7 +183,8 @@ class RoomingListController extends Controller
     public function assignRoom(Request $request)
     {
         $request->validate([
-            'person_ids'   => 'required|array|min:1',
+            'person_ids'   => 'nullable|array',
+            'haji_ids'     => 'nullable|string',
             'hotel_name'   => 'required|string|max:191',
             'room_number'  => 'nullable|string|max:100',
             'room_type'    => 'nullable|string|max:100',
@@ -191,7 +192,35 @@ class RoomingListController extends Controller
             'gender'       => 'nullable|string|max:50',
         ]);
 
-        $personIds  = $request->person_ids;
+        $personIds  = $request->person_ids ? (array)$request->person_ids : [];
+
+        // If haji_ids provided (single or comma/space-separated)
+        if (!empty($request->haji_ids)) {
+            $rawHaji = preg_split('/[\s,]+/', trim($request->haji_ids), -1, PREG_SPLIT_NO_EMPTY);
+            if (!empty($rawHaji)) {
+                $matchedByHaji = BookingPerson::where(function ($q) use ($rawHaji) {
+                    $q->whereIn('hajj_id', $rawHaji)
+                      ->orWhereIn('hb_number', $rawHaji)
+                      ->orWhereIn('passport_number', $rawHaji)
+                      ->orWhereIn('id', $rawHaji);
+                    foreach ($rawHaji as $h) {
+                        $q->orWhere('hajj_id', 'LIKE', '%' . $h . '%')
+                          ->orWhere('hb_number', 'LIKE', '%' . $h . '%');
+                    }
+                })->pluck('id')->toArray();
+
+                $personIds = array_unique(array_merge($personIds, $matchedByHaji));
+            }
+        }
+
+        if (empty($personIds)) {
+            $errMsg = "Please select at least one pilgrim or provide valid Haji ID(s) to assign.";
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $errMsg], 422);
+            }
+            return back()->with('error', $errMsg);
+        }
+
         $hotelName  = trim($request->hotel_name);
         $roomNumber = !empty($request->room_number) ? trim($request->room_number) : null;
         $roomType   = $request->room_type ? trim($request->room_type) : 'Quad';
@@ -262,8 +291,8 @@ class RoomingListController extends Controller
         }
 
         $successMsg = !empty($roomNumber) 
-            ? "{$updatedCount} Pilgrims assigned to Room {$roomNumber} ({$hotelName} - {$roomType}) successfully!"
-            : "{$updatedCount} Pilgrims allocated to {$hotelName} ({$roomType}) successfully!";
+            ? "{$updatedCount} Pilgrim(s) assigned to Room {$roomNumber} ({$hotelName} - {$roomType}) successfully!"
+            : "{$updatedCount} Pilgrim(s) assigned to {$hotelName} ({$roomType} - Room: Pending) successfully!";
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -508,19 +537,24 @@ class RoomingListController extends Controller
                     'location'          => $loc ?: 'makkah',
                 ];
 
-                if (empty($rNum)) {
+                $hasExplicitHotel = !empty($hName) && !in_array(strtolower($hName), ['pending room allocation', 'unassigned', '—', '-']);
+                $hasExplicitRoom = !empty($rNum) && !in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-']);
+
+                if (!$hasExplicitHotel && !$hasExplicitRoom) {
                     $unassignedOccupants[] = $occData;
                 } else {
-                    $hName = $hName ?: 'Unspecified Hotel';
+                    $hName = $hasExplicitHotel ? $hName : 'Unspecified Hotel';
                     $rType = ucfirst($rType ?: 'Quad');
                     $loc = $loc ?: 'makkah';
+                    $displayRoomNo = $hasExplicitRoom ? $rNum : 'PENDING';
+                    $occData['room_number'] = $displayRoomNo;
 
-                    $groupKey = strtolower($loc . '___' . $hName . '___' . $rNum);
+                    $groupKey = strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
 
                     if (!isset($groupedRooms[$groupKey])) {
-                        $baseCap = HotelRoomCapacity::resolveCapacity($hName, $rNum, $rType, $loc);
-                        $customCap = HotelRoomCapacity::where(function ($q) use ($rNum) {
-                            foreach (HotelRoomCapacity::normalizeRoomNumber($rNum) as $v) {
+                        $baseCap = HotelRoomCapacity::resolveCapacity($hName, $displayRoomNo, $rType, $loc);
+                        $customCap = HotelRoomCapacity::where(function ($q) use ($displayRoomNo) {
+                            foreach (HotelRoomCapacity::normalizeRoomNumber($displayRoomNo) as $v) {
                                 $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
                             }
                         })->first();
@@ -531,7 +565,7 @@ class RoomingListController extends Controller
 
                         $groupedRooms[$groupKey] = [
                             'hotel_name'      => $hName,
-                            'room_number'     => $rNum,
+                            'room_number'     => $displayRoomNo,
                             'room_type'       => $rType,
                             'room_gender'     => $roomGender,
                             'location'        => $loc,
