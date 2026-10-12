@@ -25,6 +25,7 @@ class RoomingListController extends Controller
         // Dropdown Data
         $registeredHotels = Hotel::orderBy('name')->get();
         $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
+        $packages = \App\Models\Package::orderBy('name')->orderBy('package_title')->get();
         $roomTypes = RoomType::where('status', 'active')->orderBy('capacity')->get();
         if ($roomTypes->isEmpty()) {
             $roomTypes = collect([
@@ -42,6 +43,7 @@ class RoomingListController extends Controller
         return view('reports.rooming_list', array_merge($data, compact(
             'registeredHotels',
             'distinctHotelNames',
+            'packages',
             'roomTypes'
         )));
     }
@@ -379,6 +381,33 @@ class RoomingListController extends Controller
             });
         }
 
+        // Package Filter
+        $packageFilter = $request->get('package_id');
+        if (!empty($packageFilter)) {
+            $bookingQuery->where('package_id', $packageFilter);
+        }
+
+        // Date-wise Filter (Departure/Arrival, Hotel Check-in/out, or Booking Date)
+        if (!empty($fromDate)) {
+            $bookingQuery->where(function ($q) use ($fromDate) {
+                $q->whereDate('departure_date', '>=', $fromDate)
+                  ->orWhereDate('created_at', '>=', $fromDate)
+                  ->orWhereHas('hotels', function ($hq) use ($fromDate) {
+                      $hq->whereDate('check_in', '>=', $fromDate);
+                  });
+            });
+        }
+        if (!empty($toDate)) {
+            $bookingQuery->where(function ($q) use ($toDate) {
+                $q->whereDate('arrival_date', '<=', $toDate)
+                  ->orWhereDate('departure_date', '<=', $toDate)
+                  ->orWhereDate('created_at', '<=', $toDate)
+                  ->orWhereHas('hotels', function ($hq) use ($toDate) {
+                      $hq->whereDate('check_out', '<=', $toDate);
+                  });
+            });
+        }
+
         $allBookings = $bookingQuery->latest()->get();
 
         $groupedRooms = [];
@@ -685,6 +714,7 @@ class RoomingListController extends Controller
             'locationFilter',
             'roomTypeFilter',
             'statusFilter',
+            'packageFilter',
             'search',
             'fromDate',
             'toDate',

@@ -193,6 +193,10 @@
                                     <label class="form-label">Card Number</label>
                                     <input type="text" name="card_number" class="form-control">
                                 </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Remarks / Special Notes</label>
+                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Special requests, instructions, booking remarks...">{{ old('remarks') }}</textarea>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-end mt-4">

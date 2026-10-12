@@ -1007,6 +1007,12 @@
                         <td><strong style="color:var(--green)">{{ number_format($booking->qurbani_charges, 2) }} PKR</strong></td>
                     </tr>
                     @endif
+                    @if (!empty($booking->remarks))
+                    <tr>
+                        <td>Remarks</td>
+                        <td><span class="text-dark">{{ $booking->remarks }}</span></td>
+                    </tr>
+                    @endif
                 </table>
             </div>
 
@@ -1098,6 +1104,7 @@
                             <th>Expiry Date</th>
                             <th>CNIC</th>
                             <th>Phone</th>
+                            <th style="width:80px; text-align:center;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1125,6 +1132,19 @@
                                 <td>{{ $person->passport_expiry_date ? \Carbon\Carbon::parse($person->passport_expiry_date)->format('d M Y') : '—' }}</td>
                                 <td>{{ $person->cnic ?? '—' }}</td>
                                 <td>{{ $person->phone ?? '—' }}</td>
+                                <td style="text-align:center;">
+                                    @if ($booking->persons->count() > 1)
+                                        <form method="POST" action="{{ route('booking.person.delete', [$booking->id, $person->id]) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to remove passenger {{ addslashes($person->full_name) }} from this booking?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger btn-xs py-0 px-2" title="Remove passenger">
+                                                <i class="mdi mdi-delete-outline me-1"></i>Remove
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted small">—</span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

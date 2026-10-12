@@ -206,6 +206,10 @@
                                     <input type="text" name="card_number" class="form-control"
                                         value="{{ old('card_number', $booking->card_number) }}">
                                 </div>
+                                <div class="col-md-12">
+                                    <label class="form-label">Remarks / Special Notes</label>
+                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Special requests, instructions, booking remarks...">{{ old('remarks', $booking->remarks) }}</textarea>
+                                </div>
                             </div>
                             <div class="d-flex justify-content-end mt-4">
                                 <button type="button" class="btn btn-primary btn-next">Next <i
@@ -601,10 +605,20 @@
                                     <div class="person-card" id="person_card_{{ $i }}">
                                         <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                                             <strong class="text-primary" style="font-size:13px;">
-                                                <i class="mdi mdi-account me-1"></i>{{ $i === 0 ? ($booking->booking_for === 'company' ? 'Main Passenger' : 'Main Passenger (Client)') : 'Passenger ' . ($i + 1) }}
+                                                <i class="mdi mdi-account me-1"></i><span class="person-title-text">{{ $i === 0 ? ($booking->booking_for === 'company' ? 'Main Passenger' : 'Main Passenger (Client)') : 'Passenger ' . ($i + 1) }}</span>
                                             </strong>
-                                            <span class="badge bg-light text-muted border">Person #{{ $i + 1 }}</span>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-light text-muted border person-badge">Person #{{ $i + 1 }}</span>
+                                                <button type="button" class="btn btn-outline-danger btn-xs py-0 px-2 btn-remove-person" onclick="removePersonCard(this)" title="Remove this person from booking">
+                                                    <i class="mdi mdi-delete-outline me-1"></i>Remove
+                                                </button>
+                                            </div>
                                         </div>
+                                        <input type="hidden" name="persons[{{ $i }}][room_number]" value="{{ $person->room_number ?? '' }}">
+                                        <input type="hidden" name="persons[{{ $i }}][room_type]" value="{{ $person->room_type ?? '' }}">
+                                        <input type="hidden" name="persons[{{ $i }}][hotel_name]" value="{{ $person->hotel_name ?? '' }}">
+                                        <input type="hidden" name="persons[{{ $i }}][location]" value="{{ $person->location ?? '' }}">
+                                        <input type="hidden" name="persons[{{ $i }}][room_gender]" value="{{ $person->room_gender ?? '' }}">
                                         <div class="row g-2">
                                             @if ($i === 0 && $booking->booking_for !== 'company')
                                                 <div class="col-md-12 mb-2">
@@ -721,6 +735,11 @@
                                         </div>
                                     </div>
                                 @endforeach
+                            </div>
+                            <div class="mt-2 mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddPerson">
+                                    <i class="mdi mdi-account-plus me-1"></i>+ Add Passenger
+                                </button>
                             </div>
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary btn-prev"><i
@@ -2326,10 +2345,20 @@
             <div class="person-card" id="person_card_${idx}">
                 <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                     <strong class="text-primary" style="font-size:13px;">
-                        <i class="mdi mdi-account me-1"></i>${label}
+                        <i class="mdi mdi-account me-1"></i><span class="person-title-text">${label}</span>
                     </strong>
-                    <span class="badge bg-light text-muted border">Person #${idx + 1}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-muted border person-badge">Person #${idx + 1}</span>
+                        <button type="button" class="btn btn-outline-danger btn-xs py-0 px-2 btn-remove-person" onclick="removePersonCard(this)" title="Remove this person from booking">
+                            <i class="mdi mdi-delete-outline me-1"></i>Remove
+                        </button>
+                    </div>
                 </div>
+                <input type="hidden" name="persons[${idx}][room_number]" value="">
+                <input type="hidden" name="persons[${idx}][room_type]" value="">
+                <input type="hidden" name="persons[${idx}][hotel_name]" value="">
+                <input type="hidden" name="persons[${idx}][location]" value="">
+                <input type="hidden" name="persons[${idx}][room_gender]" value="">
                 <div class="row g-2">
                     ${clientDropdown}
                     <div class="col-md-3">
@@ -2477,6 +2506,121 @@
             }
             initSearchableSelects('#personsList');
         }
+
+        // ═══════════════════════════════════════
+        // REMOVE & ADD PERSON FUNCTIONS
+        // ═══════════════════════════════════════
+        function removePersonCard(btn) {
+            const card = btn.closest('.person-card');
+            if (!card) return;
+
+            const container = document.getElementById('personsList');
+            const allCards = container.querySelectorAll('.person-card');
+
+            if (allCards.length <= 1) {
+                alert('A booking must have at least 1 passenger. You cannot remove the only passenger.');
+                return;
+            }
+
+            const nameInput = card.querySelector('input[name*="[full_name]"]');
+            const pName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'this passenger';
+
+            if (!confirm(`Are you sure you want to remove "${pName}" from this booking?`)) {
+                return;
+            }
+
+            card.remove();
+
+            // Re-index remaining person cards
+            reindexPersonCards();
+
+            // Update No of Pax input and bar pax
+            const remainingCards = container.querySelectorAll('.person-card');
+            const newPax = remainingCards.length;
+            
+            const paxInput = document.getElementById('no_of_pax');
+            if (paxInput) {
+                paxInput.value = newPax;
+                paxInput.dispatchEvent(new Event('input'));
+            }
+            const barPax = document.getElementById('bar_pax');
+            if (barPax) {
+                barPax.innerText = newPax;
+            }
+
+            // Sync other tabs
+            if (typeof syncFlightPersons === 'function') syncFlightPersons();
+            if (typeof syncVisas === 'function') syncVisas();
+            if (typeof calcTotal === 'function') calcTotal();
+        }
+
+        function reindexPersonCards() {
+            const container = document.getElementById('personsList');
+            const cards = container.querySelectorAll('.person-card');
+            const companyMode = isCompanyMode();
+
+            cards.forEach((card, idx) => {
+                card.id = 'person_card_' + idx;
+
+                // Update title
+                const isFirst = (idx === 0);
+                const titleEl = card.querySelector('.person-title-text');
+                if (titleEl) {
+                    titleEl.innerText = isFirst 
+                        ? (companyMode ? 'Main Passenger' : 'Main Passenger (Client)')
+                        : `Passenger ${idx + 1}`;
+                }
+
+                // Update badge
+                const badgeEl = card.querySelector('.person-badge');
+                if (badgeEl) {
+                    badgeEl.innerText = `Person #${idx + 1}`;
+                }
+
+                // Update input names and IDs for all elements inside this card
+                card.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/persons\[\d+\]/, `persons[${idx}]`);
+                    }
+                    if (input.id) {
+                        input.id = input.id.replace(/_\d+$/, `_${idx}`);
+                    }
+                    if (input.hasAttribute('data-idx')) {
+                        input.setAttribute('data-idx', idx);
+                    }
+                    if (input.hasAttribute('oninput')) {
+                        const oninput = input.getAttribute('oninput');
+                        input.setAttribute('oninput', oninput.replace(/\(\d+\)/, `(${idx})`));
+                    }
+                    if (input.hasAttribute('onchange')) {
+                        const onchange = input.getAttribute('onchange');
+                        input.setAttribute('onchange', onchange.replace(/,\s*\d+\)/, `, ${idx})`));
+                    }
+                });
+            });
+        }
+
+        document.getElementById('btnAddPerson')?.addEventListener('click', function() {
+            const container = document.getElementById('personsList');
+            const currentCount = container.querySelectorAll('.person-card').length;
+            const newIdx = currentCount;
+            container.insertAdjacentHTML('beforeend', buildPersonRow(newIdx, newIdx === 0));
+            initSearchableSelects('#personsList');
+            
+            const paxInput = document.getElementById('no_of_pax');
+            if (paxInput) {
+                paxInput.value = newIdx + 1;
+                paxInput.dispatchEvent(new Event('input'));
+            }
+            const barPax = document.getElementById('bar_pax');
+            if (barPax) {
+                barPax.innerText = newIdx + 1;
+            }
+
+            if (typeof syncFlightPersons === 'function') syncFlightPersons();
+            if (typeof syncVisas === 'function') syncVisas();
+            if (typeof calcTotal === 'function') calcTotal();
+        });
 
         // ═══════════════════════════════════════
         // FLIGHT PERSONS

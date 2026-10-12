@@ -247,8 +247,38 @@
                                 </select>
                             </div>
 
+                            {{-- Package Filter --}}
+                            <div class="col-xl-3 col-md-4 col-sm-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Package</label>
+                                <select name="package_id" class="form-select form-select-sm">
+                                    <option value="">-- All Packages --</option>
+                                    @foreach($packages as $pkg)
+                                        @php
+                                            $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
+                                            $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
+                                            $displayText = $pkgCode ? $pkgTitle . ' (' . $pkgCode . ')' : $pkgTitle;
+                                        @endphp
+                                        <option value="{{ $pkg->id }}" {{ ($packageFilter ?? '') == $pkg->id ? 'selected' : '' }}>
+                                            {{ $displayText }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- From Date Filter --}}
+                            <div class="col-xl-2 col-md-3 col-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
+                                <input type="date" name="from_date" class="form-control form-control-sm" value="{{ $fromDate ?? '' }}">
+                            </div>
+
+                            {{-- To Date Filter --}}
+                            <div class="col-xl-2 col-md-3 col-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
+                                <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate ?? '' }}">
+                            </div>
+
                             {{-- Search Bar --}}
-                            <div class="col-xl-9 col-md-7 col-sm-8">
+                            <div class="col-xl-5 col-md-6 col-12">
                                 <label class="form-label small fw-semibold text-muted mb-1">Search Room / Pilgrim / Passport / HB</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light"><i class="mdi mdi-magnify"></i></span>
@@ -260,7 +290,7 @@
                             </div>
 
                             {{-- Submit Button --}}
-                            <div class="col-xl-3 col-md-5 col-sm-4 d-flex gap-2">
+                            <div class="col-xl-3 col-md-6 col-12 d-flex gap-2">
                                 <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
                                     <i class="mdi mdi-filter me-1"></i> Apply Filter
                                 </button>

@@ -193,8 +193,13 @@
                                     <select name="package_id" class="form-select form-select-sm">
                                         <option value="">-- All Packages --</option>
                                         @foreach ($packages as $pkg)
+                                            @php
+                                                $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
+                                                $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
+                                                $displayText = $pkgCode ? $pkgTitle . ' (' . $pkgCode . ')' : $pkgTitle;
+                                            @endphp
                                             <option value="{{ $pkg->id }}" {{ $packageFilter == $pkg->id ? 'selected' : '' }}>
-                                                {{ $pkg->package_code ? '[' . $pkg->package_code . '] ' : '' }}{{ $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id) }}
+                                                {{ $displayText }}
                                             </option>
                                         @endforeach
                                     </select>

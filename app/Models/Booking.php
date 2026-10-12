@@ -27,6 +27,7 @@ class Booking extends Model
         'care_of',
         'voucher_number',
         'card_number',
+        'remarks',
         'phone',
         'emergency_phone',
         'departure_date',

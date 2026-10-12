@@ -125,6 +125,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('trash',        'trash')->name('booking.trash');
                 Route::get('restore/{id}', 'restore')->name('booking.restore');
                 Route::get('voucher/{booking}', 'voucher')->name('booking.voucher');
+                Route::delete('{booking}/person/{person}', 'deletePerson')->name('booking.person.delete');
             });
 
         Route::controller(ArrivalGroupController::class)

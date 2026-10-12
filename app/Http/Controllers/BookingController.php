@@ -122,6 +122,7 @@ class BookingController extends Controller
                 'total_received'  => $request->total_received ?? 0,
                 'total_amount'    => $total,
                 'balance'         => $total - ($request->total_received ?? 0),
+                'remarks'         => $request->remarks ?: null,
             ]
         ));
 
@@ -329,6 +330,7 @@ class BookingController extends Controller
                 'total_received'  => $request->total_received ?? 0,
                 'total_amount'    => $total,
                 'balance'         => $total - ($request->total_received ?? 0),
+                'remarks'         => $request->remarks ?: null,
             ]
         ));
 
@@ -504,5 +506,40 @@ class BookingController extends Controller
             'visas'
         ]);
         return view('booking.voucher', compact('booking'));
+    }
+
+    /**
+     * Delete a single person from booking (e.g. from booking details)
+     */
+    public function deletePerson($bookingId, $personId)
+    {
+        $booking = Booking::findOrFail($bookingId);
+        $person = \App\Models\BookingPerson::where('booking_id', $booking->id)->where('id', $personId)->firstOrFail();
+
+        if ($booking->persons()->count() <= 1) {
+            return back()->with('error', 'Cannot remove passenger: A booking must have at least one passenger.');
+        }
+
+        $personName = $person->full_name;
+        $person->delete();
+
+        // Update pax count
+        $newPax = max(1, $booking->persons()->count());
+        $booking->no_of_pax = $newPax;
+
+        // Recalculate total if package cost is set
+        if (!empty($booking->package_cost) && $booking->package_cost > 0) {
+            $total = ($booking->package_cost * $newPax)
+                + ($booking->visa_charges ?? 0)
+                + ($booking->flight_charges ?? 0)
+                + ($booking->other_charges ?? 0)
+                + ($booking->qurbani_charges ?? 0)
+                - ($booking->discount ?? 0);
+            $booking->total_amount = $total;
+            $booking->balance = $total - ($booking->total_received ?? 0);
+        }
+        $booking->save();
+
+        return back()->with('success', "Passenger {$personName} removed from booking successfully.");
     }
 }
