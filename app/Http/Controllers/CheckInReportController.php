@@ -17,6 +17,7 @@ class CheckInReportController extends Controller
         $hotelFilter   = $request->get('hotel_name');
         $locationFilter = $request->get('location');
         $packageFilter = $request->get('package_id');
+        $maktabFilter  = $request->get('maktab');
         $search        = $request->get('search');
         $quickFilter   = $request->get('quick_filter', 'all');
         $fromDate      = $request->get('from_date');
@@ -71,7 +72,49 @@ class CheckInReportController extends Controller
             });
         }
 
-        // Search filter (pilgrim name, passport, voucher, client name)
+        // Maktab / Camp filter (Maktab A, Maktab C, Combo)
+        if (!empty($maktabFilter) && $maktabFilter !== 'all') {
+            $query->whereHas('booking', function ($bq) use ($maktabFilter) {
+                if ($maktabFilter === 'maktab_a') {
+                    $bq->where(function ($sub) {
+                        $sub->where('camp', 'LIKE', '%Maktab A%')
+                            ->orWhere('camp', 'LIKE', '%Zone 1%')
+                            ->orWhereHas('package', function ($pq) {
+                                $pq->where('camp_category', 'LIKE', '%A%')
+                                   ->orWhere('maktab', 'LIKE', '%A%');
+                            });
+                    });
+                } elseif ($maktabFilter === 'maktab_c') {
+                    $bq->where(function ($sub) {
+                        $sub->where('camp', 'LIKE', '%Maktab C%')
+                            ->orWhere('camp', 'LIKE', '%Zone 5%')
+                            ->orWhereHas('package', function ($pq) {
+                                $pq->where('camp_category', 'LIKE', '%C%')
+                                   ->orWhere('maktab', 'LIKE', '%C%');
+                            });
+                    });
+                } elseif ($maktabFilter === 'combo') {
+                    $bq->where(function ($sub) {
+                        $sub->where('camp', 'LIKE', '%Combo%')
+                            ->orWhere('camp', 'LIKE', '%A & C%')
+                            ->orWhereHas('package', function ($pq) {
+                                $pq->where('camp_category', 'LIKE', '%Combo%')
+                                   ->orWhere('camp_category', 'LIKE', '%A & C%')
+                                   ->orWhere('camp_category', 'LIKE', '%C /A%');
+                            });
+                    });
+                } else {
+                    $term = '%' . $maktabFilter . '%';
+                    $bq->where('camp', 'LIKE', $term)
+                       ->orWhereHas('package', function ($pq) use ($term) {
+                           $pq->where('camp_category', 'LIKE', $term)
+                              ->orWhere('maktab', 'LIKE', $term);
+                       });
+                }
+            });
+        }
+
+        // Search filter (pilgrim name, passport, voucher, client name, haji_id, hb_number, phone, cnic)
         if (!empty($search)) {
             $term = '%' . $search . '%';
             $query->where(function ($q) use ($term) {
@@ -79,20 +122,30 @@ class CheckInReportController extends Controller
                   ->orWhereHas('booking', function ($bq) use ($term) {
                       $bq->where('voucher_number', 'LIKE', $term)
                          ->orWhere('care_of', 'LIKE', $term)
+                         ->orWhere('camp', 'LIKE', $term)
+                         ->orWhere('given_name', 'LIKE', $term)
+                         ->orWhere('sur_name', 'LIKE', $term)
+                         ->orWhere('passport_number', 'LIKE', $term)
+                         ->orWhere('cnic', 'LIKE', $term)
+                         ->orWhere('phone', 'LIKE', $term)
                          ->orWhereHas('client', function ($cq) use ($term) {
                              $cq->where('name', 'LIKE', $term)
                                 ->orWhere('passport_number', 'LIKE', $term)
                                 ->orWhere('phone', 'LIKE', $term);
                          })
                          ->orWhereHas('company', function ($comQ) use ($term) {
-                             $comQ->where('name', 'LIKE', $term);
+                             $comQ->where('company_name', 'LIKE', $term)
+                                  ->orWhere('company_code', 'LIKE', $term);
                          })
                          ->orWhereHas('persons', function ($pq) use ($term) {
                              $pq->where('full_name', 'LIKE', $term)
                                 ->orWhere('surname', 'LIKE', $term)
                                 ->orWhere('given_name', 'LIKE', $term)
                                 ->orWhere('passport_number', 'LIKE', $term)
-                                ->orWhere('cnic', 'LIKE', $term);
+                                ->orWhere('cnic', 'LIKE', $term)
+                                ->orWhere('phone', 'LIKE', $term)
+                                ->orWhere('hajj_id', 'LIKE', $term)
+                                ->orWhere('hb_number', 'LIKE', $term);
                          });
                   });
             });
@@ -138,6 +191,7 @@ class CheckInReportController extends Controller
             'hotelFilter',
             'locationFilter',
             'packageFilter',
+            'maktabFilter',
             'search',
             'quickFilter',
             'fromDate',

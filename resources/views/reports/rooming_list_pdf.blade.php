@@ -59,6 +59,12 @@
         }
         
         /* Official Manifest Table */
+        thead {
+            display: table-header-group;
+        }
+        tfoot {
+            display: table-footer-group;
+        }
         .manifest-table {
             width: 100%;
             border-collapse: collapse;
@@ -84,9 +90,12 @@
         .room-divider-top td {
             border-top: 2px solid #000 !important;
         }
+        .room-sub-row td {
+            border-top: 0.5px solid #888 !important;
+        }
         .room-typ-cell {
             font-weight: bold;
-            font-size: 10px;
+            font-size: 9.5px;
             text-align: center;
             text-transform: uppercase;
             border-left: 1.5px solid #000 !important;
@@ -95,7 +104,7 @@
         }
         .room-no-cell {
             font-weight: 900;
-            font-size: 14px;
+            font-size: 13px;
             color: #c00000;
             text-align: center;
             border-left: 1px solid #000 !important;
@@ -170,10 +179,10 @@
     {{-- KPI Summary Bar --}}
     <table class="kpi-table">
         <tr>
-            <td>Total Allocated Rooms: <strong>{{ number_format($totalRoomsInUse) }}</strong></td>
-            <td>Total Pilgrims (Pax): <strong>{{ number_format($totalBedsOccupied) }}</strong></td>
-            <td>Total Bed Capacity: <strong>{{ number_format($totalBedsCapacity) }}</strong></td>
-            <td>Free / Available Beds: <strong>{{ number_format($totalBedsAvailable) }}</strong></td>
+            <td>Total Allocated Rooms: <strong>{{ number_format($totalRoomsInUse ?? ($stats['total_rooms'] ?? 0)) }}</strong></td>
+            <td>Total Pilgrims (Pax): <strong>{{ number_format($totalBedsOccupied ?? ($stats['allocated_beds'] ?? 0)) }}</strong></td>
+            <td>Total Bed Capacity: <strong>{{ number_format($totalBedsCapacity ?? ($stats['total_beds'] ?? 0)) }}</strong></td>
+            <td>Free / Available Beds: <strong>{{ number_format($totalBedsAvailable ?? ($stats['available_beds'] ?? 0)) }}</strong></td>
         </tr>
     </table>
 
@@ -194,11 +203,10 @@
         </thead>
         <tbody>
             @php $globalSr = 1; @endphp
-            @forelse($groupedRooms as $room)
+            @forelse(($groupedRooms ?? $rooms ?? []) as $room)
                 @php
                     $occupants = $room['occupants'];
                     $totalOccupants = count($occupants);
-                    $rowspan = max(1, $totalOccupants);
                     
                     $rawNum = trim($room['room_number']);
                     $isUnassigned = ($rawNum === 'PENDING' || $rawNum === 'UNASSIGNED' || empty($rawNum));
@@ -251,7 +259,7 @@
                             }
                             $isFemale = strtoupper($occ['gender'] ?? 'MALE') === 'FEMALE';
                         @endphp
-                        <tr class="{{ $oIdx === 0 ? 'room-divider-top' : '' }}">
+                        <tr class="{{ $oIdx === 0 ? 'room-divider-top' : 'room-sub-row' }}">
                             <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td>
                             <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
                             <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td>
@@ -266,17 +274,22 @@
                                 </div>
                             </td>
 
-                            @if($oIdx === 0)
-                                <td rowspan="{{ $rowspan }}" class="room-typ-cell">
-                                    <div style="font-size: 7.5px; color: #444; font-weight: bold; margin-bottom: 2px;">{{ $locLabel }}</div>
-                                    <div style="font-size: 10px; font-weight: bold;">{{ $roomTypeDisplay }}</div>
+                            {{-- ROOM TYP (Always rendered on every row to prevent page break column shifting) --}}
+                            <td class="room-typ-cell">
+                                <div style="font-size: 7.5px; color: #444; font-weight: bold;">{{ $locLabel }}</div>
+                                <div style="font-size: 9.5px; font-weight: bold;">{{ $roomTypeDisplay }}</div>
+                                @if($oIdx === 0 && $room['total_capacity'] > 0)
                                     <div style="font-size: 7.5px; color: #666;">({{ $room['total_capacity'] }} Beds)</div>
-                                </td>
-                                <td rowspan="{{ $rowspan }}" class="room-no-cell">
-                                    <div>{{ $roomDisplayNo }}</div>
+                                @endif
+                            </td>
+
+                            {{-- ROOM NO (Always rendered on every row to prevent page break column shifting) --}}
+                            <td class="room-no-cell">
+                                <div>{{ $roomDisplayNo }}</div>
+                                @if($oIdx === 0 && $room['total_capacity'] > 0)
                                     <div style="font-size: 7.5px; color: #666; font-weight: normal;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }}</div>
-                                </td>
-                            @endif
+                                @endif
+                            </td>
 
                             <td class="{{ $isFemale ? 'gender-female' : 'gender-male' }}" style="font-size: 8.5px; text-transform: uppercase;">
                                 {{ strtoupper($occ['gender']) }}
