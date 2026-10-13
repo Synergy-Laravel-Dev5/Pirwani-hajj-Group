@@ -60,7 +60,8 @@ class RoomingListController extends Controller
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        $hotelPart = !empty($data['hotelFilter']) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $data['hotelFilter']) : '';
+        $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
+        $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
         $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
         $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.pdf';
 
@@ -75,7 +76,8 @@ class RoomingListController extends Controller
         $data = $this->getFilteredRoomingData($request);
         $groupedRooms = $data['groupedRooms'];
 
-        $hotelPart = !empty($data['hotelFilter']) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $data['hotelFilter']) : '';
+        $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
+        $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
         $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
         $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.csv';
 
@@ -368,7 +370,14 @@ class RoomingListController extends Controller
      */
     private function getFilteredRoomingData(Request $request): array
     {
-        $hotelFilter    = $request->get('hotel_name');
+        $rawHotelFilter = $request->get('hotel_name');
+        if (is_array($rawHotelFilter)) {
+            $hotelFilter = array_values(array_filter(array_map('trim', $rawHotelFilter)));
+        } elseif (!empty($rawHotelFilter)) {
+            $hotelFilter = [trim($rawHotelFilter)];
+        } else {
+            $hotelFilter = [];
+        }
         $locationFilter = $request->get('location');
         $roomTypeFilter = $request->get('room_type');
         $statusFilter   = $request->get('status'); // all, available, full, overbooked, unassigned
@@ -547,6 +556,8 @@ class RoomingListController extends Controller
                     'hajj_id'           => $hajjId,
                     'hb_number'         => $hbNumber,
                     'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
+                    'father_name'       => $p->father_name ?? null,
+                    'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
                     'passport'          => $p->passport_number ?: '—',
                     'gender'            => $gender,
                     'photo'             => $p->photo,
@@ -631,7 +642,15 @@ class RoomingListController extends Controller
 
         // Apply filters to assigned rooms
         if (!empty($hotelFilter)) {
-            $groupedRooms = array_filter($groupedRooms, fn($r) => stripos($r['hotel_name'], $hotelFilter) !== false);
+            $groupedRooms = array_filter($groupedRooms, function ($r) use ($hotelFilter) {
+                $rHotel = $r['hotel_name'] ?? '';
+                foreach ($hotelFilter as $hf) {
+                    if (stripos($rHotel, $hf) !== false) {
+                        return true;
+                    }
+                }
+                return false;
+            });
         }
         if (!empty($locationFilter) && $locationFilter !== 'all') {
             $groupedRooms = array_filter($groupedRooms, fn($r) => strtolower($r['location']) === strtolower($locationFilter));

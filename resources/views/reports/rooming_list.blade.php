@@ -103,9 +103,138 @@
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
-        tr {
-            page-break-inside: avoid;
+        .col-hidden {
+            display: none !important;
         }
+    }
+
+    /* Column Visibility & Hidden Styles */
+    .col-hidden {
+        display: none !important;
+    }
+
+    .column-filter-menu {
+        min-width: 210px;
+        max-height: 380px;
+        overflow-y: auto;
+        padding: 8px 10px;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e2e8f0;
+    }
+
+    .column-filter-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s ease;
+    }
+
+    .column-filter-item:hover {
+        background-color: #f1f5f9;
+    }
+
+    /* Select2 Multi-Select Styling - keep choices neatly INSIDE the input box */
+    #hotelNameSelect + .select2-container,
+    .select2-container {
+        width: 100% !important;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+    .select2-container--default.select2-container--focus .select2-selection {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+    #hotelNameSelect + .select2-container .select2-selection--multiple,
+    .select2-container--bootstrap-5 .select2-selection--multiple,
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid #ced4da !important;
+        border-radius: 6px !important;
+        min-height: 38px !important;
+        max-height: 96px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        padding: 3px 6px !important;
+        background-color: #fff !important;
+        box-sizing: border-box !important;
+    }
+    #hotelNameSelect + .select2-container .select2-selection--multiple .select2-selection__rendered,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered,
+    .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 4px !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
+    }
+    #hotelNameSelect + .select2-container .select2-selection--multiple .select2-selection__choice,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice,
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        display: inline-flex !important;
+        align-items: center !important;
+        float: none !important;
+        margin: 1px 0 !important;
+        background-color: #e0e7ff !important;
+        border: 1px solid #c7d2fe !important;
+        color: #3730a3 !important;
+        border-radius: 4px !important;
+        padding: 2px 7px !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.3 !important;
+        white-space: normal !important;
+        max-width: 100% !important;
+        word-break: break-word !important;
+    }
+    #hotelNameSelect + .select2-container .select2-selection--multiple .select2-selection__choice__remove,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove,
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #4338ca !important;
+        margin-right: 5px !important;
+        font-weight: bold !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+    }
+    #hotelNameSelect + .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover,
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #dc2626 !important;
+    }
+    #hotelNameSelect + .select2-container .select2-search--inline,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-search--inline,
+    .select2-container--default .select2-selection--multiple .select2-search--inline {
+        display: inline-flex !important;
+        flex-grow: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #hotelNameSelect + .select2-container .select2-search--inline .select2-search__field,
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-search .select2-search__field,
+    .select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+        margin: 2px 0 !important;
+        height: 24px !important;
+        font-size: 12px !important;
+        min-width: 70px !important;
+        width: 100% !important;
+        border: none !important;
+        outline: none !important;
+        padding: 0 4px !important;
     }
 </style>
 
@@ -192,19 +321,23 @@
                         <input type="hidden" name="view" value="{{ $viewMode ?? 'manifest' }}">
                         <div class="row g-2 align-items-end">
 
-                            {{-- Hotel Filter --}}
+                            {{-- Hotel Filter (Multi-Select) --}}
                             <div class="col-xl-3 col-md-4 col-sm-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Hotel Name</label>
-                                <select name="hotel_name" class="form-select form-select-sm">
-                                    <option value="">All Hotels</option>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small fw-semibold text-muted mb-0">Hotel Name (Multi-Select)</label>
+                                    @if(!empty($hotelFilter))
+                                        <span class="badge bg-primary-subtle text-primary" style="font-size: 10px;">{{ count($hotelFilter) }} selected</span>
+                                    @endif
+                                </div>
+                                <select name="hotel_name[]" id="hotelNameSelect" class="form-select form-select-sm select2" multiple="multiple" data-placeholder="Choose Hotel(s)...">
                                     @foreach($registeredHotels as $h)
-                                        <option value="{{ $h->name }}" {{ $hotelFilter == $h->name ? 'selected' : '' }}>
+                                        <option value="{{ $h->name }}" {{ in_array($h->name, (array)$hotelFilter) ? 'selected' : '' }}>
                                             {{ $h->name }} ({{ $h->city ?? $h->place ?? 'Hotel' }})
                                         </option>
                                     @endforeach
                                     @foreach($distinctHotelNames as $dhn)
                                         @if(!$registeredHotels->contains('name', $dhn))
-                                            <option value="{{ $dhn }}" {{ $hotelFilter == $dhn ? 'selected' : '' }}>{{ $dhn }}</option>
+                                            <option value="{{ $dhn }}" {{ in_array($dhn, (array)$hotelFilter) ? 'selected' : '' }}>{{ $dhn }}</option>
                                         @endif
                                     @endforeach
                                 </select>
@@ -363,6 +496,95 @@
             {{-- OFFICIAL MANIFEST TABLE VIEW (EXACT MATCH TO PDF) --}}
             @if(($viewMode ?? 'manifest') === 'manifest')
                 <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-dark fs-14">
+                                <i class="mdi mdi-table-eye text-primary me-1"></i>Manifest Columns
+                            </span>
+                            <span class="badge bg-light text-muted border">Customizable View</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            {{-- Columns Filter Dropdown --}}
+                            <div class="dropdown">
+                                <button class="btn btn-sm text-white fw-bold dropdown-toggle d-flex align-items-center gap-1 shadow-sm" 
+                                        type="button" 
+                                        id="columnsDropdownBtn" 
+                                        data-bs-toggle="dropdown" 
+                                        aria-expanded="false" 
+                                        style="background: #475569; border-color: #334155;">
+                                    <i class="mdi mdi-view-column-outline fs-15"></i> Columns
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end shadow column-filter-menu" aria-labelledby="columnsDropdownBtn" onclick="event.stopPropagation();">
+                                    <div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+                                        <span class="fw-bold text-dark small">Columns</span>
+                                        <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2 fw-semibold" id="btnResetColumns" style="font-size: 11px;">
+                                            <i class="mdi mdi-backup-restore me-1"></i>Reset
+                                        </button>
+                                    </div>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="sr" checked>
+                                        <span>S.No (SR)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="picture" checked>
+                                        <span>Haji Picture</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hajj-id" checked>
+                                        <span>Hajj ID</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hb" checked>
+                                        <span>HB Number</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="name" checked>
+                                        <span>Full Name / Pilgrim</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="father-name">
+                                        <span>Father Name</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="dob">
+                                        <span>Date of Birth (DOB)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport" checked>
+                                        <span>Passport No</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="cnic">
+                                        <span>CNIC</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="phone">
+                                        <span>Contact / Phone</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="booking-no">
+                                        <span>Booking #</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="client">
+                                        <span>Client / Group</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="room-typ" checked>
+                                        <span>Room Type / Hotel</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="room-no" checked>
+                                        <span>Room No</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="gender" checked>
+                                        <span>Gender</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="manifest-table align-middle">
@@ -371,15 +593,21 @@
                                         <th style="width: 40px;" class="no-print text-center">
                                             <input type="checkbox" id="selectAllPilgrims" class="form-check-input" title="Select / Deselect All">
                                         </th>
-                                        <th style="width: 45px;">SR</th>
-                                        <th style="width: 95px;">HAJJ ID</th>
-                                        <th style="width: 90px;">HB</th>
-                                        <th style="width: 110px;">PASSPORT</th>
-                                        <th style="width: 240px; text-align: left; padding-left: 10px;">FULL NAME</th>
-                                        <th style="width: 125px;">ROOM TYP</th>
-                                        <th style="width: 125px;">ROOM NO</th>
-                                        <th style="width: 80px;">Gender</th>
-                                        <th style="width: 85px;">Haji Picture</th>
+                                        <th style="width: 45px;" class="col-sr">SR</th>
+                                        <th style="width: 80px;" class="col-picture">PICTURE</th>
+                                        <th style="width: 95px;" class="col-hajj-id">HAJJ ID</th>
+                                        <th style="width: 90px;" class="col-hb">HB</th>
+                                        <th style="width: 220px; text-align: left; padding-left: 10px;" class="col-name">FULL NAME</th>
+                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">FATHER NAME</th>
+                                        <th style="width: 100px;" class="col-dob col-hidden">DOB</th>
+                                        <th style="width: 110px;" class="col-passport">PASSPORT</th>
+                                        <th style="width: 120px;" class="col-cnic col-hidden">CNIC</th>
+                                        <th style="width: 110px;" class="col-phone col-hidden">PHONE</th>
+                                        <th style="width: 100px;" class="col-booking-no col-hidden">BOOKING #</th>
+                                        <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-client col-hidden">CLIENT / GROUP</th>
+                                        <th style="width: 125px;" class="col-room-typ">ROOM TYP</th>
+                                        <th style="width: 125px;" class="col-room-no">ROOM NO</th>
+                                        <th style="width: 80px;" class="col-gender">GENDER</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -425,12 +653,19 @@
                                             {{-- Empty Room Row --}}
                                             <tr class="room-divider-row">
                                                 <td class="text-center no-print">—</td>
-                                                <td class="text-center text-muted fw-bold">{{ $globalSr++ }}</td>
-                                                <td class="text-center text-muted">—</td>
-                                                <td class="text-center text-muted">—</td>
-                                                <td class="text-center text-muted">—</td>
-                                                <td class="text-muted fst-italic"><em>(Empty Room - {{ $room['total_capacity'] }} Beds Available)</em></td>
-                                                <td class="room-typ-cell">
+                                                <td class="text-center text-muted fw-bold col-sr">{{ $globalSr++ }}</td>
+                                                <td class="text-center text-muted col-picture">—</td>
+                                                <td class="text-center text-muted col-hajj-id">—</td>
+                                                <td class="text-center text-muted col-hb">—</td>
+                                                <td class="text-muted fst-italic col-name"><em>(Empty Room - {{ $room['total_capacity'] }} Beds Available)</em></td>
+                                                <td class="text-center text-muted col-father-name col-hidden">—</td>
+                                                <td class="text-center text-muted col-dob col-hidden">—</td>
+                                                <td class="text-center text-muted col-passport">—</td>
+                                                <td class="text-center text-muted col-cnic col-hidden">—</td>
+                                                <td class="text-center text-muted col-phone col-hidden">—</td>
+                                                <td class="text-center text-muted col-booking-no col-hidden">—</td>
+                                                <td class="text-center text-muted col-client col-hidden">—</td>
+                                                <td class="room-typ-cell col-room-typ">
                                                     <div class="mb-1">
                                                         <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700;">
                                                              {{ $locLabel }}
@@ -439,12 +674,11 @@
                                                     <div class="fw-bold text-dark mb-1" style="font-size: 11px;">{{ $room['hotel_name'] }}</div>
                                                     <div class="fw-bold text-primary">{{ $roomTypeDisplay }} ({{ $room['total_capacity'] }} Beds)</div>
                                                 </td>
-                                                <td class="room-no-cell">
+                                                <td class="room-no-cell col-room-no">
                                                     <span class="fs-14 fw-bold text-danger">{{ $roomDisplayNo }}</span>
                                                     <small class="d-block text-muted" style="font-size: 10px;">0/{{ $room['total_capacity'] }} Beds</small>
                                                 </td>
-                                                <td class="text-center text-muted">—</td>
-                                                <td class="text-center text-muted">—</td>
+                                                <td class="text-center text-muted col-gender">—</td>
                                             </tr>
                                         @else
                                             @foreach($occupants as $oIdx => $occ)
@@ -464,23 +698,30 @@
                                                             <span class="text-muted" style="font-size: 10px;">—</span>
                                                         @endif
                                                     </td>
-                                                    <td class="text-center fw-bold">{{ $globalSr++ }}</td>
-                                                    <td class="text-center fw-semibold text-uppercase">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
-                                                    <td class="text-center fw-semibold text-uppercase">
+                                                    <td class="text-center fw-bold col-sr">{{ $globalSr++ }}</td>
+                                                    <td class="text-center p-1 col-picture">
+                                                        @if(!empty($occ['photo']) && file_exists(public_path($occ['photo'])))
+                                                            <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo">
+                                                        @else
+                                                            <div class="haji-photo-placeholder">
+                                                                <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-24"></i>
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center fw-semibold text-uppercase col-hajj-id">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
+                                                    <td class="text-center fw-semibold text-uppercase col-hb">
                                                         @if(!empty($occ['hb_number']))
                                                             <span class="badge bg-dark text-white px-2 py-1" style="font-size: 11px;">{{ $occ['hb_number'] }}</span>
                                                         @else
                                                             —
                                                         @endif
                                                     </td>
-                                                    <td class="text-center fw-bold text-uppercase">{{ $occ['passport'] }}</td>
-                                                    <td style="text-align: left; padding-left: 10px;" class="fw-bold text-uppercase text-dark">
+                                                    <td style="text-align: left; padding-left: 10px;" class="fw-bold text-uppercase text-dark col-name">
                                                         <span class="d-block">{{ $occ['name'] }}</span>
                                                         <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
                                                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0" style="font-size: 10px; font-weight: 700;">
                                                                 <i class="mdi mdi-tag-outline me-1"></i>Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
                                                             </span>
-                                                            <small class="text-muted fw-normal" style="font-size: 10px;">{{ $occ['client_name'] }} ({{ $occ['booking_number'] }})</small>
                                                             @if(!$isPending && !empty($occ['real_person_id']))
                                                                 <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
                                                                         data-id="{{ $occ['real_person_id'] }}"
@@ -491,9 +732,28 @@
                                                             @endif
                                                         </div>
                                                     </td>
+                                                    <td style="text-align: left; padding-left: 10px;" class="col-father-name col-hidden fw-semibold text-muted text-uppercase">
+                                                        {{ $occ['father_name'] ?? '—' }}
+                                                    </td>
+                                                    <td class="text-center col-dob col-hidden text-muted small">
+                                                        {{ $occ['dob'] ?? '—' }}
+                                                    </td>
+                                                    <td class="text-center fw-bold text-uppercase col-passport">{{ $occ['passport'] }}</td>
+                                                    <td class="text-center col-cnic col-hidden font-monospace small">
+                                                        {{ $occ['cnic'] ?: '—' }}
+                                                    </td>
+                                                    <td class="text-center col-phone col-hidden small">
+                                                        {{ $occ['phone'] ?: '—' }}
+                                                    </td>
+                                                    <td class="text-center col-booking-no col-hidden font-monospace fw-bold small text-primary">
+                                                        {{ $occ['booking_number'] ?: '—' }}
+                                                    </td>
+                                                    <td style="text-align: left; padding-left: 10px;" class="col-client col-hidden small fw-semibold text-truncate" style="max-width: 140px;" title="{{ $occ['client_name'] }}">
+                                                        {{ $occ['client_name'] ?: '—' }}
+                                                    </td>
                                                     
                                                     @if($oIdx === 0)
-                                                        <td rowspan="{{ $rowspan }}" class="room-typ-cell">
+                                                        <td rowspan="{{ $rowspan }}" class="room-typ-cell col-room-typ">
                                                             <div class="mb-1">
                                                                 <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
                                                                     <i class="mdi mdi-map-marker me-1"></i>{{ $locLabel }}
@@ -548,7 +808,7 @@
                                                                 </div>
                                                             @endif
                                                         </td>
-                                                        <td rowspan="{{ $rowspan }}" class="room-no-cell">
+                                                        <td rowspan="{{ $rowspan }}" class="room-no-cell col-room-no">
                                                             @if($isPending)
                                                                 <span class="badge bg-warning text-dark fs-12 px-2 py-1 fw-bold">PENDING</span>
                                                                 <small class="d-block text-muted mt-1 fw-semibold" style="font-size: 10px;">{{ $totalOccupants }} Pilgrims</small>
@@ -559,24 +819,15 @@
                                                         </td>
                                                     @endif
 
-                                                    <td class="text-center {{ strtoupper($occ['gender']) === 'FEMALE' ? 'gender-female' : 'gender-male' }} text-uppercase">
+                                                    <td class="text-center {{ strtoupper($occ['gender']) === 'FEMALE' ? 'gender-female' : 'gender-male' }} text-uppercase col-gender">
                                                         {{ strtoupper($occ['gender']) }}
-                                                    </td>
-                                                    <td class="text-center p-1">
-                                                        @if(!empty($occ['photo']) && file_exists(public_path($occ['photo'])))
-                                                            <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo">
-                                                        @else
-                                                            <div class="haji-photo-placeholder">
-                                                                <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-24"></i>
-                                                            </div>
-                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
                                         @endif
                                     @empty
                                         <tr>
-                                            <td colspan="10" class="text-center py-5 text-muted">
+                                            <td colspan="16" class="text-center py-5 text-muted">
                                                 <i class="mdi mdi-bed-empty fs-48 d-block mb-2 text-muted"></i>
                                                 <h5>No Pilgrims Found</h5>
                                                 <p>Try clearing filters above to view all bookings.</p>
@@ -1258,6 +1509,96 @@
                 }
             });
         });
+
+        // Initialize Select2 on Hotel Name Multi-Select Filter
+        if (typeof $ !== 'undefined' && $.fn.select2) {
+            $('#hotelNameSelect').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Choose Hotel(s)...',
+                allowClear: true,
+                width: '100%',
+                closeOnSelect: false
+            });
+        }
+
+        // ==========================================
+        // DYNAMIC COLUMN VISIBILITY CONTROLLER
+        // ==========================================
+        const colCheckboxes = document.querySelectorAll('.col-toggle-checkbox');
+        const defaultVisibleCols = ['sr', 'picture', 'hajj-id', 'hb', 'name', 'passport', 'room-typ', 'room-no', 'gender'];
+        const storageKey = 'rooming_manifest_columns_pref_v4';
+
+        function applyColumnVisibility(colName, isVisible) {
+            const cells = document.querySelectorAll(`.col-${colName}`);
+            cells.forEach(el => {
+                if (isVisible) {
+                    el.classList.remove('col-hidden');
+                } else {
+                    el.classList.add('col-hidden');
+                }
+            });
+        }
+
+        function saveColumnPreferences() {
+            const prefs = {};
+            colCheckboxes.forEach(cb => {
+                const col = cb.getAttribute('data-col');
+                prefs[col] = cb.checked;
+            });
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(prefs));
+            } catch(e) {}
+        }
+
+        function loadColumnPreferences() {
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const prefs = JSON.parse(saved);
+                    colCheckboxes.forEach(cb => {
+                        const col = cb.getAttribute('data-col');
+                        if (typeof prefs[col] !== 'undefined') {
+                            cb.checked = !!prefs[col];
+                            applyColumnVisibility(col, !!prefs[col]);
+                        }
+                    });
+                    return;
+                }
+            } catch(e) {}
+
+            // By default: ONLY show the original default columns, keep extra columns unchecked & hidden
+            colCheckboxes.forEach(cb => {
+                const col = cb.getAttribute('data-col');
+                const isDefault = defaultVisibleCols.includes(col);
+                cb.checked = isDefault;
+                applyColumnVisibility(col, isDefault);
+            });
+        }
+
+        colCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const col = this.getAttribute('data-col');
+                applyColumnVisibility(col, this.checked);
+                saveColumnPreferences();
+            });
+        });
+
+        // Reset Columns button (Revert to original default columns)
+        document.getElementById('btnResetColumns')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            colCheckboxes.forEach(cb => {
+                const col = cb.getAttribute('data-col');
+                const isDefault = defaultVisibleCols.includes(col);
+                cb.checked = isDefault;
+                applyColumnVisibility(col, isDefault);
+            });
+            try {
+                localStorage.removeItem(storageKey);
+            } catch(e) {}
+        });
+
+        // Load saved column preferences on page load
+        loadColumnPreferences();
     });
 </script>
 @endsection
