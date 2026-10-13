@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\BookingHotel;
 use App\Models\BookingPerson;
+use App\Models\BookingPersonRoomAllocation;
 use App\Models\Hotel;
 use App\Models\HotelRoomCapacity;
 use App\Models\RoomType;
@@ -236,12 +237,43 @@ class RoomingListController extends Controller
             if (is_numeric($pid)) {
                 $person = BookingPerson::find($pid);
                 if ($person) {
+                    // Update or create allocation for this person at this specific location & hotel stage
+                    $allocation = BookingPersonRoomAllocation::where('booking_person_id', $person->id)
+                        ->where(function ($q) use ($location, $hotelName) {
+                            $q->where(function ($sub) use ($location, $hotelName) {
+                                $sub->where('location', $location)->where('hotel_name', $hotelName);
+                            })->orWhere(function ($sub) use ($location) {
+                                $sub->where('location', $location)
+                                    ->where(function ($h) {
+                                        $h->whereNull('hotel_name')
+                                          ->orWhere('hotel_name', '')
+                                          ->orWhere('hotel_name', 'Pending Room Allocation')
+                                          ->orWhere('hotel_name', 'Unspecified Hotel');
+                                    });
+                            });
+                        })->first();
+
+                    if (!$allocation) {
+                        $allocation = new BookingPersonRoomAllocation();
+                        $allocation->booking_id = $person->booking_id;
+                        $allocation->booking_person_id = $person->id;
+                    }
+
+                    $allocation->location    = $location;
+                    $allocation->hotel_name  = $hotelName;
+                    $allocation->room_number = $roomNumber;
+                    $allocation->room_type   = $roomType;
+                    $allocation->gender      = $gender;
+                    $allocation->save();
+
+                    // Also sync to person model as primary/latest room for backwards compatibility
                     $person->room_number = $roomNumber;
-                    $person->room_type = $roomType;
-                    $person->hotel_name = $hotelName;
-                    $person->location = $location;
+                    $person->room_type   = $roomType;
+                    $person->hotel_name  = $hotelName;
+                    $person->location    = $location;
                     $person->room_gender = $gender;
                     $person->save();
+
                     $updatedCount++;
 
                     // Sync/Ensure BookingHotel on this booking
@@ -313,28 +345,91 @@ class RoomingListController extends Controller
      */
     public function unassignRoom(Request $request)
     {
-        $request->validate([
-            'person_ids' => 'required|array|min:1',
-        ]);
+        $personIds     = $request->person_ids ? (array)$request->person_ids : [];
+        $allocationIds = $request->allocation_ids ? (array)$request->allocation_ids : [];
+        $hotelName     = $request->hotel_name ? trim($request->hotel_name) : null;
+        $roomNumber    = $request->room_number ? trim($request->room_number) : null;
+        $location      = $request->location ? trim($request->location) : null;
 
-        $personIds = $request->person_ids;
         $unassignedCount = 0;
         $affectedBookings = [];
 
-        foreach ($personIds as $pid) {
-            if (is_numeric($pid)) {
-                $person = BookingPerson::find($pid);
-                if ($person) {
-                    $bId = $person->booking_id;
-                    $person->room_number = null;
-                    $person->room_type = null;
-                    $person->hotel_name = null;
-                    $person->room_gender = null;
-                    $person->save();
-                    $unassignedCount++;
-
-                    if ($bId) {
-                        $affectedBookings[$bId] = true;
+        if (!empty($allocationIds)) {
+            // Unassign by specific allocation IDs
+            $allocs = BookingPersonRoomAllocation::whereIn('id', $allocationIds)->get();
+            foreach ($allocs as $al) {
+                $bId = $al->booking_id;
+                $p = BookingPerson::find($al->booking_person_id);
+                if ($p && $p->hotel_name === $al->hotel_name && $p->room_number === $al->room_number) {
+                    $otherAlloc = BookingPersonRoomAllocation::where('booking_person_id', $p->id)
+                        ->where('id', '!=', $al->id)
+                        ->latest()
+                        ->first();
+                    if ($otherAlloc) {
+                        $p->room_number = $otherAlloc->room_number;
+                        $p->room_type   = $otherAlloc->room_type;
+                        $p->hotel_name  = $otherAlloc->hotel_name;
+                        $p->location    = $otherAlloc->location;
+                        $p->room_gender = $otherAlloc->gender;
+                    } else {
+                        $p->room_number = null;
+                        $p->room_type   = null;
+                        $p->hotel_name  = null;
+                        $p->room_gender = null;
+                    }
+                    $p->save();
+                }
+                $al->delete();
+                $unassignedCount++;
+                if ($bId) $affectedBookings[$bId] = true;
+            }
+        } elseif (!empty($hotelName) && !empty($roomNumber) && !empty($personIds)) {
+            // Unassign specific room & hotel for given pilgrims
+            $allocs = BookingPersonRoomAllocation::whereIn('booking_person_id', $personIds)
+                ->where('hotel_name', $hotelName)
+                ->where('room_number', $roomNumber)
+                ->get();
+            foreach ($allocs as $al) {
+                $bId = $al->booking_id;
+                $p = BookingPerson::find($al->booking_person_id);
+                if ($p && $p->hotel_name === $al->hotel_name && $p->room_number === $al->room_number) {
+                    $otherAlloc = BookingPersonRoomAllocation::where('booking_person_id', $p->id)
+                        ->where('id', '!=', $al->id)
+                        ->latest()
+                        ->first();
+                    if ($otherAlloc) {
+                        $p->room_number = $otherAlloc->room_number;
+                        $p->room_type   = $otherAlloc->room_type;
+                        $p->hotel_name  = $otherAlloc->hotel_name;
+                        $p->location    = $otherAlloc->location;
+                        $p->room_gender = $otherAlloc->gender;
+                    } else {
+                        $p->room_number = null;
+                        $p->room_type   = null;
+                        $p->hotel_name  = null;
+                        $p->room_gender = null;
+                    }
+                    $p->save();
+                }
+                $al->delete();
+                $unassignedCount++;
+                if ($bId) $affectedBookings[$bId] = true;
+            }
+        } elseif (!empty($personIds)) {
+            // Fallback: unassign pilgrims
+            foreach ($personIds as $pid) {
+                if (is_numeric($pid)) {
+                    $person = BookingPerson::find($pid);
+                    if ($person) {
+                        $bId = $person->booking_id;
+                        BookingPersonRoomAllocation::where('booking_person_id', $person->id)->delete();
+                        $person->room_number = null;
+                        $person->room_type   = null;
+                        $person->hotel_name  = null;
+                        $person->room_gender = null;
+                        $person->save();
+                        $unassignedCount++;
+                        if ($bId) $affectedBookings[$bId] = true;
                     }
                 }
             }
@@ -342,7 +437,7 @@ class RoomingListController extends Controller
 
         // For affected bookings: if no person in this booking has an assigned room, clear room_number on BookingHotel
         foreach (array_keys($affectedBookings) as $bId) {
-            $hasAssignedPersons = BookingPerson::where('booking_id', $bId)
+            $hasAssignedPersons = BookingPersonRoomAllocation::where('booking_id', $bId)
                 ->whereNotNull('room_number')
                 ->where('room_number', '!=', '')
                 ->where('room_number', '!=', 'PENDING')
@@ -354,14 +449,15 @@ class RoomingListController extends Controller
             }
         }
 
+        $successMsg = "{$unassignedCount} Pilgrim allocation(s) moved to Pending Room Allocation.";
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "{$unassignedCount} Pilgrims moved to Pending Room Allocation.",
+                'message' => $successMsg,
             ]);
         }
 
-        return back()->with('success', "{$unassignedCount} Pilgrims moved to Pending Room Allocation.");
+        return back()->with('success', $successMsg);
     }
 
     /**
@@ -390,7 +486,7 @@ class RoomingListController extends Controller
         $bookingQuery = Booking::with([
             'client',
             'company',
-            'persons',
+            'persons.roomAllocations',
             'hotels'
         ])->whereNull('deleted_at')
           ->whereNotIn('status', ['cancelled', 'rejected']);
@@ -410,7 +506,11 @@ class RoomingListController extends Controller
                           ->orWhere('cnic', 'LIKE', $term)
                           ->orWhere('hajj_id', 'LIKE', $term)
                           ->orWhere('hb_number', 'LIKE', $term)
-                          ->orWhere('room_number', 'LIKE', $term);
+                          ->orWhere('room_number', 'LIKE', $term)
+                          ->orWhereHas('roomAllocations', function ($raq) use ($term) {
+                              $raq->where('room_number', 'LIKE', $term)
+                                 ->orWhere('hotel_name', 'LIKE', $term);
+                          });
                    })
                    ->orWhereHas('hotels', function ($hq) use ($term) {
                        $hq->where('room_number', 'LIKE', $term)
@@ -471,6 +571,29 @@ class RoomingListController extends Controller
                 }
             }
 
+            // Determine Booked Room Type & default hotel from booking
+            $bookedRoomType = 'Quad';
+            $bHotelFirst = $b->hotels ? $b->hotels->first() : null;
+            if ($bHotelFirst && !empty($bHotelFirst->room_type)) {
+                $bookedRoomType = ucfirst(trim($bHotelFirst->room_type));
+            } elseif (!empty($b->package?->room_type)) {
+                $bookedRoomType = ucfirst(trim($b->package->room_type));
+            } else {
+                $pax = max(1, (int) ($b->no_of_pax ?: 1));
+                $bookedRoomType = match($pax) {
+                    1 => 'Single',
+                    2 => 'Double',
+                    3 => 'Triple',
+                    4 => 'Quad',
+                    5 => 'Quint',
+                    6 => 'Six / Sharing',
+                    default => 'Sharing (' . $pax . ' Beds)',
+                };
+            }
+            if (in_array(strtolower($bookedRoomType), ['six', 'sharing', '6', 'six-bed', '6-bed'])) {
+                $bookedRoomType = 'Six / Sharing';
+            }
+
             foreach ($persons as $p) {
                 $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
                 $hbNumber = !empty($p->hb_number) ? BookingPerson::formatHbNumber($p->hb_number) : '';
@@ -483,158 +606,168 @@ class RoomingListController extends Controller
                     }
                 }
 
-                // Check person level room or booking hotel level room
-                $rNum = !empty($p->room_number) ? trim($p->room_number) : null;
-                if (in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
-                    $rNum = null;
-                }
-                $rType = !empty($p->room_type) ? trim($p->room_type) : null;
-                $hName = !empty($p->hotel_name) ? trim($p->hotel_name) : null;
-                $loc = !empty($p->location) ? trim($p->location) : null;
-                $rGender = !empty($p->room_gender) ? trim($p->room_gender) : 'Any';
-                $cIn = null;
-                $cOut = null;
+                // Get all room allocations for this person
+                $allocations = $p->roomAllocations ?? collect();
 
-                if ($b->hotels && $b->hotels->count() > 0) {
-                    $matchedHotel = null;
-                    if (!empty($locationFilter) && $locationFilter !== 'all') {
-                        $matchedHotel = $b->hotels->firstWhere('location', $locationFilter);
-                    }
-                    if (!$matchedHotel && !empty($loc)) {
-                        $matchedHotel = $b->hotels->firstWhere('location', $loc);
-                    }
-                    if (!$matchedHotel && !empty($hName)) {
-                        $matchedHotel = $b->hotels->firstWhere('hotel_name', $hName);
-                    }
-                    if (!$matchedHotel) {
-                        $matchedHotel = $b->hotels->first();
-                    }
-
-                    if ($matchedHotel) {
-                        $rType = $rType ?: $matchedHotel->room_type;
-                        $hName = $hName ?: $matchedHotel->hotel_name;
-                        $loc = $loc ?: $matchedHotel->location;
-                        $cIn = $matchedHotel->check_in;
-                        $cOut = $matchedHotel->check_out;
-
-                        // Only for virtual temporary pilgrims without real DB record can room_number fall back to booking hotel.
-                        // For real pilgrims (BookingPerson model), room assignment is strictly controlled on the person.
-                        if (!is_numeric($p->id) && empty($rNum) && !empty($matchedHotel->room_number)) {
-                            $rNum = trim($matchedHotel->room_number);
-                        }
-                    }
+                // If person has no allocations table records yet, fall back to person model columns
+                if ($allocations->isEmpty() && (!empty($p->room_number) || !empty($p->hotel_name))) {
+                    $allocations = collect([(object)[
+                        'id'          => null,
+                        'hotel_name'  => $p->hotel_name,
+                        'room_number' => $p->room_number,
+                        'room_type'   => $p->room_type,
+                        'location'    => $p->location ?: 'makkah',
+                        'gender'      => $p->room_gender ?: 'Any',
+                        'check_in'    => null,
+                        'check_out'   => null,
+                    ]]);
                 }
 
-                // Determine Booked Room Type from booking / hotel / pax count
-                $bookedRoomType = 'Quad';
-                $bHotelFirst = $b->hotels ? $b->hotels->first() : null;
-                if (!empty($p->room_type)) {
-                    $bookedRoomType = ucfirst(trim($p->room_type));
-                } elseif ($bHotelFirst && !empty($bHotelFirst->room_type)) {
-                    $bookedRoomType = ucfirst(trim($bHotelFirst->room_type));
-                } elseif (!empty($b->package?->room_type)) {
-                    $bookedRoomType = ucfirst(trim($b->package->room_type));
-                } else {
-                    $pax = max(1, (int) ($b->no_of_pax ?: 1));
-                    $bookedRoomType = match($pax) {
-                        1 => 'Single',
-                        2 => 'Double',
-                        3 => 'Triple',
-                        4 => 'Quad',
-                        5 => 'Quint',
-                        6 => 'Six / Sharing',
-                        default => 'Sharing (' . $pax . ' Beds)',
-                    };
-                }
-                if (in_array(strtolower($bookedRoomType), ['six', 'sharing', '6', 'six-bed', '6-bed'])) {
-                    $bookedRoomType = 'Six / Sharing';
-                }
-
-                $occData = [
-                    'person_id'         => $p->id,
-                    'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
-                    'hajj_id'           => $hajjId,
-                    'hb_number'         => $hbNumber,
-                    'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
-                    'father_name'       => $p->father_name ?? null,
-                    'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
-                    'passport'          => $p->passport_number ?: '—',
-                    'gender'            => $gender,
-                    'photo'             => $p->photo,
-                    'cnic'              => $p->cnic,
-                    'phone'             => $p->phone ?: $b->phone,
-                    'booking_id'        => $b->id,
-                    'booking_number'    => $b->booking_number ?? ('#BK-' . $b->id),
-                    'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
-                    'check_in'          => $cIn ? date('d M Y', strtotime($cIn)) : '—',
-                    'check_out'         => $cOut ? date('d M Y', strtotime($cOut)) : '—',
-                    'room_type'         => $rType ?: 'Quad',
-                    'booked_room_type'  => $bookedRoomType,
-                    'booked_hotel_name' => $bHotelFirst ? $bHotelFirst->hotel_name : '—',
-                    'booking_pax'       => $b->no_of_pax ?: 1,
-                    'room_number'       => $rNum,
-                    'hotel_name'        => $hName,
-                    'location'          => $loc ?: 'makkah',
-                ];
-
-                $hasExplicitHotel = !empty($hName) && !in_array(strtolower($hName), ['pending room allocation', 'unassigned', '—', '-']);
-                $hasExplicitRoom = !empty($rNum) && !in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-']);
-
-                if (!$hasExplicitHotel && !$hasExplicitRoom) {
+                if ($allocations->isEmpty()) {
+                    // Totally unassigned pilgrim
+                    $occData = [
+                        'allocation_id'     => null,
+                        'person_id'         => $p->id,
+                        'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
+                        'hajj_id'           => $hajjId,
+                        'hb_number'         => $hbNumber,
+                        'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
+                        'father_name'       => $p->father_name ?? null,
+                        'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
+                        'passport'          => $p->passport_number ?: '—',
+                        'gender'            => $gender,
+                        'photo'             => $p->photo,
+                        'cnic'              => $p->cnic,
+                        'phone'             => $p->phone ?: $b->phone,
+                        'booking_id'        => $b->id,
+                        'booking_number'    => $b->booking_number ?? ('#BK-' . $b->id),
+                        'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
+                        'check_in'          => $bHotelFirst?->check_in ? date('d M Y', strtotime($bHotelFirst->check_in)) : '—',
+                        'check_out'         => $bHotelFirst?->check_out ? date('d M Y', strtotime($bHotelFirst->check_out)) : '—',
+                        'room_type'         => $bHotelFirst?->room_type ? ucfirst($bHotelFirst->room_type) : $bookedRoomType,
+                        'booked_room_type'  => $bookedRoomType,
+                        'booked_hotel_name' => $bHotelFirst ? $bHotelFirst->hotel_name : 'Pending Allocation',
+                        'booking_pax'       => $b->no_of_pax ?: 1,
+                        'room_number'       => null,
+                        'hotel_name'        => $bHotelFirst?->hotel_name,
+                        'location'          => $bHotelFirst?->location ?: 'makkah',
+                    ];
                     $unassignedOccupants[] = $occData;
                 } else {
-                    $hName = $hasExplicitHotel ? $hName : 'Unspecified Hotel';
-                    $rType = ucfirst($rType ?: 'Quad');
-                    $loc = $loc ?: 'makkah';
-                    $displayRoomNo = $hasExplicitRoom ? $rNum : 'PENDING';
-                    $occData['room_number'] = $displayRoomNo;
+                    foreach ($allocations as $alloc) {
+                        $rNum = !empty($alloc->room_number) ? trim($alloc->room_number) : null;
+                        if (in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
+                            $rNum = null;
+                        }
+                        $hName = !empty($alloc->hotel_name) ? trim($alloc->hotel_name) : null;
+                        $loc = !empty($alloc->location) ? trim($alloc->location) : 'makkah';
+                        $rType = !empty($alloc->room_type) ? trim($alloc->room_type) : null;
+                        $rGender = !empty($alloc->gender) ? trim($alloc->gender) : 'Any';
 
-                    $groupKey = strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
-
-                    if (!isset($groupedRooms[$groupKey])) {
-                        $baseCap = HotelRoomCapacity::resolveCapacity($hName, $displayRoomNo, $rType, $loc);
-                        $customCap = HotelRoomCapacity::where(function ($q) use ($displayRoomNo) {
-                            foreach (HotelRoomCapacity::normalizeRoomNumber($displayRoomNo) as $v) {
-                                $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                        $matchedHotel = null;
+                        if ($b->hotels && $b->hotels->count() > 0) {
+                            $matchedHotel = $b->hotels->first(function ($bh) use ($loc, $hName) {
+                                return (!empty($hName) && stripos($bh->hotel_name, $hName) !== false) ||
+                                       (strtolower($bh->location) === strtolower($loc));
+                            });
+                            if (!$matchedHotel) {
+                                $matchedHotel = $b->hotels->first();
                             }
-                        })->first();
+                        }
 
-                        $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;
-                        $effectiveCap = max(1, $baseCap);
-                        $roomGender = !empty($customCap->gender) && $customCap->gender !== 'Any' ? $customCap->gender : $rGender;
+                        $cIn = $alloc->check_in ?? ($matchedHotel?->check_in);
+                        $cOut = $alloc->check_out ?? ($matchedHotel?->check_out);
+                        $rType = $rType ?: ($matchedHotel?->room_type ? ucfirst($matchedHotel->room_type) : $bookedRoomType);
+                        $hName = $hName ?: ($matchedHotel?->hotel_name ?: 'Unspecified Hotel');
 
-                        $groupedRooms[$groupKey] = [
-                            'hotel_name'      => $hName,
-                            'room_number'     => $displayRoomNo,
-                            'room_type'       => $rType,
-                            'room_gender'     => $roomGender,
-                            'location'        => $loc,
-                            'capacity_id'     => $customCap ? $customCap->id : null,
-                            'base_capacity'   => $baseCap,
-                            'extra_beds'      => $extraBeds,
-                            'total_capacity'  => $effectiveCap,
-                            'occupied_beds'   => 0,
-                            'available_beds'  => $effectiveCap,
-                            'is_full'         => false,
-                            'is_overbooked'   => false,
-                            'notes'           => $customCap ? $customCap->notes : null,
-                            'occupants'       => [],
-                            'check_in_min'    => $cIn,
-                            'check_out_max'   => $cOut,
-                            'booking_ids'     => [],
-                            'latest_activity' => 0,
+                        $occData = [
+                            'allocation_id'     => $alloc->id ?? null,
+                            'person_id'         => $p->id,
+                            'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
+                            'hajj_id'           => $hajjId,
+                            'hb_number'         => $hbNumber,
+                            'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
+                            'father_name'       => $p->father_name ?? null,
+                            'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
+                            'passport'          => $p->passport_number ?: '—',
+                            'gender'            => $gender,
+                            'photo'             => $p->photo,
+                            'cnic'              => $p->cnic,
+                            'phone'             => $p->phone ?: $b->phone,
+                            'booking_id'        => $b->id,
+                            'booking_number'    => $b->booking_number ?? ('#BK-' . $b->id),
+                            'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
+                            'check_in'          => $cIn ? date('d M Y', strtotime($cIn)) : '—',
+                            'check_out'         => $cOut ? date('d M Y', strtotime($cOut)) : '—',
+                            'room_type'         => $rType,
+                            'booked_room_type'  => $bookedRoomType,
+                            'booked_hotel_name' => $hName,
+                            'booking_pax'       => $b->no_of_pax ?: 1,
+                            'room_number'       => $rNum,
+                            'hotel_name'        => $hName,
+                            'location'          => $loc,
                         ];
-                    }
 
-                    $groupedRooms[$groupKey]['occupied_beds']++;
-                    if (!in_array($b->id, $groupedRooms[$groupKey]['booking_ids'])) {
-                        $groupedRooms[$groupKey]['booking_ids'][] = $b->id;
-                    }
-                    $groupedRooms[$groupKey]['occupants'][] = $occData;
+                        $hasExplicitHotel = !empty($hName) && !in_array(strtolower($hName), ['pending room allocation', 'unassigned', '—', '-']);
+                        $hasExplicitRoom = !empty($rNum) && !in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-']);
 
-                    $pActivity = $p->updated_at ? $p->updated_at->timestamp : ($p->created_at ? $p->created_at->timestamp : 0);
-                    if ($pActivity > ($groupedRooms[$groupKey]['latest_activity'] ?? 0)) {
-                        $groupedRooms[$groupKey]['latest_activity'] = $pActivity;
+                        if (!$hasExplicitHotel && !$hasExplicitRoom) {
+                            $unassignedOccupants[] = $occData;
+                        } else {
+                            $hName = $hasExplicitHotel ? $hName : 'Unspecified Hotel';
+                            $rType = ucfirst($rType ?: 'Quad');
+                            $loc = $loc ?: 'makkah';
+                            $displayRoomNo = $hasExplicitRoom ? $rNum : 'PENDING';
+                            $occData['room_number'] = $displayRoomNo;
+
+                            $groupKey = strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
+
+                            if (!isset($groupedRooms[$groupKey])) {
+                                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $displayRoomNo, $rType, $loc);
+                                $customCap = HotelRoomCapacity::where(function ($q) use ($displayRoomNo) {
+                                    foreach (HotelRoomCapacity::normalizeRoomNumber($displayRoomNo) as $v) {
+                                        $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                                    }
+                                })->first();
+
+                                $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;
+                                $effectiveCap = max(1, $baseCap);
+                                $roomGender = !empty($customCap->gender) && $customCap->gender !== 'Any' ? $customCap->gender : $rGender;
+
+                                $groupedRooms[$groupKey] = [
+                                    'hotel_name'      => $hName,
+                                    'room_number'     => $displayRoomNo,
+                                    'room_type'       => $rType,
+                                    'room_gender'     => $roomGender,
+                                    'location'        => $loc,
+                                    'capacity_id'     => $customCap ? $customCap->id : null,
+                                    'base_capacity'   => $baseCap,
+                                    'extra_beds'      => $extraBeds,
+                                    'total_capacity'  => $effectiveCap,
+                                    'occupied_beds'   => 0,
+                                    'available_beds'  => $effectiveCap,
+                                    'is_full'         => false,
+                                    'is_overbooked'   => false,
+                                    'notes'           => $customCap ? $customCap->notes : null,
+                                    'occupants'       => [],
+                                    'check_in_min'    => $cIn,
+                                    'check_out_max'   => $cOut,
+                                    'booking_ids'     => [],
+                                    'latest_activity' => 0,
+                                ];
+                            }
+
+                            $groupedRooms[$groupKey]['occupied_beds']++;
+                            if (!in_array($b->id, $groupedRooms[$groupKey]['booking_ids'])) {
+                                $groupedRooms[$groupKey]['booking_ids'][] = $b->id;
+                            }
+                            $groupedRooms[$groupKey]['occupants'][] = $occData;
+
+                            $pActivity = $p->updated_at ? $p->updated_at->timestamp : ($p->created_at ? $p->created_at->timestamp : 0);
+                            if ($pActivity > ($groupedRooms[$groupKey]['latest_activity'] ?? 0)) {
+                                $groupedRooms[$groupKey]['latest_activity'] = $pActivity;
+                            }
+                        }
                     }
                 }
             }

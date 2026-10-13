@@ -124,4 +124,9 @@ class BookingPerson extends Model
     {
         return $this->belongsTo(Booking::class);
     }
+
+    public function roomAllocations()
+    {
+        return $this->hasMany(BookingPersonRoomAllocation::class, 'booking_person_id');
+    }
 }

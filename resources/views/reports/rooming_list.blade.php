@@ -682,11 +682,15 @@
                                             </tr>
                                         @else
                                             @foreach($occupants as $oIdx => $occ)
-                                                <tr class="{{ $oIdx === 0 ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" id="row-pilgrim-{{ $occ['person_id'] }}">
+                                                <tr class="{{ $oIdx === 0 ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}">
                                                     <td class="text-center no-print">
                                                         @if(!empty($occ['real_person_id']))
                                                             <input type="checkbox" class="form-check-input pilgrim-check" 
                                                                    value="{{ $occ['real_person_id'] }}"
+                                                                   data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                   data-hotel="{{ $room['hotel_name'] ?? '' }}"
+                                                                   data-room="{{ $room['room_number'] ?? '' }}"
+                                                                   data-location="{{ $room['location'] ?? '' }}"
                                                                    data-name="{{ $occ['name'] }}"
                                                                    data-hb="{{ $occ['hb_number'] }}"
                                                                    data-passport="{{ $occ['passport'] }}"
@@ -704,7 +708,7 @@
                                                             <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo">
                                                         @else
                                                             <div class="haji-photo-placeholder">
-                                                                <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-24"></i>
+                                                                 <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-24"></i>
                                                             </div>
                                                         @endif
                                                     </td>
@@ -725,6 +729,10 @@
                                                             @if(!$isPending && !empty($occ['real_person_id']))
                                                                 <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
                                                                         data-id="{{ $occ['real_person_id'] }}"
+                                                                        data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                        data-hotel="{{ $room['hotel_name'] ?? '' }}"
+                                                                        data-room="{{ $room['room_number'] ?? '' }}"
+                                                                        data-location="{{ $room['location'] ?? '' }}"
                                                                         data-name="{{ $occ['name'] }}"
                                                                         title="Unassign this pilgrim from room" style="font-size: 9.5px; border-radius: 4px;">
                                                                     <i class="mdi mdi-close-circle-outline"></i> Unassign
@@ -886,13 +894,16 @@
                                             </button>
                                             @php
                                                 $cardRealRoomIds = array_filter(array_column($room['occupants'], 'real_person_id'));
+                                                $cardAllocIds = array_filter(array_column($room['occupants'], 'allocation_id'));
                                             @endphp
                                             @if(!empty($cardRealRoomIds))
                                                 <button type="button" 
                                                         class="btn btn-outline-danger btn-xs ms-1 btn-unassign-room-all py-0 px-2"
                                                         data-room="{{ $room['room_number'] }}"
                                                         data-hotel="{{ $room['hotel_name'] }}"
+                                                        data-location="{{ $room['location'] }}"
                                                         data-ids="{{ implode(',', $cardRealRoomIds) }}"
+                                                        data-allocation-ids="{{ implode(',', $cardAllocIds) }}"
                                                         title="Unassign all pilgrims in Room {{ $room['room_number'] }}">
                                                     <i class="mdi mdi-close-circle-outline"></i> Unassign Room
                                                 </button>
@@ -916,11 +927,15 @@
                                             </thead>
                                             <tbody>
                                                 @forelse($room['occupants'] as $occ)
-                                                    <tr>
+                                                    <tr id="card-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}">
                                                         <td class="no-print text-center">
                                                             @if(!empty($occ['real_person_id']))
                                                                 <input type="checkbox" class="form-check-input pilgrim-check" 
                                                                        value="{{ $occ['real_person_id'] }}"
+                                                                       data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                       data-hotel="{{ $room['hotel_name'] ?? '' }}"
+                                                                       data-room="{{ $room['room_number'] ?? '' }}"
+                                                                       data-location="{{ $room['location'] ?? '' }}"
                                                                        data-name="{{ $occ['name'] }}"
                                                                        data-hb="{{ $occ['hb_number'] }}"
                                                                        data-passport="{{ $occ['passport'] }}"
@@ -954,6 +969,10 @@
                                                                 @if(!$isPending && !empty($occ['real_person_id']))
                                                                     <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
                                                                             data-id="{{ $occ['real_person_id'] }}"
+                                                                            data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                            data-hotel="{{ $room['hotel_name'] ?? '' }}"
+                                                                            data-room="{{ $room['room_number'] ?? '' }}"
+                                                                            data-location="{{ $room['location'] ?? '' }}"
                                                                             data-name="{{ $occ['name'] }}"
                                                                             title="Unassign this pilgrim from room" style="font-size: 9px; border-radius: 4px;">
                                                                         <i class="mdi mdi-close-circle-outline"></i> Unassign
@@ -1341,8 +1360,12 @@
             let maleCount = 0;
             const bookedTypes = {};
 
+            const seenPids = new Set();
             checked.forEach(cb => {
                 const pid = cb.value;
+                if (seenPids.has(pid)) return;
+                seenPids.add(pid);
+
                 const name = cb.getAttribute('data-name');
                 const hb = cb.getAttribute('data-hb') || '';
                 const gender = cb.getAttribute('data-gender') || 'Male';
@@ -1366,6 +1389,7 @@
                 pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} ${hb ? '(' + hb + ')' : ''} <small class="opacity-75">[${bType}]</small>`;
                 pillsContainer.appendChild(pill);
             });
+            modalCount.innerText = seenPids.size;
 
             if (modalTypesSummary) {
                 const typeArr = Object.entries(bookedTypes).map(([k, v]) => `${v} ${k}`);
@@ -1453,10 +1477,18 @@
             const assignedChecked = Array.from(checked).filter(cb => cb.getAttribute('data-status') !== 'pending');
             const targetList = assignedChecked.length > 0 ? assignedChecked : Array.from(checked);
 
-            if (confirm(`Are you sure you want to unassign ${targetList.length} selected pilgrims from their rooms and move them back to Pending Room Allocation?`)) {
+            if (confirm(`Are you sure you want to unassign ${targetList.length} selected pilgrim room allocation(s) and move them back to Pending Room Allocation?`)) {
                 const unassignInputs = document.getElementById('unassignHiddenInputs');
                 unassignInputs.innerHTML = '';
                 targetList.forEach(cb => {
+                    const aId = cb.getAttribute('data-allocation-id');
+                    if (aId) {
+                        const inpA = document.createElement('input');
+                        inpA.type = 'hidden';
+                        inpA.name = 'allocation_ids[]';
+                        inpA.value = aId;
+                        unassignInputs.appendChild(inpA);
+                    }
                     const inp = document.createElement('input');
                     inp.type = 'hidden';
                     inp.name = 'person_ids[]';
@@ -1472,15 +1504,49 @@
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const pid = this.getAttribute('data-id');
+                const allocId = this.getAttribute('data-allocation-id');
+                const hotelName = this.getAttribute('data-hotel');
+                const roomNo = this.getAttribute('data-room');
+                const location = this.getAttribute('data-location');
                 const name = this.getAttribute('data-name');
-                if (confirm(`Are you sure you want to unassign "${name}" from room and move back to Pending Room Allocation?`)) {
+                if (confirm(`Are you sure you want to unassign "${name}" from this room and move back to Pending Room Allocation?`)) {
                     const unassignInputs = document.getElementById('unassignHiddenInputs');
                     unassignInputs.innerHTML = '';
-                    const inp = document.createElement('input');
-                    inp.type = 'hidden';
-                    inp.name = 'person_ids[]';
-                    inp.value = pid;
-                    unassignInputs.appendChild(inp);
+                    if (allocId) {
+                        const inpA = document.createElement('input');
+                        inpA.type = 'hidden';
+                        inpA.name = 'allocation_ids[]';
+                        inpA.value = allocId;
+                        unassignInputs.appendChild(inpA);
+                    }
+                    if (pid) {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'person_ids[]';
+                        inp.value = pid;
+                        unassignInputs.appendChild(inp);
+                    }
+                    if (hotelName) {
+                        const inpH = document.createElement('input');
+                        inpH.type = 'hidden';
+                        inpH.name = 'hotel_name';
+                        inpH.value = hotelName;
+                        unassignInputs.appendChild(inpH);
+                    }
+                    if (roomNo) {
+                        const inpR = document.createElement('input');
+                        inpR.type = 'hidden';
+                        inpR.name = 'room_number';
+                        inpR.value = roomNo;
+                        unassignInputs.appendChild(inpR);
+                    }
+                    if (location) {
+                        const inpL = document.createElement('input');
+                        inpL.type = 'hidden';
+                        inpL.name = 'location';
+                        inpL.value = location;
+                        unassignInputs.appendChild(inpL);
+                    }
                     document.getElementById('bulkUnassignForm').submit();
                 }
             });
@@ -1491,13 +1557,25 @@
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const roomNo = this.getAttribute('data-room');
+                const hotelName = this.getAttribute('data-hotel');
+                const location = this.getAttribute('data-location');
                 const rawIds = this.getAttribute('data-ids') || '';
                 const ids = rawIds.split(',').map(x => x.trim()).filter(x => x.length > 0);
-                if (ids.length === 0) return;
+                const rawAllocIds = this.getAttribute('data-allocation-ids') || '';
+                const allocIds = rawAllocIds.split(',').map(x => x.trim()).filter(x => x.length > 0);
 
-                if (confirm(`Are you sure you want to unassign all ${ids.length} pilgrims from Room ${roomNo} and move them to Pending Room Allocation?`)) {
+                if (ids.length === 0 && allocIds.length === 0) return;
+
+                if (confirm(`Are you sure you want to unassign all pilgrims from Room ${roomNo} and move them to Pending Room Allocation?`)) {
                     const unassignInputs = document.getElementById('unassignHiddenInputs');
                     unassignInputs.innerHTML = '';
+                    allocIds.forEach(aId => {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'allocation_ids[]';
+                        inp.value = aId;
+                        unassignInputs.appendChild(inp);
+                    });
                     ids.forEach(id => {
                         const inp = document.createElement('input');
                         inp.type = 'hidden';
@@ -1505,6 +1583,27 @@
                         inp.value = id;
                         unassignInputs.appendChild(inp);
                     });
+                    if (hotelName) {
+                        const inpH = document.createElement('input');
+                        inpH.type = 'hidden';
+                        inpH.name = 'hotel_name';
+                        inpH.value = hotelName;
+                        unassignInputs.appendChild(inpH);
+                    }
+                    if (roomNo) {
+                        const inpR = document.createElement('input');
+                        inpR.type = 'hidden';
+                        inpR.name = 'room_number';
+                        inpR.value = roomNo;
+                        unassignInputs.appendChild(inpR);
+                    }
+                    if (location) {
+                        const inpL = document.createElement('input');
+                        inpL.type = 'hidden';
+                        inpL.name = 'location';
+                        inpL.value = location;
+                        unassignInputs.appendChild(inpL);
+                    }
                     document.getElementById('bulkUnassignForm').submit();
                 }
             });

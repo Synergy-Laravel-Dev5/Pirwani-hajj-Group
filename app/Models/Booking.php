@@ -97,4 +97,9 @@ class Booking extends Model
     {
         return $this->hasMany(BookingVisa::class);
     }
+
+    public function roomAllocations()
+    {
+        return $this->hasMany(BookingPersonRoomAllocation::class, 'booking_id');
+    }
 }
