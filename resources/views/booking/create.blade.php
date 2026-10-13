@@ -2006,6 +2006,11 @@
                                class="form-control form-control-sm" placeholder="Muhammad Khan" oninput="onPersonManualName(${idx})">
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label" style="font-size:12px;">Father Name</label>
+                        <input type="text" name="persons[${idx}][father_name]" id="person_father_name_${idx}"
+                               class="form-control form-control-sm" placeholder="e.g. Abdul Rehman">
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Date of Birth</label>
                         <input type="date" name="persons[${idx}][dob]" id="person_dob_${idx}"
                                class="form-control form-control-sm" onchange="syncVisas()">

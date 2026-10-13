@@ -661,6 +661,12 @@
                                                     value="{{ $person->full_name }}" oninput="onPersonManualName({{ $i }})">
                                             </div>
                                             <div class="col-md-3">
+                                                <label class="form-label" style="font-size:12px;">Father Name</label>
+                                                <input type="text" name="persons[{{ $i }}][father_name]" id="person_father_name_{{ $i }}"
+                                                    class="form-control form-control-sm" placeholder="e.g. Abdul Rehman"
+                                                    value="{{ $person->father_name ?? '' }}">
+                                            </div>
+                                            <div class="col-md-3">
                                                 <label class="form-label" style="font-size:12px;">Date of Birth</label>
                                                 <input type="date" name="persons[{{ $i }}][dob]" id="person_dob_{{ $i }}"
                                                     class="form-control form-control-sm"

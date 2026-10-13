@@ -13,6 +13,7 @@ class BookingPerson extends Model
         'hajj_id',
         'hb_number',
         'full_name',
+        'father_name',
         'gender',
         'surname',
         'given_name',

@@ -1098,6 +1098,7 @@
                             <th style="width:40px">#</th>
                             <th style="width:50px">Photo</th>
                             <th>Full Name</th>
+                            <th>Father Name</th>
                             <th>DOB</th>
                             <th>Passport #</th>
                             <th>Issue Date</th>
@@ -1126,6 +1127,7 @@
                                     @endif
                                 </td>
                                 <td><strong style="color:var(--text)">{{ $person->full_name }}</strong></td>
+                                <td>{{ $person->father_name ?? '—' }}</td>
                                 <td>{{ $person->dob ? \Carbon\Carbon::parse($person->dob)->format('d M Y') : '—' }}</td>
                                 <td><strong style="color:var(--gold-dk)">{{ $person->passport_number ?? '—' }}</strong></td>
                                 <td>{{ ($person->date_of_issue ?? $person->passport_issue_date) ? \Carbon\Carbon::parse($person->date_of_issue ?? $person->passport_issue_date)->format('d M Y') : '—' }}</td>
