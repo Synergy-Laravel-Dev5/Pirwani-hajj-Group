@@ -583,6 +583,11 @@
                                 enter the name and passport details manually.
                             </div>
                             <div id="personsList"></div>
+                            <div class="mt-2 mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddPerson">
+                                    <i class="mdi mdi-account-plus me-1"></i>+ Add Passenger
+                                </button>
+                            </div>
 
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary btn-prev"><i
@@ -1984,10 +1989,20 @@
             <div class="person-card" id="person_card_${idx}">
                 <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
                     <strong class="text-primary" style="font-size:13px;">
-                        <i class="mdi mdi-account me-1"></i>${label}
+                        <i class="mdi mdi-account me-1"></i><span class="person-title-text">${label}</span>
                     </strong>
-                    <span class="badge bg-light text-muted border">Person #${idx + 1}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-muted border person-badge">Person #${idx + 1}</span>
+                        <button type="button" class="btn btn-outline-danger btn-xs py-0 px-2 btn-remove-person" onclick="removePersonCard(this)" title="Remove this person from booking">
+                            <i class="mdi mdi-delete-outline me-1"></i>Remove
+                        </button>
+                    </div>
                 </div>
+                <input type="hidden" name="persons[${idx}][room_number]" value="">
+                <input type="hidden" name="persons[${idx}][room_type]" value="">
+                <input type="hidden" name="persons[${idx}][hotel_name]" value="">
+                <input type="hidden" name="persons[${idx}][location]" value="">
+                <input type="hidden" name="persons[${idx}][room_gender]" value="">
                 <div class="row g-2">
                     ${clientDropdown}
                     <div class="col-md-3">
@@ -2126,11 +2141,21 @@
         function rebuildPersons() {
             const pax = parseInt(document.getElementById('no_of_pax').value) || 1;
             const list = document.getElementById('personsList');
-            list.innerHTML = '';
-            for (let i = 0; i < pax; i++) {
-                list.insertAdjacentHTML('beforeend', buildPersonRow(i, i === 0));
+            const currentCards = list.querySelectorAll('.person-card');
+            const currentCount = currentCards.length;
+
+            if (pax < currentCount) {
+                for (let i = currentCount - 1; i >= pax; i--) {
+                    const card = document.getElementById('person_card_' + i);
+                    if (card) card.remove();
+                }
+            } else if (pax > currentCount) {
+                for (let i = currentCount; i < pax; i++) {
+                    list.insertAdjacentHTML('beforeend', buildPersonRow(i, i === 0));
+                }
             }
-            if (!isCompanyMode()) {
+
+            if (currentCount === 0 && !isCompanyMode()) {
                 const clientId = clientSelect.value;
                 if (clientId) {
                     const firstSel = document.querySelector('.person-client-select[data-idx="0"]');
@@ -2144,6 +2169,129 @@
             initSearchableSelects('#personsList');
             calcTotal();
         }
+
+        // ═══════════════════════════════════════
+        // REMOVE & ADD PERSON FUNCTIONS
+        // ═══════════════════════════════════════
+        function removePersonCard(btn) {
+            const card = btn.closest('.person-card');
+            if (!card) return;
+
+            const container = document.getElementById('personsList');
+            const allCards = container.querySelectorAll('.person-card');
+
+            if (allCards.length <= 1) {
+                alert('A booking must have at least 1 passenger. You cannot remove the only passenger.');
+                return;
+            }
+
+            const nameInput = card.querySelector('input[name*="[full_name]"]');
+            const pName = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'this passenger';
+
+            if (!confirm(`Are you sure you want to remove "${pName}" from this booking?`)) {
+                return;
+            }
+
+            card.remove();
+
+            // Re-index remaining person cards
+            reindexPersonCards();
+
+            // Update No of Pax input and bar pax
+            const remainingCards = container.querySelectorAll('.person-card');
+            const newPax = remainingCards.length;
+            
+            const paxInput = document.getElementById('no_of_pax');
+            if (paxInput) {
+                paxInput.value = newPax;
+            }
+            const barPax = document.getElementById('bar_pax');
+            if (barPax) {
+                barPax.innerText = newPax;
+            }
+
+            if (typeof qurbaniOption !== 'undefined' && qurbaniOption.value !== 'not_included' && typeof pkgQurbaniPerHeadRate !== 'undefined' && pkgQurbaniPerHeadRate > 0) {
+                if (typeof qurbaniQty !== 'undefined' && qurbaniQty) qurbaniQty.value = newPax;
+                if (typeof qurbaniCharges !== 'undefined' && qurbaniCharges) qurbaniCharges.value = (pkgQurbaniPerHeadRate * newPax).toFixed(2);
+            }
+
+            // Sync other tabs
+            if (typeof syncFlightPersons === 'function') syncFlightPersons();
+            if (typeof syncVisas === 'function') syncVisas();
+            if (typeof calcTotal === 'function') calcTotal();
+        }
+
+        function reindexPersonCards() {
+            const container = document.getElementById('personsList');
+            const cards = container.querySelectorAll('.person-card');
+            const companyMode = isCompanyMode();
+
+            cards.forEach((card, idx) => {
+                card.id = 'person_card_' + idx;
+
+                // Update title
+                const isFirst = (idx === 0);
+                const titleEl = card.querySelector('.person-title-text');
+                if (titleEl) {
+                    titleEl.innerText = isFirst 
+                        ? (companyMode ? 'Main Passenger' : 'Main Passenger (Client)')
+                        : `Passenger ${idx + 1}`;
+                }
+
+                // Update badge
+                const badgeEl = card.querySelector('.person-badge');
+                if (badgeEl) {
+                    badgeEl.innerText = `Person #${idx + 1}`;
+                }
+
+                // Update input names and IDs for all elements inside this card
+                card.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.name) {
+                        input.name = input.name.replace(/persons\[\d+\]/, `persons[${idx}]`);
+                    }
+                    if (input.id) {
+                        input.id = input.id.replace(/_\d+$/, `_${idx}`);
+                    }
+                    if (input.hasAttribute('data-idx')) {
+                        input.setAttribute('data-idx', idx);
+                    }
+                    if (input.hasAttribute('oninput')) {
+                        const oninput = input.getAttribute('oninput');
+                        input.setAttribute('oninput', oninput.replace(/\(\d+\)/, `(${idx})`));
+                    }
+                    if (input.hasAttribute('onchange')) {
+                        const onchange = input.getAttribute('onchange');
+                        input.setAttribute('onchange', onchange.replace(/,\s*\d+\)/, `, ${idx})`));
+                    }
+                });
+            });
+        }
+
+        document.getElementById('btnAddPerson')?.addEventListener('click', function() {
+            const container = document.getElementById('personsList');
+            const currentCount = container.querySelectorAll('.person-card').length;
+            const newIdx = currentCount;
+            container.insertAdjacentHTML('beforeend', buildPersonRow(newIdx, newIdx === 0));
+            initSearchableSelects('#personsList');
+            
+            const paxInput = document.getElementById('no_of_pax');
+            if (paxInput) {
+                paxInput.value = newIdx + 1;
+            }
+            const barPax = document.getElementById('bar_pax');
+            if (barPax) {
+                barPax.innerText = newIdx + 1;
+            }
+
+            if (typeof qurbaniOption !== 'undefined' && qurbaniOption.value !== 'not_included' && typeof pkgQurbaniPerHeadRate !== 'undefined' && pkgQurbaniPerHeadRate > 0) {
+                if (typeof qurbaniQty !== 'undefined' && qurbaniQty) qurbaniQty.value = newIdx + 1;
+                if (typeof qurbaniCharges !== 'undefined' && qurbaniCharges) qurbaniCharges.value = (pkgQurbaniPerHeadRate * (newIdx + 1)).toFixed(2);
+            }
+
+            if (typeof syncFlightPersons === 'function') syncFlightPersons();
+            if (typeof syncVisas === 'function') syncVisas();
+            if (typeof calcTotal === 'function') calcTotal();
+        });
 
         document.getElementById('no_of_pax').addEventListener('input', function() {
             const pax = parseInt(this.value) || 1;
