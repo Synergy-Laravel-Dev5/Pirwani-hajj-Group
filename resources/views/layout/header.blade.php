@@ -248,6 +248,18 @@
                         </li>
                     @endcan
                     <li>
+                        <a href="{{ route('report.person') }}">
+                            <i data-feather="user-check"></i>
+                            <span>Person Report</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.flight') }}">
+                            <i data-feather="navigation"></i>
+                            <span>Flight Report</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('haji-group.index') }}">
                             <i data-feather="users"></i>
                             <span>Haji Pilgrim Groups</span>

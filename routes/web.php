@@ -31,6 +31,8 @@ use App\Http\Controllers\RoomInventoryController;
 use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\CheckInReportController;
 use App\Http\Controllers\MaktabReportController;
+use App\Http\Controllers\PersonReportController;
+use App\Http\Controllers\FlightReportController;
 use App\Http\Controllers\RoomingListController;
 
 Route::middleware('guest')->group(function () {
@@ -391,6 +393,16 @@ Route::middleware('auth')->group(function () {
         Route::controller(MaktabReportController::class)
             ->prefix('reports')->group(function () {
                 Route::get('maktab', 'index')->name('report.maktab');
+            });
+
+        Route::controller(PersonReportController::class)
+            ->prefix('reports')->group(function () {
+                Route::get('persons', 'index')->name('report.person');
+            });
+
+        Route::controller(FlightReportController::class)
+            ->prefix('reports')->group(function () {
+                Route::get('flights', 'index')->name('report.flight');
             });
 
         Route::controller(RoomingListController::class)->group(function () {
