@@ -30,6 +30,7 @@ use App\Http\Controllers\HajiGroupController;
 use App\Http\Controllers\RoomInventoryController;
 use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\CheckInReportController;
+use App\Http\Controllers\MaktabReportController;
 use App\Http\Controllers\RoomingListController;
 
 Route::middleware('guest')->group(function () {
@@ -385,6 +386,11 @@ Route::middleware('auth')->group(function () {
         Route::controller(CheckInReportController::class)
             ->prefix('reports')->group(function () {
                 Route::get('check-in', 'index')->name('report.check-in');
+            });
+
+        Route::controller(MaktabReportController::class)
+            ->prefix('reports')->group(function () {
+                Route::get('maktab', 'index')->name('report.maktab');
             });
 
         Route::controller(RoomingListController::class)->group(function () {

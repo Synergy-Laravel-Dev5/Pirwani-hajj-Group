@@ -272,6 +272,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('report.maktab') }}">
+                            <i data-feather="layers"></i>
+                            <span>Maktab - report</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('arrival-group.index') }}">
                             <i data-feather="arrow-down-left"></i>
                             <span>Arrival Groups</span>
