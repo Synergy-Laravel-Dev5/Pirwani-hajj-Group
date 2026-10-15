@@ -71,12 +71,9 @@ class MaktabReportController extends Controller
 
         // 2. Gender filter (Male / Female / All)
         if (!empty($genderFilter) && $genderFilter !== 'all') {
-            $g = strtolower($genderFilter);
-            $query->where(function ($sq) use ($g) {
-                $sq->whereRaw('LOWER(gender) = ?', [$g])
-                   ->orWhereHas('booking.persons', function ($pq) use ($g) {
-                       $pq->whereRaw('LOWER(gender) = ?', [$g]);
-                   });
+            $g = strtolower(trim($genderFilter));
+            $query->whereHas('booking.persons', function ($pq) use ($g) {
+                $pq->whereRaw('LOWER(TRIM(gender)) = ?', [$g]);
             });
         }
 

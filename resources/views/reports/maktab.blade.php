@@ -243,24 +243,31 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php $displayRowIdx = 0; @endphp
                                     @forelse ($hotelStays as $idx => $stay)
                                         @php
                                             $booking = $stay->booking;
                                             $rawPersons = $booking ? $booking->persons : collect([]);
                                             
-                                            // If gender filter is active, prioritize pilgrims of the chosen gender
+                                            // If gender filter is active, strictly filter pilgrims of the chosen gender
                                             if (!empty($genderFilter) && $genderFilter !== 'all') {
-                                                $gLower = strtolower($genderFilter);
-                                                $persons = $rawPersons->sortByDesc(function($p) use ($gLower) {
-                                                    return strtolower($p->gender ?? '') === $gLower ? 1 : 0;
+                                                $gLower = strtolower(trim($genderFilter));
+                                                $persons = $rawPersons->filter(function($p) use ($gLower) {
+                                                    return strtolower(trim($p->gender ?? '')) === $gLower;
                                                 })->values();
+
+                                                if ($persons->isEmpty()) {
+                                                    continue;
+                                                }
+                                                $paxCount = $persons->count();
                                             } else {
                                                 $persons = $rawPersons;
+                                                $paxCount = $booking ? ($booking->no_of_pax ?: $rawPersons->count()) : 1;
                                             }
 
                                             $mainPerson = $persons->first();
                                             $otherPersons = $persons->slice(1);
-                                            $paxCount = $booking ? ($booking->no_of_pax ?: $rawPersons->count()) : 1;
+                                            $displayRowIdx++;
                                             
                                             $checkIn = $stay->check_in ? \Carbon\Carbon::parse($stay->check_in) : null;
                                             $checkOut = $stay->check_out ? \Carbon\Carbon::parse($stay->check_out) : null;
@@ -297,7 +304,7 @@
                                             };
                                         @endphp
                                         <tr>
-                                            <td class="text-center fw-bold text-muted">{{ $idx + 1 }}</td>
+                                            <td class="text-center fw-bold text-muted">{{ $displayRowIdx }}</td>
 
                                             {{-- Pilgrim / Hajji Details with Photo, Gender Badge & Accompanying Persons --}}
                                             <td>
@@ -419,9 +426,6 @@
                                                                         <strong class="text-dark" style="font-size: 12.5px;">
                                                                             {{ $otherP->full_name }}
                                                                         </strong>
-                                                                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 9.5px; padding: 2px 4px;">
-                                                                            Pax {{ $oIdx + 2 }}
-                                                                        </span>
                                                                     </div>
                                                                     <div class="text-muted small mt-1 d-flex flex-wrap gap-1 align-items-center">
                                                                         {{-- Gender Badge for Other Pax --}}

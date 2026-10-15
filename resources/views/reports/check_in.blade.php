@@ -452,9 +452,6 @@
                                                                         <strong class="text-dark" style="font-size: 12.5px;">
                                                                             {{ $otherP->full_name }}
                                                                         </strong>
-                                                                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 9.5px; padding: 2px 4px;">
-                                                                            Pax {{ $oIdx + 2 }}
-                                                                        </span>
                                                                     </div>
                                                                     <div class="text-muted small mt-1 d-flex flex-wrap gap-1 align-items-center">
                                                                         @if ($otherP->passport_number)

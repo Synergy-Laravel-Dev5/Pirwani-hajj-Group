@@ -169,9 +169,10 @@
         <div class="header-subtitle">Official Rooming List & Manifest Report</div>
         <div class="header-meta">
             Generated on: <strong>{{ date('d M Y, h:i A') }}</strong>
-            @if(!empty($hotelFilter)) | Hotel: <strong>{{ $hotelFilter }}</strong> @endif
+            @if(!empty($hotelFilter)) | Hotel: <strong>{{ is_array($hotelFilter) ? implode(', ', $hotelFilter) : $hotelFilter }}</strong> @endif
             @if(!empty($locationFilter) && $locationFilter !== 'all') | Location: <strong>{{ strtoupper($locationFilter) }}</strong> @endif
             @if(!empty($roomTypeFilter) && $roomTypeFilter !== 'all') | Room Type: <strong>{{ strtoupper($roomTypeFilter) }}</strong> @endif
+            @if(!empty($packageFilter)) | Package: <strong>{{ is_array($packageFilter) ? count($packageFilter) . ' selected' : $packageFilter }}</strong> @endif
             @if(!empty($fromDate) || !empty($toDate)) | Dates: <strong>{{ $fromDate ?: 'Start' }} to {{ $toDate ?: 'End' }}</strong> @endif
         </div>
     </div>

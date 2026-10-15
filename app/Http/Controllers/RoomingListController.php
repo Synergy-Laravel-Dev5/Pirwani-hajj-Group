@@ -74,112 +74,270 @@ class RoomingListController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        @set_time_limit(180);
+        @ini_set('memory_limit', '512M');
+
         $data = $this->getFilteredRoomingData($request);
         $groupedRooms = $data['groupedRooms'];
 
         $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
         $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
         $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
-        $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.csv';
+        $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.xlsx';
 
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rooming Manifest');
+        $sheet->setShowGridLines(true);
+
+        // Title Block
+        $sheet->mergeCells('A1:U1');
+        $sheet->setCellValue('A1', 'PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E293B'));
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
+        // Subtitle / Filters summary Block
+        $filterSummary = 'Generated: ' . date('d M Y, h:i A');
+        if (!empty($data['hotelFilter'])) {
+            $filterSummary .= ' | Hotels: ' . (is_array($data['hotelFilter']) ? implode(', ', $data['hotelFilter']) : $data['hotelFilter']);
+        }
+        if (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') {
+            $filterSummary .= ' | Location: ' . strtoupper($data['locationFilter']);
+        }
+        if (!empty($data['roomTypeFilter']) && $data['roomTypeFilter'] !== 'all') {
+            $filterSummary .= ' | Room Type: ' . strtoupper($data['roomTypeFilter']);
+        }
+        $sheet->mergeCells('A2:U2');
+        $sheet->setCellValue('A2', $filterSummary);
+        $sheet->getStyle('A2')->getFont()->setSize(10)->setItalic(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('64748B'));
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getRowDimension(2)->setRowHeight(20);
+
+        // Column Headers
         $headers = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0',
+            'A' => ['title' => 'SR', 'width' => 8],
+            'B' => ['title' => 'PICTURE', 'width' => 14],
+            'C' => ['title' => 'HAJJ ID', 'width' => 14],
+            'D' => ['title' => 'HB NUMBER', 'width' => 14],
+            'E' => ['title' => 'PASSPORT NO', 'width' => 16],
+            'F' => ['title' => 'PILGRIM FULL NAME', 'width' => 28],
+            'G' => ['title' => 'GENDER', 'width' => 12],
+            'H' => ['title' => 'LOCATION', 'width' => 14],
+            'I' => ['title' => 'HOTEL / BUILDING', 'width' => 26],
+            'J' => ['title' => 'ROOM TYPE', 'width' => 15],
+            'K' => ['title' => 'ROOM NUMBER', 'width' => 16],
+            'L' => ['title' => 'TOTAL BEDS', 'width' => 12],
+            'M' => ['title' => 'OCCUPIED', 'width' => 12],
+            'N' => ['title' => 'AVAILABLE', 'width' => 12],
+            'O' => ['title' => 'ROOM GENDER', 'width' => 14],
+            'P' => ['title' => 'BOOKING REF', 'width' => 16],
+            'Q' => ['title' => 'CLIENT / AGENT', 'width' => 24],
+            'R' => ['title' => 'PHONE', 'width' => 16],
+            'S' => ['title' => 'CHECK IN', 'width' => 14],
+            'T' => ['title' => 'CHECK OUT', 'width' => 14],
+            'U' => ['title' => 'ROOM NOTES', 'width' => 22],
         ];
 
-        return response()->stream(function () use ($groupedRooms) {
-            $handle = fopen('php://output', 'w');
-            
-            // Output UTF-8 BOM so Microsoft Excel cleanly renders characters
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        $headerRow = 4;
+        $sheet->getRowDimension($headerRow)->setRowHeight(28);
 
-            // CSV Column Headers
-            fputcsv($handle, [
-                'SR',
-                'HAJJ ID',
-                'HB NUMBER',
-                'PASSPORT NUMBER',
-                'FULL NAME',
-                'GENDER',
-                'LOCATION',
-                'HOTEL / BUILDING',
-                'ROOM TYPE',
-                'ROOM NUMBER',
-                'TOTAL BEDS',
-                'OCCUPIED BEDS',
-                'AVAILABLE BEDS',
-                'ROOM GENDER',
-                'BOOKING NUMBER',
-                'CLIENT / GROUP NAME',
-                'PHONE NUMBER',
-                'CHECK IN',
-                'CHECK OUT',
-                'ROOM NOTES'
-            ]);
+        foreach ($headers as $col => $colInfo) {
+            $sheet->setCellValue($col . $headerRow, $colInfo['title']);
+            $sheet->getColumnDimension($col)->setWidth($colInfo['width']);
+        }
 
-            $sr = 1;
-            foreach ($groupedRooms as $room) {
-                $rNum = trim($room['room_number']);
-                $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum));
-                $roomDisplayNo = $isUnassigned ? 'UNASSIGNED' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
-                $locLabel = strtoupper($room['location'] ?? 'MAKKAH');
+        // Header Styling
+        $headerRange = 'A' . $headerRow . ':U' . $headerRow;
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1E293B'],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ]);
 
-                if (empty($room['occupants'])) {
-                    fputcsv($handle, [
-                        $sr++,
-                        '—',
-                        '—',
-                        '—',
-                        '(Empty Room)',
-                        '—',
-                        $locLabel,
-                        $room['hotel_name'],
-                        $room['room_type'],
-                        $roomDisplayNo,
-                        $room['total_capacity'],
-                        0,
-                        $room['total_capacity'],
-                        $room['room_gender'] ?? 'Any',
-                        '—',
-                        '—',
-                        '—',
-                        $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—',
-                        $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—',
-                        $room['notes'] ?? ''
-                    ]);
-                } else {
-                    foreach ($room['occupants'] as $occ) {
-                        fputcsv($handle, [
-                            $sr++,
-                            !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—',
-                            !empty($occ['hb_number']) ? $occ['hb_number'] : '—',
-                            $occ['passport'] ?? '—',
-                            $occ['name'] ?? '—',
-                            strtoupper($occ['gender'] ?? 'Male'),
-                            $locLabel,
-                            $room['hotel_name'],
-                            $room['room_type'],
-                            $roomDisplayNo,
-                            $room['total_capacity'],
-                            $room['occupied_beds'],
-                            $room['available_beds'],
-                            $room['room_gender'] ?? 'Any',
-                            $occ['booking_number'] ?? '—',
-                            $occ['client_name'] ?? '—',
-                            $occ['phone'] ?? '—',
-                            $occ['check_in'] ?? '—',
-                            $occ['check_out'] ?? '—',
-                            $room['notes'] ?? ''
-                        ]);
+        $currentRow = 5;
+        $sr = 1;
+
+        $cacheDir = storage_path('app/temp_photos');
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0777, true);
+        }
+
+        foreach ($groupedRooms as $room) {
+            $rNum = trim($room['room_number']);
+            $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum));
+            $roomDisplayNo = $isUnassigned ? 'UNASSIGNED' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
+            $locLabel = strtoupper($room['location'] ?? 'MAKKAH');
+
+            if (empty($room['occupants'])) {
+                // Empty room row
+                $sheet->getRowDimension($currentRow)->setRowHeight(26);
+                $sheet->setCellValue('A' . $currentRow, $sr++);
+                $sheet->setCellValue('B' . $currentRow, '—');
+                $sheet->setCellValue('C' . $currentRow, '—');
+                $sheet->setCellValue('D' . $currentRow, '—');
+                $sheet->setCellValue('E' . $currentRow, '—');
+                $sheet->setCellValue('F' . $currentRow, '(Empty Room)');
+                $sheet->setCellValue('G' . $currentRow, '—');
+                $sheet->setCellValue('H' . $currentRow, $locLabel);
+                $sheet->setCellValue('I' . $currentRow, $room['hotel_name']);
+                $sheet->setCellValue('J' . $currentRow, $room['room_type']);
+                $sheet->setCellValue('K' . $currentRow, $roomDisplayNo);
+                $sheet->setCellValue('L' . $currentRow, $room['total_capacity']);
+                $sheet->setCellValue('M' . $currentRow, 0);
+                $sheet->setCellValue('N' . $currentRow, $room['total_capacity']);
+                $sheet->setCellValue('O' . $currentRow, $room['room_gender'] ?? 'Any');
+                $sheet->setCellValue('P' . $currentRow, '—');
+                $sheet->setCellValue('Q' . $currentRow, '—');
+                $sheet->setCellValue('R' . $currentRow, '—');
+                $sheet->setCellValue('S' . $currentRow, $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—');
+                $sheet->setCellValue('T' . $currentRow, $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—');
+                $sheet->setCellValue('U' . $currentRow, $room['notes'] ?? '');
+
+                $rowRange = 'A' . $currentRow . ':U' . $currentRow;
+                $sheet->getStyle($rowRange)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('B' . $currentRow . ':E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('G' . $currentRow . ':O' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('S' . $currentRow . ':T' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                $sheet->getStyle('K' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('DC2626'));
+                $sheet->getStyle($rowRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                $sheet->getStyle($rowRange)->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM);
+
+                $currentRow++;
+            } else {
+                foreach ($room['occupants'] as $occIdx => $occ) {
+                    $sheet->getRowDimension($currentRow)->setRowHeight(52);
+                    $sheet->setCellValue('A' . $currentRow, $sr++);
+
+                    // Embed Photo in Column B
+                    $photoPath = !empty($occ['photo']) ? trim($occ['photo']) : null;
+                    $photoFile = null;
+
+                    if ($photoPath) {
+                        $rawClean = ltrim($photoPath, '/\\');
+                        $localPath = public_path($rawClean);
+                        if (file_exists($localPath) && @getimagesize($localPath)) {
+                            $photoFile = $localPath;
+                        } else {
+                            $cachedFile = $cacheDir . '/' . md5($rawClean) . '.jpg';
+                            if (file_exists($cachedFile) && filesize($cachedFile) > 0 && @getimagesize($cachedFile)) {
+                                $photoFile = $cachedFile;
+                            } else {
+                                $remoteUrl = 'https://pirwanitravels.com.pk/' . $rawClean;
+                                $ctx = stream_context_create(['http' => ['timeout' => 2]]);
+                                $imgData = @file_get_contents($remoteUrl, false, $ctx);
+                                if ($imgData && strlen($imgData) > 100) {
+                                    @file_put_contents($cachedFile, $imgData);
+                                    if (@getimagesize($cachedFile)) {
+                                        $photoFile = $cachedFile;
+                                    }
+                                }
+                            }
+                        }
                     }
+
+                    if ($photoFile && file_exists($photoFile)) {
+                        try {
+                            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                            $drawing->setName('Photo_' . $sr);
+                            $drawing->setDescription('Pilgrim Photo');
+                            $drawing->setPath($photoFile);
+                            $drawing->setHeight(46);
+                            $drawing->setCoordinates('B' . $currentRow);
+                            $drawing->setOffsetX(10);
+                            $drawing->setOffsetY(3);
+                            $drawing->setWorksheet($sheet);
+                        } catch (\Throwable $e) {
+                            $sheet->setCellValue('B' . $currentRow, '—');
+                        }
+                    } else {
+                        $sheet->setCellValue('B' . $currentRow, '—');
+                    }
+
+                    $sheet->setCellValue('C' . $currentRow, !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—');
+                    $sheet->setCellValue('D' . $currentRow, !empty($occ['hb_number']) ? $occ['hb_number'] : '—');
+                    $sheet->setCellValue('E' . $currentRow, $occ['passport'] ?? '—');
+                    $sheet->setCellValue('F' . $currentRow, $occ['name'] ?? '—');
+
+                    $occGender = strtoupper($occ['gender'] ?? 'MALE');
+                    $sheet->setCellValue('G' . $currentRow, $occGender);
+
+                    $sheet->setCellValue('H' . $currentRow, $locLabel);
+                    $sheet->setCellValue('I' . $currentRow, $room['hotel_name']);
+                    $sheet->setCellValue('J' . $currentRow, $room['room_type']);
+                    $sheet->setCellValue('K' . $currentRow, $roomDisplayNo);
+                    $sheet->setCellValue('L' . $currentRow, $room['total_capacity']);
+                    $sheet->setCellValue('M' . $currentRow, $room['occupied_beds']);
+                    $sheet->setCellValue('N' . $currentRow, $room['available_beds']);
+                    $sheet->setCellValue('O' . $currentRow, $room['room_gender'] ?? 'Any');
+                    $sheet->setCellValue('P' . $currentRow, $occ['booking_number'] ?? '—');
+                    $sheet->setCellValue('Q' . $currentRow, $occ['client_name'] ?? '—');
+                    $sheet->setCellValue('R' . $currentRow, $occ['phone'] ?? '—');
+                    $sheet->setCellValue('S' . $currentRow, $occ['check_in'] ?? '—');
+                    $sheet->setCellValue('T' . $currentRow, $occ['check_out'] ?? '—');
+                    $sheet->setCellValue('U' . $currentRow, $room['notes'] ?? '');
+
+                    // Alignments
+                    $rowRange = 'A' . $currentRow . ':U' . $currentRow;
+                    $sheet->getStyle($rowRange)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                    $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('B' . $currentRow . ':E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('G' . $currentRow . ':O' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('S' . $currentRow . ':T' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                    // Gender Styling
+                    if ($occGender === 'FEMALE') {
+                        $sheet->getStyle('G' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('9D174D'));
+                    } else {
+                        $sheet->getStyle('G' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E3A8A'));
+                    }
+
+                    // Room No Styling
+                    $sheet->getStyle('K' . $currentRow)->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('DC2626'));
+                    $sheet->getStyle('D' . $currentRow)->getFont()->setBold(true);
+                    $sheet->getStyle('E' . $currentRow)->getFont()->setBold(true);
+
+                    // Borders
+                    $sheet->getStyle($rowRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+                    $sheet->getStyle($rowRange)->getBorders()->getAllBorders()->getColor()->setRGB('CBD5E1');
+
+                    // If first occupant in room, put thick top border
+                    if ($occIdx === 0) {
+                        $sheet->getStyle($rowRange)->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM);
+                        $sheet->getStyle($rowRange)->getBorders()->getTop()->getColor()->setRGB('000000');
+                    }
+
+                    $currentRow++;
                 }
             }
+        }
 
-            fclose($handle);
-        }, 200, $headers);
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 
     /**
@@ -519,10 +677,18 @@ class RoomingListController extends Controller
             });
         }
 
-        // Package Filter
-        $packageFilter = $request->get('package_id');
+        // Package Filter (Multi-Select or Single)
+        $rawPackageFilter = $request->get('package_id');
+        if (is_array($rawPackageFilter)) {
+            $packageFilter = array_values(array_filter(array_map('trim', $rawPackageFilter)));
+        } elseif (!empty($rawPackageFilter) && $rawPackageFilter !== 'all') {
+            $packageFilter = [trim($rawPackageFilter)];
+        } else {
+            $packageFilter = [];
+        }
+
         if (!empty($packageFilter)) {
-            $bookingQuery->where('package_id', $packageFilter);
+            $bookingQuery->whereIn('package_id', $packageFilter);
         }
 
         // Date-wise Filter (Departure/Arrival, Hotel Check-in/out, or Booking Date)
@@ -856,6 +1022,32 @@ class RoomingListController extends Controller
             }
             return strcmp($a['room_number'] ?? '', $b['room_number'] ?? '');
         });
+
+        // Apply filters to unassigned occupants so they strictly match selected criteria
+        if (!empty($hotelFilter)) {
+            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($hotelFilter) {
+                $occHotel = $occ['hotel_name'] ?? ($occ['booked_hotel_name'] ?? '');
+                foreach ($hotelFilter as $hf) {
+                    if (stripos($occHotel, $hf) !== false) {
+                        return true;
+                    }
+                }
+                return false;
+            }));
+        }
+        if (!empty($locationFilter) && $locationFilter !== 'all') {
+            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($locationFilter) {
+                return strtolower($occ['location'] ?? '') === strtolower($locationFilter);
+            }));
+        }
+        if (!empty($roomTypeFilter) && $roomTypeFilter !== 'all') {
+            $cleanType = strtolower(trim($roomTypeFilter));
+            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($cleanType) {
+                $rt = strtolower(trim($occ['room_type'] ?? ($occ['booked_room_type'] ?? '')));
+                if ($cleanType === 'six') return in_array($rt, ['six', 'sharing']);
+                return $rt === $cleanType;
+            }));
+        }
 
         $unassignedPilgrimsCount = count($unassignedOccupants);
 
