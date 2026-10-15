@@ -85,6 +85,134 @@ class RoomingListController extends Controller
         $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
         $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.xlsx';
 
+        if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
+            $xlsFileName = str_replace('.xlsx', '.xls', $fileName);
+            return response()->streamDownload(function () use ($groupedRooms, $filterSummary) {
+                echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+                echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+                echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Rooming Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+                echo '<style>
+                    body { font-family: Arial, sans-serif; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle; height: 35px; }
+                    td { border: 1px solid #CBD5E1; vertical-align: middle; padding: 6px; }
+                    .center { text-align: center; }
+                    .room-no { font-weight: bold; color: #DC2626; font-size: 14px; text-align: center; }
+                    .gender-male { color: #1E3A8A; font-weight: bold; }
+                    .gender-female { color: #9D174D; font-weight: bold; }
+                    .room-divider { border-top: 2px solid #000000 !important; }
+                </style></head><body>';
+                echo '<table>';
+                echo '<tr><th colspan="21" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
+                echo '<tr><td colspan="21" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+                echo '<tr>
+                    <th>SR</th>
+                    <th>PICTURE</th>
+                    <th>HAJJ ID</th>
+                    <th>HB NUMBER</th>
+                    <th>PASSPORT NO</th>
+                    <th>PILGRIM FULL NAME</th>
+                    <th>GENDER</th>
+                    <th>LOCATION</th>
+                    <th>HOTEL / BUILDING</th>
+                    <th>ROOM TYPE</th>
+                    <th>ROOM NUMBER</th>
+                    <th>TOTAL BEDS</th>
+                    <th>OCCUPIED</th>
+                    <th>AVAILABLE</th>
+                    <th>ROOM GENDER</th>
+                    <th>BOOKING REF</th>
+                    <th>CLIENT / AGENT</th>
+                    <th>PHONE</th>
+                    <th>CHECK IN</th>
+                    <th>CHECK OUT</th>
+                    <th>ROOM NOTES</th>
+                </tr>';
+
+                $sr = 1;
+                foreach ($groupedRooms as $room) {
+                    $rNum = trim($room['room_number']);
+                    $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum));
+                    $roomDisplayNo = $isUnassigned ? 'UNASSIGNED' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
+                    $locLabel = strtoupper($room['location'] ?? 'MAKKAH');
+
+                    if (empty($room['occupants'])) {
+                        echo '<tr class="room-divider">';
+                        echo '<td class="center">' . ($sr++) . '</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td><em>(Empty Room)</em></td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
+                        echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
+                        echo '<td class="center">' . htmlspecialchars($room['room_type']) . '</td>';
+                        echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
+                        echo '<td class="center">' . $room['total_capacity'] . '</td>';
+                        echo '<td class="center">0</td>';
+                        echo '<td class="center">' . $room['total_capacity'] . '</td>';
+                        echo '<td class="center">' . htmlspecialchars($room['room_gender'] ?? 'Any') . '</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">' . ($room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—') . '</td>';
+                        echo '<td class="center">' . ($room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—') . '</td>';
+                        echo '<td>' . htmlspecialchars($room['notes'] ?? '') . '</td>';
+                        echo '</tr>';
+                    } else {
+                        foreach ($room['occupants'] as $occIdx => $occ) {
+                            $isTop = ($occIdx === 0) ? ' class="room-divider"' : '';
+                            $occGender = strtoupper($occ['gender'] ?? 'MALE');
+                            $genderClass = ($occGender === 'FEMALE') ? 'gender-female' : 'gender-male';
+
+                            $photoUrl = null;
+                            if (!empty($occ['photo'])) {
+                                $rawPhoto = ltrim($occ['photo'], '/\\');
+                                if (file_exists(public_path($rawPhoto))) {
+                                    $photoUrl = asset($rawPhoto);
+                                } else {
+                                    $photoUrl = 'https://pirwanitravels.com.pk/' . $rawPhoto;
+                                }
+                            }
+
+                            echo '<tr' . $isTop . '>';
+                            echo '<td class="center">' . ($sr++) . '</td>';
+                            if ($photoUrl) {
+                                echo '<td class="center" style="height: 55px;"><img src="' . htmlspecialchars($photoUrl) . '" width="45" height="50" style="object-fit: cover; border-radius: 4px;"></td>';
+                            } else {
+                                echo '<td class="center">—</td>';
+                            }
+                            echo '<td class="center">' . htmlspecialchars(!empty($occ['hajj_id']) ? $occ['hajj_id'] : '—') . '</td>';
+                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars(!empty($occ['hb_number']) ? $occ['hb_number'] : '—') . '</td>';
+                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($occ['passport'] ?? '—') . '</td>';
+                            echo '<td><strong>' . htmlspecialchars($occ['name'] ?? '—') . '</strong></td>';
+                            echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($occGender) . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
+                            echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($room['room_type']) . '</td>';
+                            echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
+                            echo '<td class="center">' . $room['total_capacity'] . '</td>';
+                            echo '<td class="center">' . $room['occupied_beds'] . '</td>';
+                            echo '<td class="center">' . $room['available_beds'] . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($room['room_gender'] ?? 'Any') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['booking_number'] ?? '—') . '</td>';
+                            echo '<td>' . htmlspecialchars($occ['client_name'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['phone'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['check_in'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['check_out'] ?? '—') . '</td>';
+                            echo '<td>' . htmlspecialchars($room['notes'] ?? '') . '</td>';
+                            echo '</tr>';
+                        }
+                    }
+                }
+                echo '</table></body></html>';
+            }, $xlsFileName, [
+                'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
+                'Cache-Control' => 'max-age=0',
+            ]);
+        }
+
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Rooming Manifest');

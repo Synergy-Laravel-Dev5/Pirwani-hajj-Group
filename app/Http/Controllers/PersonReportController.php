@@ -58,20 +58,50 @@ class PersonReportController extends Controller
             $query->whereHas('booking', function ($bq) use ($maktab) {
                 if ($maktab === 'maktab_a') {
                     $bq->where(function ($sub) {
-                        $sub->where('camp', 'LIKE', '%Maktab A%')
-                            ->orWhere('camp', 'LIKE', '%Zone 1%')
-                            ->orWhere('camp', 'LIKE', '%Zone 2%')
-                            ->orWhereHas('package', function ($pq) {
-                                $pq->where('camp_category', 'LIKE', '%A%')->orWhere('maktab', 'LIKE', '%A%');
+                        $sub->where(function ($q) {
+                            $q->whereNotNull('camp')->where('camp', '!=', '')
+                              ->where(function ($c) {
+                                  $c->where('camp', 'LIKE', '%Maktab A%')
+                                    ->orWhere('camp', 'LIKE', '%Zone 1%')
+                                    ->orWhere('camp', 'LIKE', '%Zone 2%');
+                              })
+                              ->where('camp', 'NOT LIKE', '%Maktab C%')
+                              ->where('camp', 'NOT LIKE', '%Zone 5%');
+                        })->orWhere(function ($q) {
+                            $q->where(function ($empty) {
+                                $empty->whereNull('camp')->orWhere('camp', '');
+                            })->whereHas('package', function ($pq) {
+                                $pq->where(function ($pSub) {
+                                    $pSub->where('camp_category', '=', 'A')
+                                         ->orWhere('camp_category', 'LIKE', 'A (%')
+                                         ->orWhere('camp_zone', 'LIKE', '%ZONE 1%')
+                                         ->orWhere('camp_zone', 'LIKE', '%ZONE 2%');
+                                })->where('camp_category', 'NOT LIKE', '%C%');
                             });
+                        });
                     });
                 } elseif ($maktab === 'maktab_c') {
                     $bq->where(function ($sub) {
-                        $sub->where('camp', 'LIKE', '%Maktab C%')
-                            ->orWhere('camp', 'LIKE', '%Zone 5%')
-                            ->orWhereHas('package', function ($pq) {
-                                $pq->where('camp_category', 'LIKE', '%C%')->orWhere('maktab', 'LIKE', '%C%');
+                        $sub->where(function ($q) {
+                            $q->whereNotNull('camp')->where('camp', '!=', '')
+                              ->where(function ($c) {
+                                  $c->where('camp', 'LIKE', '%Maktab C%')
+                                    ->orWhere('camp', 'LIKE', '%Zone 5%');
+                              })
+                              ->where('camp', 'NOT LIKE', '%Maktab A%')
+                              ->where('camp', 'NOT LIKE', '%Zone 1%')
+                              ->where('camp', 'NOT LIKE', '%Zone 2%');
+                        })->orWhere(function ($q) {
+                            $q->where(function ($empty) {
+                                $empty->whereNull('camp')->orWhere('camp', '');
+                            })->whereHas('package', function ($pq) {
+                                $pq->where(function ($pSub) {
+                                    $pSub->where('camp_category', '=', 'C')
+                                         ->orWhere('camp_category', 'LIKE', 'C (%')
+                                         ->orWhere('camp_zone', 'LIKE', '%ZONE 5%');
+                                })->where('camp_category', 'NOT LIKE', '%A%');
                             });
+                        });
                     });
                 } elseif ($maktab === 'combo') {
                     $bq->where(function ($sub) {
@@ -85,10 +115,7 @@ class PersonReportController extends Controller
                     });
                 } else {
                     $term = '%' . $maktab . '%';
-                    $bq->where('camp', 'LIKE', $term)
-                       ->orWhereHas('package', function ($pq) use ($term) {
-                           $pq->where('camp_category', 'LIKE', $term)->orWhere('maktab', 'LIKE', $term);
-                       });
+                    $bq->where('camp', 'LIKE', $term);
                 }
             });
         }

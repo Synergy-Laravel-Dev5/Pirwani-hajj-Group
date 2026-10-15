@@ -393,6 +393,8 @@ Route::middleware('auth')->group(function () {
         Route::controller(MaktabReportController::class)
             ->prefix('reports')->group(function () {
                 Route::get('maktab', 'index')->name('report.maktab');
+                Route::get('maktab/export-pdf', 'exportPdf')->name('report.maktab.export-pdf');
+                Route::get('maktab/export-excel', 'exportExcel')->name('report.maktab.export-excel');
             });
 
         Route::controller(PersonReportController::class)

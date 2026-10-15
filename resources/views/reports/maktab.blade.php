@@ -14,13 +14,19 @@
                         </h4>
                         <p class="text-muted mb-0 small">Maktab-wise rooming manifests, gender breakdown, pilgrim details, and stay schedules.</p>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-wrap gap-2">
                         <a href="{{ route('report.maktab') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="mdi mdi-refresh me-1"></i> Reset Filters
                         </a>
-                        <button onclick="window.print()" class="btn btn-primary btn-sm">
+                        <button onclick="window.print()" class="btn btn-outline-dark btn-sm">
                             <i class="mdi mdi-printer me-1"></i> Print Manifest
                         </button>
+                        <a href="{{ route('report.maktab.export-pdf', request()->query()) }}" class="btn btn-danger btn-sm">
+                            <i class="mdi mdi-file-pdf-box me-1"></i> Export PDF
+                        </a>
+                        <a href="{{ route('report.maktab.export-excel', request()->query()) }}" class="btn btn-success btn-sm">
+                            <i class="mdi mdi-file-excel me-1"></i> Export Excel
+                        </a>
                     </div>
                 </div>
 
@@ -231,13 +237,10 @@
                                 <thead class="table-light text-uppercase text-dark fw-semibold" style="font-size: 11.5px; letter-spacing: 0.5px;">
                                     <tr>
                                         <th class="text-center" style="width: 40px;">#</th>
-                                        <th style="min-width: 220px;">Pilgrim / Hajji Details</th>
-                                        <th style="min-width: 180px;">Hotel & Location</th>
-                                        <th style="min-width: 130px;">Room Details</th>
-                                        <th style="min-width: 140px;">Check-In Date</th>
-                                        <th style="min-width: 140px;">Check-Out Date</th>
-                                        <th class="text-center" style="min-width: 80px;">Nights</th>
-                                        <th style="min-width: 160px;">Package & Voucher</th>
+                                        <th style="min-width: 240px;">Pilgrim / Hajji Details</th>
+                                        <th style="min-width: 190px;">Hotel & Location</th>
+                                        <th style="min-width: 140px;">Room Details</th>
+                                        <th style="min-width: 180px;">Package & Voucher</th>
                                         <th class="text-center" style="min-width: 110px;">Status</th>
                                         <th class="text-center no-print" style="width: 90px;">Action</th>
                                     </tr>
@@ -484,34 +487,7 @@
                                                 </div>
                                             </td>
 
-                                            {{-- Check-In Date --}}
-                                            <td>
-                                                <div class="fw-bold text-dark">
-                                                    <i class="mdi mdi-calendar-arrow-right text-success me-1"></i>
-                                                    {{ $checkIn ? $checkIn->format('d M Y') : '—' }}
-                                                </div>
-                                                <small class="text-muted d-block ps-3">
-                                                    {{ $checkIn ? $checkIn->format('l') : '' }} (04:00 PM)
-                                                </small>
-                                            </td>
 
-                                            {{-- Check-Out Date --}}
-                                            <td>
-                                                <div class="fw-bold text-dark">
-                                                    <i class="mdi mdi-calendar-arrow-left text-danger me-1"></i>
-                                                    {{ $checkOut ? $checkOut->format('d M Y') : '—' }}
-                                                </div>
-                                                <small class="text-muted d-block ps-3">
-                                                    {{ $checkOut ? $checkOut->format('l') : '' }} (12:00 PM)
-                                                </small>
-                                            </td>
-
-                                            {{-- Nights --}}
-                                            <td class="text-center">
-                                                <span class="badge bg-light text-dark border px-2 py-1 fs-12 fw-bold">
-                                                    {{ $stay->no_of_nights ?: ($checkIn && $checkOut ? $checkIn->diffInDays($checkOut) : '—') }} N
-                                                </span>
-                                            </td>
 
                                             {{-- Package & Voucher Ref --}}
                                             <td>
