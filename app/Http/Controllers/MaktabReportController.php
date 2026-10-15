@@ -29,9 +29,10 @@ class MaktabReportController extends Controller
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        $maktabPart = (!empty($data['maktabFilter']) && $data['maktabFilter'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['maktabFilter'])) : '';
-        $genderPart = (!empty($data['genderFilter']) && $data['genderFilter'] !== 'all') ? '_' . strtoupper($data['genderFilter']) : '';
-        $fileName = 'Official_Maktab_Report_Manifest' . $maktabPart . $genderPart . '_' . date('Ymd_His') . '.pdf';
+        $maktabPart   = (!empty($data['maktabFilter']) && $data['maktabFilter'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['maktabFilter'])) : '';
+        $genderPart   = (!empty($data['genderFilter']) && $data['genderFilter'] !== 'all') ? '_' . strtoupper($data['genderFilter']) : '';
+        $locationPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
+        $fileName     = 'Official_Maktab_Report_Manifest' . $maktabPart . $genderPart . $locationPart . '_' . date('Ymd_His') . '.pdf';
 
         return $pdf->download($fileName);
     }
@@ -41,19 +42,22 @@ class MaktabReportController extends Controller
         @set_time_limit(180);
         @ini_set('memory_limit', '512M');
 
-        $data = $this->getFilteredMaktabStays($request);
-        $hotelStays = $data['hotelStays'];
-        $genderFilter = $data['genderFilter'];
+        $data           = $this->getFilteredMaktabStays($request);
+        $hotelStays     = $data['hotelStays'];
+        $genderFilter   = $data['genderFilter'];
+        $locationFilter = $data['locationFilter'];
+        $isAllLocations = empty($locationFilter) || $locationFilter === 'all';
 
-        $maktabPart = (!empty($data['maktabFilter']) && $data['maktabFilter'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['maktabFilter'])) : '';
-        $genderPart = (!empty($data['genderFilter']) && $data['genderFilter'] !== 'all') ? '_' . strtoupper($data['genderFilter']) : '';
-        $fileName = 'Official_Maktab_Report_Manifest' . $maktabPart . $genderPart . '_' . date('Ymd_His') . '.xlsx';
-        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Maktab: ' . strtoupper($data['maktabFilter']) . ' | Gender: ' . strtoupper($data['genderFilter']);
+        $maktabPart   = (!empty($data['maktabFilter']) && $data['maktabFilter'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['maktabFilter'])) : '';
+        $genderPart   = (!empty($data['genderFilter']) && $data['genderFilter'] !== 'all') ? '_' . strtoupper($data['genderFilter']) : '';
+        $locationPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
+        $fileName     = 'Official_Maktab_Report_Manifest' . $maktabPart . $genderPart . $locationPart . '_' . date('Ymd_His') . '.xlsx';
+        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Maktab: ' . strtoupper($data['maktabFilter']) . ' | Gender: ' . strtoupper($data['genderFilter']) . ' | Location: ' . strtoupper($locationFilter);
 
         // Check if PhpSpreadsheet is available (Live server safe fallback)
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
             $xlsFileName = str_replace('.xlsx', '.xls', $fileName);
-            return response()->streamDownload(function () use ($hotelStays, $genderFilter, $filterSummary) {
+            return response()->streamDownload(function () use ($hotelStays, $genderFilter, $filterSummary, $isAllLocations) {
                 echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
                 echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
                 echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Maktab Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
@@ -93,9 +97,24 @@ class MaktabReportController extends Controller
                     }
                     if ($persons->isEmpty()) continue;
 
-                    $campName = $booking ? ($booking->camp ?: ($booking->package->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
+                    $campName = $booking ? ($booking->camp ?: ($booking->package?->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
                     $pkgTitle = $booking && $booking->package ? ($booking->package->package_title ?: $booking->package->name) : '—';
                     $voucherNo = $booking ? ($booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT))) : '—';
+
+                    $allStays = $stay->all_stays ?? collect([$stay]);
+                    if ($isAllLocations) {
+                        $hotelLines = [];
+                        $roomLines  = [];
+                        foreach ($allStays as $st) {
+                            $hotelLines[] = strtoupper($st->location ?: 'LOC') . ': ' . strtoupper($st->hotel_name ?: 'Hotel');
+                            $roomLines[]  = strtoupper($st->location ?: 'LOC') . ': ' . ucfirst($st->room_type ?: 'Standard') . ' (' . ($st->no_of_rooms ?: 1) . ' R)';
+                        }
+                        $hotelDisplay = implode('<br>', $hotelLines);
+                        $roomDisplay  = implode('<br>', $roomLines);
+                    } else {
+                        $hotelDisplay = htmlspecialchars(strtoupper($stay->hotel_name ?: 'Hotel') . ' (' . strtoupper($stay->location ?: 'Location') . ')');
+                        $roomDisplay  = htmlspecialchars(ucfirst($stay->room_type ?: 'Standard') . ' (' . ($stay->no_of_rooms ?: 1) . ' Room)');
+                    }
 
                     foreach ($persons as $p) {
                         $pGender = strtoupper($p->gender ?? 'MALE');
@@ -106,8 +125,8 @@ class MaktabReportController extends Controller
                         echo '<td><strong>' . htmlspecialchars($p->full_name ?? ($p->given_name . ' ' . $p->surname)) . '</strong></td>';
                         echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($pGender) . '</td>';
                         echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($p->passport_number ?? '—') . '</td>';
-                        echo '<td>' . htmlspecialchars(strtoupper($stay->hotel_name ?: 'Hotel') . ' (' . strtoupper($stay->location ?: 'Location') . ')') . '</td>';
-                        echo '<td class="center">' . htmlspecialchars(ucfirst($stay->room_type ?: 'Standard') . ' (' . ($stay->no_of_rooms ?: 1) . ' Room)') . '</td>';
+                        echo '<td>' . $hotelDisplay . '</td>';
+                        echo '<td class="center">' . $roomDisplay . '</td>';
                         echo '<td class="center"><strong>' . htmlspecialchars($campName) . '</strong></td>';
                         echo '<td>' . htmlspecialchars($pkgTitle) . '</td>';
                         echo '<td class="center">' . htmlspecialchars($voucherNo) . '</td>';
@@ -144,8 +163,8 @@ class MaktabReportController extends Controller
             'B' => ['title' => 'PILGRIM FULL NAME', 'width' => 28],
             'C' => ['title' => 'GENDER', 'width' => 12],
             'D' => ['title' => 'PASSPORT NO', 'width' => 16],
-            'E' => ['title' => 'HOTEL & LOCATION', 'width' => 26],
-            'F' => ['title' => 'ROOM DETAILS', 'width' => 16],
+            'E' => ['title' => 'HOTEL & LOCATION', 'width' => 32],
+            'F' => ['title' => 'ROOM DETAILS', 'width' => 24],
             'G' => ['title' => 'MAKTAB / CAMP', 'width' => 24],
             'H' => ['title' => 'PACKAGE', 'width' => 22],
             'I' => ['title' => 'BOOKING / VOUCHER', 'width' => 18],
@@ -180,9 +199,24 @@ class MaktabReportController extends Controller
             }
             if ($persons->isEmpty()) continue;
 
-            $campName = $booking ? ($booking->camp ?: ($booking->package->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
+            $campName = $booking ? ($booking->camp ?: ($booking->package?->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
             $pkgTitle = $booking && $booking->package ? ($booking->package->package_title ?: $booking->package->name) : '—';
             $voucherNo = $booking ? ($booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT))) : '—';
+
+            $allStays = $stay->all_stays ?? collect([$stay]);
+            if ($isAllLocations) {
+                $hotelLines = [];
+                $roomLines  = [];
+                foreach ($allStays as $st) {
+                    $hotelLines[] = strtoupper($st->location ?: 'LOC') . ': ' . strtoupper($st->hotel_name ?: 'Hotel');
+                    $roomLines[]  = strtoupper($st->location ?: 'LOC') . ': ' . ucfirst($st->room_type ?: 'Standard') . ' (' . ($st->no_of_rooms ?: 1) . ' R)';
+                }
+                $hotelText = implode("\n", $hotelLines);
+                $roomText  = implode("\n", $roomLines);
+            } else {
+                $hotelText = strtoupper($stay->hotel_name ?: 'Hotel') . ' (' . strtoupper($stay->location ?: 'Location') . ')';
+                $roomText  = ucfirst($stay->room_type ?: 'Standard') . ' (' . ($stay->no_of_rooms ?: 1) . ' Room)';
+            }
 
             foreach ($persons as $p) {
                 $pGender = strtoupper($p->gender ?? 'MALE');
@@ -190,9 +224,11 @@ class MaktabReportController extends Controller
                 $sheet->setCellValue('A' . $currentRow, $sr++);
                 $sheet->setCellValue('B' . $currentRow, $p->full_name ?? ($p->given_name . ' ' . $p->surname));
                 $sheet->setCellValue('C' . $currentRow, $pGender);
-                $sheet->setCellValue('D' . $currentRow, $p->passport_number ?? '—');
-                $sheet->setCellValue('E' . $currentRow, strtoupper($stay->hotel_name ?: 'Hotel') . ' (' . strtoupper($stay->location ?: 'Location') . ')');
-                $sheet->setCellValue('F' . $currentRow, ucfirst($stay->room_type ?: 'Standard') . ' (' . ($stay->no_of_rooms ?: 1) . ' Room)');
+                $sheet->setCellValue('D' . $currentRow, $p->passport_number ?: '—');
+                $sheet->setCellValue('E' . $currentRow, $hotelText);
+                $sheet->getStyle('E' . $currentRow)->getAlignment()->setWrapText(true);
+                $sheet->setCellValue('F' . $currentRow, $roomText);
+                $sheet->getStyle('F' . $currentRow)->getAlignment()->setWrapText(true);
                 $sheet->setCellValue('G' . $currentRow, $campName);
                 $sheet->setCellValue('H' . $currentRow, $pkgTitle);
                 $sheet->setCellValue('I' . $currentRow, $voucherNo);
@@ -230,11 +266,12 @@ class MaktabReportController extends Controller
 
     private function getFilteredMaktabStays(Request $request)
     {
-        $maktabFilter = $request->get('maktab', 'all');
-        $genderFilter = $request->get('gender', 'all');
+        $maktabFilter   = $request->get('maktab', 'all');
+        $genderFilter   = $request->get('gender', 'all');
+        $locationFilter = $request->get('location', 'all');
 
         // Query BookingHotel records with active bookings
-        $query = BookingHotel::with(['booking.client', 'booking.company', 'booking.package', 'booking.persons'])
+        $query = BookingHotel::with(['booking.client', 'booking.company', 'booking.package', 'booking.persons', 'booking.hotels'])
             ->whereHas('booking', function ($q) {
                 $q->whereNull('deleted_at')->whereNotIn('status', ['cancelled', 'rejected']);
             });
@@ -314,12 +351,30 @@ class MaktabReportController extends Controller
             });
         }
 
-        // Order by check_in date ascending
-        $hotelStays = $query->orderBy('check_in', 'asc')->get();
+        // 3. Location filter handling
+        if (!empty($locationFilter) && $locationFilter !== 'all') {
+            $locLower = strtolower(trim($locationFilter));
+            $query->whereRaw('LOWER(TRIM(location)) = ?', [$locLower]);
+            $hotelStays = $query->orderBy('check_in', 'asc')->get();
+            foreach ($hotelStays as $s) {
+                $s->all_stays = collect([$s]);
+            }
+        } else {
+            // All Locations: Each booking / pilgrim appears ONLY ONCE!
+            // Group stays by booking_id, take representative stay, and attach all its hotel stays to $primary->all_stays
+            $grouped = $query->orderBy('check_in', 'asc')->get()->groupBy('booking_id');
+            $hotelStays = $grouped->map(function ($stays) {
+                $primary = $stays->first();
+                $primary->all_stays = $stays;
+                return $primary;
+            })->values();
+        }
 
         // Calculate KPI Statistics
         $totalStays = $hotelStays->count();
-        $totalRooms = $hotelStays->sum('no_of_rooms');
+        $totalRooms = $hotelStays->reduce(function ($carry, $stay) {
+            return $carry + ($stay->all_stays ? $stay->all_stays->sum('no_of_rooms') : ($stay->no_of_rooms ?: 1));
+        }, 0);
 
         $allBookingIds = $hotelStays->pluck('booking_id')->unique();
 
@@ -333,11 +388,11 @@ class MaktabReportController extends Controller
         }
 
         $today = Carbon::today()->format('Y-m-d');
-        $todayCheckins = (clone $query)->whereDate('check_in', $today)->count();
-        $upcoming7Days = (clone $query)->whereDate('check_in', '>=', $today)
+        $todayCheckins = BookingHotel::whereIn('booking_id', $allBookingIds)->whereDate('check_in', $today)->count();
+        $upcoming7Days = BookingHotel::whereIn('booking_id', $allBookingIds)->whereDate('check_in', '>=', $today)
             ->whereDate('check_in', '<=', Carbon::today()->addDays(7)->format('Y-m-d'))
             ->count();
-        $activeInHouse = (clone $query)->whereDate('check_in', '<=', $today)
+        $activeInHouse = BookingHotel::whereIn('booking_id', $allBookingIds)->whereDate('check_in', '<=', $today)
             ->whereDate('check_out', '>=', $today)
             ->count();
 
@@ -349,6 +404,9 @@ class MaktabReportController extends Controller
 
         // Distinct camps from DB to populate dropdown
         $distinctCamps = Booking::whereNotNull('camp')->where('camp', '!=', '')->distinct()->pluck('camp')->toArray();
+
+        // Distinct locations from DB to populate dropdown
+        $distinctLocations = BookingHotel::whereNotNull('location')->where('location', '!=', '')->distinct()->pluck('location')->toArray();
 
         return compact(
             'hotelStays',
@@ -362,7 +420,9 @@ class MaktabReportController extends Controller
             'activeInHouse',
             'maktabFilter',
             'genderFilter',
-            'distinctCamps'
+            'locationFilter',
+            'distinctCamps',
+            'distinctLocations'
         );
     }
 }

@@ -400,6 +400,8 @@ Route::middleware('auth')->group(function () {
         Route::controller(PersonReportController::class)
             ->prefix('reports')->group(function () {
                 Route::get('persons', 'index')->name('report.person');
+                Route::get('persons/export-pdf', 'exportPdf')->name('report.person.export-pdf');
+                Route::get('persons/export-excel', 'exportExcel')->name('report.person.export-excel');
             });
 
         Route::controller(FlightReportController::class)

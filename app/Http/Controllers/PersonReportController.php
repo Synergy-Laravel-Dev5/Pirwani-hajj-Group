@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\BookingPerson;
 use App\Models\Package;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class PersonReportController extends Controller
 {
-    public function index(Request $request)
+    private function getFilteredPersons(Request $request)
     {
         $search     = $request->get('search');
         $gender     = $request->get('gender', 'all');
@@ -141,7 +142,7 @@ class PersonReportController extends Controller
         $packages = Package::latest()->get();
         $distinctCamps = Booking::whereNotNull('camp')->where('camp', '!=', '')->distinct()->pluck('camp')->toArray();
 
-        return view('reports.person', compact(
+        return compact(
             'persons',
             'totalPersons',
             'maleCount',
@@ -155,6 +156,106 @@ class PersonReportController extends Controller
             'gender',
             'maktab',
             'packageId'
-        ));
+        );
+    }
+
+    public function index(Request $request)
+    {
+        $data = $this->getFilteredPersons($request);
+
+        return view('reports.person', $data);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $data = $this->getFilteredPersons($request);
+
+        $pdf = Pdf::loadView('reports.person_pdf', $data);
+        $pdf->setPaper('A4', 'landscape');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', true);
+
+        $maktabPart = (!empty($data['maktab']) && $data['maktab'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['maktab'])) : '';
+        $genderPart = (!empty($data['gender']) && $data['gender'] !== 'all') ? '_' . strtoupper($data['gender']) : '';
+        $fileName = 'Official_Person_Manifest' . $maktabPart . $genderPart . '_' . date('Ymd_His') . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        @set_time_limit(180);
+        @ini_set('memory_limit', '512M');
+
+        $data = $this->getFilteredPersons($request);
+        $persons = $data['persons'];
+
+        $maktabPart = (!empty($data['maktab']) && $data['maktab'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['maktab'])) : '';
+        $genderPart = (!empty($data['gender']) && $data['gender'] !== 'all') ? '_' . strtoupper($data['gender']) : '';
+        $fileName = 'Official_Person_Manifest' . $maktabPart . $genderPart . '_' . date('Ymd_His') . '.xlsx';
+        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Maktab: ' . strtoupper($data['maktab']) . ' | Gender: ' . strtoupper($data['gender']) . ' | Total: ' . $data['totalPersons'];
+
+        // Live server safe fallback to stream HTML .xls
+        $xlsFileName = str_replace('.xlsx', '.xls', $fileName);
+        return response()->streamDownload(function () use ($persons, $filterSummary) {
+            echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+            echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Pilgrims Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+            echo '<style>
+                body { font-family: Arial, sans-serif; }
+                table { border-collapse: collapse; width: 100%; }
+                th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle; height: 32px; font-size: 11px; }
+                td { border: 1px solid #CBD5E1; vertical-align: middle; padding: 6px; font-size: 11px; }
+                .center { text-align: center; }
+                .gender-male { color: #1E3A8A; font-weight: bold; }
+                .gender-female { color: #9D174D; font-weight: bold; }
+            </style></head><body>';
+            echo '<table>';
+            echo '<tr><th colspan="12" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL BOOKING PERSON & PILGRIM MANIFEST</th></tr>';
+            echo '<tr><td colspan="12" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+            echo '<tr>
+                <th>SR</th>
+                <th>HAJJ ID</th>
+                <th>HB NUMBER</th>
+                <th>FULL NAME</th>
+                <th>FATHER NAME</th>
+                <th>GENDER</th>
+                <th>PASSPORT NO</th>
+                <th>CNIC</th>
+                <th>PHONE / CONTACT</th>
+                <th>VOUCHER / BOOKING REF</th>
+                <th>PACKAGE</th>
+                <th>MAKTAB / CAMP</th>
+            </tr>';
+
+            $sr = 1;
+            foreach ($persons as $p) {
+                $booking = $p->booking;
+                $campName = $booking ? ($booking->camp ?: ($booking->package->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
+                $pkgTitle = $booking && $booking->package ? ($booking->package->package_title ?: $booking->package->name) : '—';
+                $voucherNo = $booking ? ($booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT))) : '—';
+                $pGender = strtoupper($p->gender ?? 'MALE');
+                $genderClass = ($pGender === 'FEMALE') ? 'gender-female' : 'gender-male';
+
+                echo '<tr>';
+                echo '<td class="center">' . ($sr++) . '</td>';
+                echo '<td class="center"><strong>' . htmlspecialchars($p->hajj_id ?? '—') . '</strong></td>';
+                echo '<td class="center">' . htmlspecialchars($p->hb_number ?? '—') . '</td>';
+                echo '<td><strong>' . htmlspecialchars($p->full_name ?? ($p->given_name . ' ' . $p->surname)) . '</strong></td>';
+                echo '<td>' . htmlspecialchars($p->father_name ?? '—') . '</td>';
+                echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($pGender) . '</td>';
+                echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($p->passport_number ?? '—') . '</td>';
+                echo '<td class="center">' . htmlspecialchars($p->cnic ?? '—') . '</td>';
+                echo '<td class="center">' . htmlspecialchars($p->phone ?? '—') . '</td>';
+                echo '<td class="center">' . htmlspecialchars($voucherNo) . '</td>';
+                echo '<td>' . htmlspecialchars($pkgTitle) . '</td>';
+                echo '<td class="center"><strong>' . htmlspecialchars($campName) . '</strong></td>';
+                echo '</tr>';
+            }
+            echo '</table></body></html>';
+        }, $xlsFileName, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 }

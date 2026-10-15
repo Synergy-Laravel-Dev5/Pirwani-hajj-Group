@@ -142,7 +142,10 @@
         <div class="header-meta">
             Generated: <strong>{{ date('d M Y, h:i A') }}</strong>
             @if(!empty($maktabFilter) && $maktabFilter !== 'all')
-                &nbsp;|&nbsp; Maktab Filter: <strong>{{ strtoupper(str_replace('_', ' ', $maktabFilter)) }}</strong>
+                &nbsp;|&nbsp; Maktab: <strong>{{ strtoupper(str_replace('_', ' ', $maktabFilter)) }}</strong>
+            @endif
+            @if(!empty($locationFilter) && $locationFilter !== 'all')
+                &nbsp;|&nbsp; Location: <strong>{{ strtoupper($locationFilter) }}</strong>
             @endif
             @if(!empty($genderFilter) && $genderFilter !== 'all')
                 &nbsp;|&nbsp; Gender: <strong>{{ strtoupper($genderFilter) }}</strong>
@@ -153,7 +156,7 @@
     <!-- KPI Summary Table -->
     <table class="kpi-table">
         <tr>
-            <td>Total Stays<br><strong>{{ number_format($totalStays) }}</strong></td>
+            <td>{{ (empty($locationFilter) || $locationFilter === 'all') ? 'Total Bookings' : 'Total Stays' }}<br><strong>{{ number_format($totalStays) }}</strong></td>
             <td>Total Rooms<br><strong>{{ number_format($totalRooms) }}</strong></td>
             <td>Total Pilgrims (Pax)<br><strong>{{ number_format($totalPilgrims) }}</strong></td>
             <td>👨 Male Pilgrims<br><strong>{{ number_format($totalMalePilgrims) }}</strong></td>
@@ -167,8 +170,8 @@
         <thead>
             <tr>
                 <th style="width: 25px;">#</th>
-                <th style="width: 260px; text-align: left; padding-left: 6px;">PILGRIM / HAJJI DETAILS</th>
-                <th style="width: 160px; text-align: left; padding-left: 6px;">HOTEL & LOCATION</th>
+                <th style="width: 250px; text-align: left; padding-left: 6px;">PILGRIM / HAJJI DETAILS</th>
+                <th style="width: 170px; text-align: left; padding-left: 6px;">HOTEL & LOCATION</th>
                 <th style="width: 110px; text-align: center;">ROOM DETAILS</th>
                 <th style="width: 170px; text-align: left; padding-left: 6px;">PACKAGE & VOUCHER</th>
                 <th style="width: 110px; text-align: center;">MAKTAB / CAMP</th>
@@ -176,7 +179,10 @@
             </tr>
         </thead>
         <tbody>
-            @php $sr = 1; @endphp
+            @php
+                $sr = 1;
+                $isAllLoc = empty($locationFilter) || $locationFilter === 'all';
+            @endphp
             @forelse($hotelStays as $idx => $stay)
                 @php
                     $booking = $stay->booking;
@@ -191,17 +197,19 @@
 
                     $mainPerson = $persons->first();
                     $otherPersons = $persons->slice(1);
-                    $campName = $booking ? ($booking->camp ?: ($booking->package->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
+                    $campName = $booking ? ($booking->camp ?: ($booking->package?->camp_category ? 'Maktab ' . $booking->package->camp_category : 'Standard Camp')) : '—';
                     $isMaktabA = str_contains(strtolower($campName), 'a') || str_contains(strtolower($campName), 'zone 1') || str_contains(strtolower($campName), 'zone 2');
 
                     $voucherNo = $booking ? ($booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT))) : '—';
                     $pkgTitle = $booking && $booking->package ? ($booking->package->package_title ?: $booking->package->name) : '—';
 
+                    $allStays = $stay->all_stays ?? collect([$stay]);
+
                     $checkIn = $stay->check_in ? \Carbon\Carbon::parse($stay->check_in) : null;
                     $checkOut = $stay->check_out ? \Carbon\Carbon::parse($stay->check_out) : null;
                     $statusText = 'Scheduled';
                     if ($checkIn) {
-                        if ($checkIn->isToday()) $statusText = 'Checking In Today';
+                        if ($checkIn->isToday()) $statusText = 'Checking In';
                         elseif ($checkOut && $checkOut->isPast()) $statusText = 'Checked Out';
                         elseif ($checkIn->isPast() && ($checkOut ? $checkOut->isFuture() || $checkOut->isToday() : true)) $statusText = 'In-House';
                         elseif ($checkIn->isFuture()) $statusText = 'Upcoming';
@@ -244,7 +252,7 @@
                                     <div>
                                         • {{ $oP->full_name }} 
                                         <span class="{{ strtolower($oP->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}">
-                                            ({{ ucfirst($oP->gender ?? 'Male') }})
+                                             ({{ ucfirst($oP->gender ?? 'Male') }})
                                         </span>
                                         @if($oP->passport_number) - {{ $oP->passport_number }} @endif
                                     </div>
@@ -255,14 +263,29 @@
 
                     {{-- Hotel & Location --}}
                     <td style="padding-left: 6px;">
-                        <strong style="text-transform: uppercase;">{{ $stay->hotel_name ?: 'Hotel Not Specified' }}</strong>
-                        <div style="font-size: 8px; color: #555;">Location: {{ strtoupper($stay->location ?: 'Location') }}</div>
+                        @if($isAllLoc)
+                            @foreach($allStays as $st)
+                                <div style="margin-bottom: 2px;">
+                                    <strong>{{ strtoupper($st->location ?: 'LOC') }}:</strong>
+                                    {{ strtoupper($st->hotel_name ?: 'Hotel') }}
+                                </div>
+                            @endforeach
+                        @else
+                            <strong style="text-transform: uppercase;">{{ $stay->hotel_name ?: 'Hotel Not Specified' }}</strong>
+                            <div style="font-size: 8px; color: #555;">Location: {{ strtoupper($stay->location ?: 'Location') }}</div>
+                        @endif
                     </td>
 
                     {{-- Room Details --}}
                     <td class="center">
-                        <strong>{{ ucfirst($stay->room_type ?: 'Standard') }}</strong>
-                        <div style="font-size: 7.5px; color: #555;">{{ $stay->no_of_rooms ?: 1 }} Room(s)</div>
+                        @if($isAllLoc)
+                            @foreach($allStays as $st)
+                                <div>{{ ucfirst($st->room_type ?: 'Standard') }} ({{ $st->no_of_rooms ?: 1 }} R)</div>
+                            @endforeach
+                        @else
+                            <strong>{{ ucfirst($stay->room_type ?: 'Standard') }}</strong>
+                            <div style="font-size: 7.5px; color: #555;">{{ $stay->no_of_rooms ?: 1 }} Room(s)</div>
+                        @endif
                     </td>
 
                     {{-- Package & Voucher --}}
@@ -289,7 +312,7 @@
             @empty
                 <tr>
                     <td colspan="7" class="center" style="padding: 20px; font-style: italic; color: #888;">
-                        No hotel stays match the selected criteria.
+                        No records match the selected Maktab or Location criteria.
                     </td>
                 </tr>
             @endforelse
