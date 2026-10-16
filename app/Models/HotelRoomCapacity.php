@@ -102,36 +102,57 @@ class HotelRoomCapacity extends Model
 
     /**
      * Resolve effective bed capacity for a room in a hotel.
+    /**
+     * Find specific custom capacity record for a hotel and room number.
+     * Strictly matches room number variants and hotel name (or fallback to location if hotel is empty).
+     */
+    public static function findCustomCapacity(?string $hotelName, ?string $roomNumber, ?string $location = null): ?self
+    {
+        $roomVariants = self::normalizeRoomNumber($roomNumber);
+        if (empty($roomVariants)) return null;
+
+        $normHotel = self::normalizeHotelString($hotelName);
+        $cleanLoc = strtolower(trim((string) $location));
+
+        $records = self::where(function ($q) use ($roomVariants) {
+            foreach ($roomVariants as $v) {
+                $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+            }
+        })->get();
+
+        if ($records->isEmpty()) return null;
+
+        // 1. First priority: Best match on normalized hotel name
+        if (!empty($normHotel)) {
+            foreach ($records as $r) {
+                $rNorm = self::normalizeHotelString($r->hotel_name);
+                if (!empty($rNorm) && ($rNorm === $normHotel || str_contains($rNorm, $normHotel) || str_contains($normHotel, $rNorm))) {
+                    return $r;
+                }
+            }
+        }
+
+        // 2. Second priority: If hotel name was empty/unspecified, fallback to location match
+        if (empty($normHotel) && !empty($cleanLoc)) {
+            foreach ($records as $r) {
+                $rLoc = strtolower(trim((string) $r->location));
+                if ($rLoc === $cleanLoc) {
+                    return $r;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Looks up custom capacity in hotel_room_capacities; if absent, uses room_type standard capacity.
      */
     public static function resolveCapacity(?string $hotelName, ?string $roomNumber, ?string $roomType = null, ?string $location = null): int
     {
-        $normHotel = self::normalizeHotelString($hotelName);
-        $roomVariants = self::normalizeRoomNumber($roomNumber);
-        $cleanLoc = strtolower(trim((string) $location));
-
-        if (!empty($roomVariants)) {
-            $customs = self::where(function ($q) use ($roomVariants) {
-                foreach ($roomVariants as $v) {
-                    $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
-                }
-            })->get();
-
-            foreach ($customs as $custom) {
-                $cNorm = self::normalizeHotelString($custom->hotel_name);
-                $cLoc = strtolower(trim((string) $custom->location));
-
-                $isMatch = false;
-                if (!empty($normHotel) && !empty($cNorm) && ($cNorm === $normHotel || str_contains($cNorm, $normHotel) || str_contains($normHotel, $cNorm))) {
-                    $isMatch = true;
-                } elseif (!empty($cleanLoc) && !empty($cLoc) && $cleanLoc === $cLoc) {
-                    $isMatch = true;
-                }
-
-                if ($isMatch && $custom->bed_capacity > 0) {
-                    return (int) $custom->bed_capacity;
-                }
-            }
+        $custom = self::findCustomCapacity($hotelName, $roomNumber, $location);
+        if ($custom && $custom->bed_capacity > 0) {
+            return (int) $custom->bed_capacity;
         }
 
         return self::standardTypeCapacity($roomType);

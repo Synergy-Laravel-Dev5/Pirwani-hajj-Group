@@ -1110,6 +1110,7 @@
         // HB NUMBER SYNCHRONIZATION (Requirement #1)
         // ═══════════════════════════════════════
         let currentHbNumber = '{{ $nextHbNumber ?? "" }}';
+        let currentNextHajjId = '{{ $nextHajjId ?? "" }}';
 
         function syncAllHbNumbers(val) {
             currentHbNumber = (val || '').trim();
@@ -2060,7 +2061,8 @@
                     <div class="col-md-2">
                         <label class="form-label" style="font-size:12px;">Hajj ID</label>
                         <input type="text" name="persons[${idx}][hajj_id]" id="person_hajj_id_${idx}"
-                               class="form-control form-control-sm" placeholder="e.g. PW26057">
+                               class="form-control form-control-sm" placeholder="e.g. PW27001"
+                               value="${idx === 0 ? (currentNextHajjId || '') : ''}">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label" style="font-size:12px;">HB #</label>

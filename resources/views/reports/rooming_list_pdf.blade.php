@@ -73,18 +73,18 @@
         .manifest-table th {
             background-color: #f1f5f9;
             color: #000;
-            font-size: 9.5px;
+            font-size: 10.5px;
             font-weight: bold;
             text-align: center;
             vertical-align: middle;
-            padding: 5px 3px;
+            padding: 6px 3px;
             border: 1.5px solid #000;
             text-transform: uppercase;
         }
         .manifest-table td {
-            padding: 4px 3px;
+            padding: 5px 3px;
             vertical-align: middle;
-            font-size: 9px;
+            font-size: 10px;
             border: 1px solid #000;
         }
         .room-divider-top td {
@@ -95,7 +95,7 @@
         }
         .room-typ-cell {
             font-weight: bold;
-            font-size: 9.5px;
+            font-size: 10.5px;
             text-align: center;
             text-transform: uppercase;
             border-left: 1.5px solid #000 !important;
@@ -104,7 +104,7 @@
         }
         .room-no-cell {
             font-weight: 900;
-            font-size: 13px;
+            font-size: 14.5px;
             color: #c00000;
             text-align: center;
             border-left: 1px solid #000 !important;
@@ -274,7 +274,14 @@
                                 @endif
                             </td>
                             <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase; color: #000;">
-                                <div>{{ $occ['name'] }}</div>
+                                <div>
+                                    {{ $occ['name'] }}
+                                    @if(!empty($occ['is_family_head']) && ($occ['booking_pax'] ?? 1) > 1)
+                                        <span style="font-size: 7px; color: #166534; background-color: #dcfce7; border: 0.5px solid #86efac; padding: 1px 3px; border-radius: 2px; font-weight: bold; margin-left: 3px;">
+                                            FAMILY HEAD
+                                        </span>
+                                    @endif
+                                </div>
                                 <div style="font-size: 7.5px; color: #0d6efd; font-weight: bold; margin-top: 1px;">
                                     Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
                                 </div>
@@ -287,9 +294,6 @@
                             <td class="room-typ-cell">
                                 <div style="font-size: 7.5px; color: #444; font-weight: bold;">{{ $locLabel }}</div>
                                 <div style="font-size: 9.5px; font-weight: bold;">{{ $roomTypeDisplay }}</div>
-                                @if($oIdx === 0 && $room['total_capacity'] > 0)
-                                    <div style="font-size: 7.5px; color: #666;">({{ $room['total_capacity'] }} Beds)</div>
-                                @endif
                             </td>
 
                             {{-- ROOM NO (Always rendered on every row to prevent page break column shifting) --}}

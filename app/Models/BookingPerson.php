@@ -43,7 +43,6 @@ class BookingPerson extends Model
                     ->value('hb_number');
                 if (!empty($existing)) {
                     $person->hb_number = self::formatHbNumber($existing);
-                    return;
                 }
             }
 
@@ -51,6 +50,13 @@ class BookingPerson extends Model
                 $person->hb_number = self::generateNextHbNumber($person->booking_id);
             } else {
                 $person->hb_number = self::formatHbNumber($person->hb_number);
+            }
+
+            // Auto-generate Hajj ID (PW27001, PW27002, ...) if empty
+            if (empty($person->hajj_id)) {
+                $person->hajj_id = self::generateNextHajjId();
+            } else {
+                $person->hajj_id = self::formatHajjId($person->hajj_id);
             }
         });
 
@@ -65,7 +71,58 @@ class BookingPerson extends Model
             if (!empty($person->hb_number)) {
                 $person->hb_number = self::formatHbNumber($person->hb_number);
             }
+            if (!empty($person->hajj_id)) {
+                $person->hajj_id = self::formatHajjId($person->hajj_id);
+            }
         });
+    }
+
+    /**
+     * Standardize Hajj ID to strict format: PW27001, PW27002, ...
+     */
+    public static function formatHajjId(?string $value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+        $trimmed = strtoupper(trim($value));
+        if (preg_match('/^(?:PW)?(?:27)?(\d+)$/i', $trimmed, $matches)) {
+            $num = (int) $matches[1];
+            return 'PW27' . str_pad($num, 3, '0', STR_PAD_LEFT);
+        }
+        return $trimmed;
+    }
+
+    /**
+     * Mutator to ensure hajj_id is always saved in standard format
+     */
+    public function setHajjIdAttribute($value)
+    {
+        $this->attributes['hajj_id'] = self::formatHajjId($value);
+    }
+
+    /**
+     * Auto-generate sequential Hajj ID (PW27001, PW27002, ...)
+     */
+    public static function generateNextHajjId(): string
+    {
+        $maxNum = 0;
+        $all = self::whereNotNull('hajj_id')
+            ->where('hajj_id', '!=', '')
+            ->pluck('hajj_id');
+
+        foreach ($all as $hid) {
+            if (preg_match('/PW27(\d+)/i', $hid, $matches)) {
+                $val = (int) $matches[1];
+                if ($val > $maxNum) {
+                    $maxNum = $val;
+                }
+            }
+        }
+
+        $next = $maxNum > 0 ? ($maxNum + 1) : 1;
+
+        return 'PW27' . str_pad($next, 3, '0', STR_PAD_LEFT);
     }
 
     /**

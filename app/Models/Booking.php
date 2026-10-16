@@ -91,7 +91,7 @@ class Booking extends Model
 
     public function persons()
     {
-        return $this->hasMany(BookingPerson::class);
+        return $this->hasMany(BookingPerson::class)->orderBy('id', 'asc');
     }
 
     public function hotels()

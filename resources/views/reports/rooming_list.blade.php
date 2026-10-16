@@ -14,23 +14,23 @@
         background-color: #f8fafc;
         color: #000;
         font-weight: 800;
-        font-size: 13px;
+        font-size: 14.5px;
         text-align: center;
         vertical-align: middle;
-        padding: 10px 6px;
+        padding: 10px 8px;
         border: 2px solid #000000 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .manifest-table td {
-        padding: 8px 6px;
+        padding: 9px 8px;
         vertical-align: middle;
-        font-size: 13px;
+        font-size: 14.5px;
         border: 1.5px solid #000000 !important;
     }
     .room-typ-cell {
         font-weight: 800;
-        font-size: 14px;
+        font-size: 15px;
         text-align: center;
         text-transform: uppercase;
         background-color: #ffffff;
@@ -39,7 +39,7 @@
     }
     .room-no-cell {
         font-weight: 900;
-        font-size: 22px;
+        font-size: 24px;
         color: #e51c23;
         text-align: center;
         background-color: #ffffff;
@@ -204,6 +204,35 @@
     }
     .multiselect-tag-pill .remove-tag:hover {
         color: #991b1b;
+    }
+
+    /* Booking Family Box Styling */
+    tr.booking-box-row.booking-box-start td {
+        border-top: 2.5px solid #2563eb !important;
+    }
+    tr.booking-box-row.booking-box-end td {
+        border-bottom: 2.5px solid #2563eb !important;
+    }
+    tr.booking-box-row td:first-child {
+        border-left: 4.5px solid #2563eb !important;
+    }
+    tr.booking-box-row.booking-box-start td:first-child {
+        border-top-left-radius: 4px;
+    }
+    tr.booking-box-row.booking-box-end td:first-child {
+        border-bottom-left-radius: 4px;
+    }
+    tr.booking-box-row {
+        background-color: #f8faff;
+    }
+    tr.booking-box-row.bg-warning-subtle {
+        background-color: #fff9f0 !important;
+    }
+    tr.booking-box-row:hover {
+        background-color: #f0f7ff !important;
+    }
+    .booking-box-badge {
+        box-shadow: 0 1px 3px rgba(37,99,235,0.12);
     }
 </style>
 
@@ -699,25 +728,25 @@
                                         <th style="width: 40px;" class="no-print text-center">
                                             <input type="checkbox" id="selectAllPilgrims" class="form-check-input" title="Select / Deselect All">
                                         </th>
-                                        <th style="width: 45px;" class="col-sr">SR</th>
+                                        <th style="width: 50px;" class="col-sr">SR</th>
                                         <th style="width: 80px;" class="col-picture">PICTURE</th>
-                                        <th style="width: 95px;" class="col-hajj-id">HAJJ ID</th>
-                                        <th style="width: 90px;" class="col-hb">HB</th>
-                                        <th style="width: 220px; text-align: left; padding-left: 10px;" class="col-name">FULL NAME</th>
-                                        <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-given-name col-hidden">GIVEN NAME</th>
-                                        <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-surname col-hidden">SURNAME</th>
-                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">HUSBAND / FATHER NAME</th>
-                                        <th style="width: 100px;" class="col-dob col-hidden">DOB</th>
-                                        <th style="width: 110px;" class="col-passport">PASSPORT</th>
-                                        <th style="width: 110px;" class="col-passport-doi col-hidden">DATE OF ISSUE</th>
-                                        <th style="width: 115px;" class="col-passport-exp col-hidden">EXPIRY DATE</th>
-                                        <th style="width: 120px;" class="col-cnic col-hidden">CNIC</th>
-                                        <th style="width: 110px;" class="col-phone col-hidden">PHONE</th>
-                                        <th style="width: 100px;" class="col-booking-no col-hidden">BOOKING #</th>
-                                        <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-client col-hidden">CLIENT / GROUP</th>
-                                        <th style="width: 125px;" class="col-room-typ">ROOM TYP</th>
-                                        <th style="width: 125px;" class="col-room-no">ROOM NO</th>
-                                        <th style="width: 80px;" class="col-gender">GENDER</th>
+                                        <th style="width: 105px;" class="col-hajj-id">HAJJ ID</th>
+                                        <th style="width: 95px;" class="col-hb">HB</th>
+                                        <th style="width: 250px; text-align: left; padding-left: 10px;" class="col-name">FULL NAME</th>
+                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-given-name col-hidden">GIVEN NAME</th>
+                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-surname col-hidden">SURNAME</th>
+                                        <th style="width: 170px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">HUSBAND / FATHER NAME</th>
+                                        <th style="width: 105px;" class="col-dob col-hidden">DOB</th>
+                                        <th style="width: 120px;" class="col-passport">PASSPORT</th>
+                                        <th style="width: 115px;" class="col-passport-doi col-hidden">DATE OF ISSUE</th>
+                                        <th style="width: 120px;" class="col-passport-exp col-hidden">EXPIRY DATE</th>
+                                        <th style="width: 125px;" class="col-cnic col-hidden">CNIC</th>
+                                        <th style="width: 115px;" class="col-phone col-hidden">PHONE</th>
+                                        <th style="width: 110px;" class="col-booking-no col-hidden">BOOKING #</th>
+                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-client col-hidden">CLIENT / GROUP</th>
+                                        <th style="width: 135px;" class="col-room-typ">ROOM TYP</th>
+                                        <th style="width: 135px;" class="col-room-no">ROOM NO</th>
+                                        <th style="width: 90px;" class="col-gender">GENDER</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -763,11 +792,11 @@
                                             {{-- Empty Room Row --}}
                                             <tr class="room-divider-row">
                                                 <td class="text-center no-print">—</td>
-                                                <td class="text-center text-muted fw-bold col-sr">{{ $globalSr++ }}</td>
+                                                <td class="text-center text-muted fw-bold col-sr" style="font-size: 14.5px;">{{ $globalSr++ }}</td>
                                                 <td class="text-center text-muted col-picture">—</td>
                                                 <td class="text-center text-muted col-hajj-id">—</td>
                                                 <td class="text-center text-muted col-hb">—</td>
-                                                <td class="text-muted fst-italic col-name"><em>(Empty Room - {{ $room['total_capacity'] }} Beds Available)</em></td>
+                                                <td class="text-muted fst-italic col-name" style="font-size: 14.5px;"><em>(Empty Room - {{ $room['total_capacity'] }} Beds Available)</em></td>
                                                 <td class="text-center text-muted col-given-name col-hidden">—</td>
                                                 <td class="text-center text-muted col-surname col-hidden">—</td>
                                                 <td class="text-center text-muted col-father-name col-hidden">—</td>
@@ -781,22 +810,47 @@
                                                 <td class="text-center text-muted col-client col-hidden">—</td>
                                                 <td class="room-typ-cell col-room-typ">
                                                     <div class="mb-1">
-                                                        <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700;">
+                                                        <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 11px; font-weight: 700;">
                                                              {{ $locLabel }}
                                                         </span>
                                                     </div>
-                                                    <div class="fw-bold text-dark mb-1" style="font-size: 11px;">{{ $room['hotel_name'] }}</div>
-                                                    <div class="fw-bold text-primary">{{ $roomTypeDisplay }} ({{ $room['total_capacity'] }} Beds)</div>
+                                                    <div class="fw-bold text-dark mb-1" style="font-size: 13.5px;">{{ $room['hotel_name'] }}</div>
+                                                    <div class="fw-bold text-primary" style="font-size: 15px;">{{ $roomTypeDisplay }}</div>
                                                 </td>
                                                 <td class="room-no-cell col-room-no">
-                                                    <span class="fs-14 fw-bold text-danger">{{ $roomDisplayNo }}</span>
-                                                    <small class="d-block text-muted" style="font-size: 10px;">0/{{ $room['total_capacity'] }} Beds</small>
+                                                    <span class="fw-bold text-danger" style="font-size: 24px; letter-spacing: 1px;">{{ $roomDisplayNo }}</span>
+                                                    <small class="d-block text-muted fw-semibold" style="font-size: 11.5px;">0/{{ $room['total_capacity'] }} Booked</small>
                                                 </td>
                                                 <td class="text-center text-muted col-gender">—</td>
                                             </tr>
                                         @else
                                             @foreach($occupants as $oIdx => $occ)
-                                                <tr class="{{ $oIdx === 0 ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}">
+                                                @php
+                                                    $bId = $occ['booking_id'] ?? null;
+                                                    $prevBId = $oIdx > 0 ? ($occupants[$oIdx - 1]['booking_id'] ?? null) : null;
+                                                    $nextBId = ($oIdx + 1 < $totalOccupants) ? ($occupants[$oIdx + 1]['booking_id'] ?? null) : null;
+                                                    $isBStart = ($bId !== $prevBId);
+                                                    $isBEnd   = ($bId !== $nextBId);
+
+                                                    $bookingPaxInRoom = count(array_filter($occupants, fn($o) => ($o['booking_id'] ?? null) === $bId));
+                                                    $isMultiPax = ($bookingPaxInRoom > 1);
+
+                                                    $boxClass = '';
+                                                    if ($isMultiPax) {
+                                                        if ($isBStart && $isBEnd) {
+                                                            $boxClass = 'booking-box-start booking-box-end';
+                                                        } elseif ($isBStart) {
+                                                            $boxClass = 'booking-box-start';
+                                                        } elseif ($isBEnd) {
+                                                            $boxClass = 'booking-box-end';
+                                                        } else {
+                                                            $boxClass = 'booking-box-mid';
+                                                        }
+                                                    }
+                                                @endphp
+                                                <tr class="{{ $oIdx === 0 ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }} {{ $isMultiPax ? 'booking-box-row ' . $boxClass : '' }}" 
+                                                    id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}"
+                                                    data-booking-id="{{ $bId }}">
                                                     <td class="text-center no-print">
                                                         @if(!empty($occ['real_person_id']))
                                                             <input type="checkbox" class="form-check-input pilgrim-check" 
@@ -804,19 +858,21 @@
                                                                    data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
                                                                    data-hotel="{{ $room['hotel_name'] ?? '' }}"
                                                                    data-room="{{ $room['room_number'] ?? '' }}"
-                                                                   data-location="{{ $room['location'] ?? '' }}"
+                                                                   data-location="{{ $room['location'] ?? ($occ['location'] ?? 'makkah') }}"
                                                                    data-name="{{ $occ['name'] }}"
                                                                    data-hb="{{ $occ['hb_number'] }}"
                                                                    data-passport="{{ $occ['passport'] }}"
                                                                    data-gender="{{ $occ['gender'] }}"
                                                                    data-booking="{{ $occ['booking_number'] }}"
+                                                                   data-booking-id="{{ $bId }}"
                                                                    data-booked-type="{{ $occ['booked_room_type'] ?? 'Quad' }}"
+                                                                   data-booked-hotel="{{ $occ['booked_hotel_name'] ?? ($occ['hotel_name'] ?? '') }}"
                                                                    data-status="{{ $isPending ? 'pending' : 'assigned' }}">
                                                         @else
-                                                            <span class="text-muted" style="font-size: 10px;">—</span>
+                                                            <span class="text-muted" style="font-size: 11px;">—</span>
                                                         @endif
                                                     </td>
-                                                    <td class="text-center fw-bold col-sr">{{ $globalSr++ }}</td>
+                                                    <td class="text-center fw-bold col-sr" style="font-size: 14.5px;">{{ $globalSr++ }}</td>
                                                     <td class="text-center p-1 col-picture">
                                                         @if(!empty($occ['photo']) && file_exists(public_path($occ['photo'])))
                                                             <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo">
@@ -826,18 +882,56 @@
                                                             </div>
                                                         @endif
                                                     </td>
-                                                    <td class="text-center fw-semibold text-uppercase col-hajj-id">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
-                                                    <td class="text-center fw-semibold text-uppercase col-hb">
+                                                    <td class="text-center fw-bold text-uppercase col-hajj-id" style="font-size: 14.5px; letter-spacing: 0.5px;">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
+                                                    <td class="text-center fw-bold text-uppercase col-hb">
                                                         @if(!empty($occ['hb_number']))
-                                                            <span class="badge bg-dark text-white px-2 py-1" style="font-size: 11px;">{{ $occ['hb_number'] }}</span>
+                                                            <span class="badge bg-dark text-white px-2 py-1" style="font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">{{ $occ['hb_number'] }}</span>
                                                         @else
                                                             —
                                                         @endif
                                                     </td>
                                                     <td style="text-align: left; padding-left: 10px;" class="fw-bold text-uppercase text-dark col-name">
-                                                        <span class="d-block">{{ $occ['name'] }}</span>
+                                                        @if($isBStart && $isMultiPax)
+                                                            <div class="booking-box-badge d-flex align-items-center justify-content-between p-1 px-2 mb-1 rounded border shadow-sm" 
+                                                                 style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #93c5fd !important;">
+                                                                <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                                    <span class="badge bg-primary text-white font-monospace px-1.5 py-0.5" style="font-size: 11.5px; font-weight: 700;">{{ $occ['booking_number'] }}</span>
+                                                                    @if(!empty($occ['hb_number']))
+                                                                        <span class="badge bg-dark text-white font-monospace px-1.5 py-0.5" style="font-size: 11.5px; font-weight: 700;">{{ $occ['hb_number'] }}</span>
+                                                                    @endif
+                                                                    <strong class="text-primary" style="font-size: 12.5px;">
+                                                                        <i class="mdi mdi-account-group me-1"></i>Family Group ({{ $bookingPaxInRoom }} Pax)
+                                                                    </strong>
+                                                                    <span class="badge bg-white text-primary border px-2 py-0.5" style="font-size: 11px; font-weight: 700;">
+                                                                        Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
+                                                                    </span>
+                                                                </div>
+                                                                <div class="no-print">
+                                                                    <button type="button" class="btn btn-xs btn-primary py-1 px-2 btn-select-entire-booking fw-bold shadow-sm"
+                                                                            data-booking-id="{{ $bId }}"
+                                                                            data-booked-hotel="{{ $occ['booked_hotel_name'] ?? ($occ['hotel_name'] ?? '') }}"
+                                                                            data-booked-type="{{ $occ['booked_room_type'] ?? 'Quad' }}"
+                                                                            data-location="{{ $occ['location'] ?? 'makkah' }}"
+                                                                            style="font-size: 11.5px; border-radius: 4px;">
+                                                                        <i class="mdi mdi-door-open me-1"></i>Select & Assign Room
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                            <span class="d-inline-block fw-bold text-dark" style="font-size: 15.5px; letter-spacing: 0.2px;">{{ $occ['name'] }}</span>
+                                                            @if(!empty($occ['is_family_head']) && ($occ['booking_pax'] ?? 1) > 1)
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5" style="font-size: 11px; font-weight: 700; letter-spacing: 0.3px;">
+                                                                    <i class="mdi mdi-crown text-warning me-0.5"></i> Family Head
+                                                                </span>
+                                                            @elseif(empty($occ['is_family_head']) && ($occ['booking_pax'] ?? 1) > 1)
+                                                                <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-1.5 py-0.5" style="font-size: 10.5px; font-weight: 600;">
+                                                                    Member
+                                                                </span>
+                                                            @endif
+                                                        </div>
                                                         <div class="mt-1 d-flex flex-wrap gap-1 align-items-center">
-                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0" style="font-size: 10px; font-weight: 700;">
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5" style="font-size: 11px; font-weight: 700;">
                                                                 <i class="mdi mdi-tag-outline me-1"></i>Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
                                                             </span>
                                                             @if(!$isPending && !empty($occ['real_person_id']))
@@ -848,72 +942,69 @@
                                                                         data-room="{{ $room['room_number'] ?? '' }}"
                                                                         data-location="{{ $room['location'] ?? '' }}"
                                                                         data-name="{{ $occ['name'] }}"
-                                                                        title="Unassign this pilgrim from room" style="font-size: 9.5px; border-radius: 4px;">
+                                                                        title="Unassign this pilgrim from room" style="font-size: 10.5px; border-radius: 4px;">
                                                                     <i class="mdi mdi-close-circle-outline"></i> Unassign
                                                                 </button>
                                                             @endif
                                                         </div>
                                                     </td>
-                                                    <td style="text-align: left; padding-left: 10px;" class="col-given-name col-hidden fw-semibold text-muted text-uppercase">
+                                                    <td style="text-align: left; padding-left: 10px; font-size: 14px;" class="col-given-name col-hidden fw-semibold text-muted text-uppercase">
                                                         {{ $occ['given_name'] ?? '—' }}
                                                     </td>
-                                                    <td style="text-align: left; padding-left: 10px;" class="col-surname col-hidden fw-semibold text-muted text-uppercase">
+                                                    <td style="text-align: left; padding-left: 10px; font-size: 14px;" class="col-surname col-hidden fw-semibold text-muted text-uppercase">
                                                         {{ $occ['surname'] ?? '—' }}
                                                     </td>
-                                                    <td style="text-align: left; padding-left: 10px;" class="col-father-name col-hidden fw-semibold text-muted text-uppercase">
+                                                    <td style="text-align: left; padding-left: 10px; font-size: 14px;" class="col-father-name col-hidden fw-semibold text-muted text-uppercase">
                                                         {{ $occ['father_name'] ?? '—' }}
                                                     </td>
-                                                    <td class="text-center col-dob col-hidden text-muted small">
+                                                    <td class="text-center col-dob col-hidden text-muted" style="font-size: 13.5px;">
                                                         {{ $occ['dob'] ?? '—' }}
                                                     </td>
-                                                    <td class="text-center fw-bold text-uppercase col-passport">{{ $occ['passport'] }}</td>
-                                                    <td class="text-center col-passport-doi col-hidden small">
+                                                    <td class="text-center fw-bold text-uppercase col-passport" style="font-size: 14.5px; letter-spacing: 0.5px;">{{ $occ['passport'] }}</td>
+                                                    <td class="text-center col-passport-doi col-hidden" style="font-size: 13.5px;">
                                                         {{ $occ['date_of_issue'] ?? '—' }}
                                                     </td>
-                                                    <td class="text-center col-passport-exp col-hidden small">
+                                                    <td class="text-center col-passport-exp col-hidden" style="font-size: 13.5px;">
                                                         {{ $occ['passport_expiry_date'] ?? '—' }}
                                                     </td>
-                                                    <td class="text-center col-cnic col-hidden font-monospace small">
+                                                    <td class="text-center col-cnic col-hidden font-monospace" style="font-size: 13.5px;">
                                                         {{ $occ['cnic'] ?: '—' }}
                                                     </td>
-                                                    <td class="text-center col-phone col-hidden small">
+                                                    <td class="text-center col-phone col-hidden" style="font-size: 13.5px;">
                                                         {{ $occ['phone'] ?: '—' }}
                                                     </td>
-                                                    <td class="text-center col-booking-no col-hidden font-monospace fw-bold small text-primary">
+                                                    <td class="text-center col-booking-no col-hidden font-monospace fw-bold text-primary" style="font-size: 13.5px;">
                                                         {{ $occ['booking_number'] ?: '—' }}
                                                     </td>
-                                                    <td style="text-align: left; padding-left: 10px;" class="col-client col-hidden small fw-semibold text-truncate" style="max-width: 140px;" title="{{ $occ['client_name'] }}">
+                                                    <td style="text-align: left; padding-left: 10px; font-size: 13.5px; max-width: 140px;" class="col-client col-hidden fw-semibold text-truncate" title="{{ $occ['client_name'] }}">
                                                         {{ $occ['client_name'] ?: '—' }}
                                                     </td>
                                                     
                                                     @if($oIdx === 0)
                                                         <td rowspan="{{ $rowspan }}" class="room-typ-cell col-room-typ">
                                                             <div class="mb-1">
-                                                                <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
+                                                                <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 11px; font-weight: 700; letter-spacing: 0.5px;">
                                                                     <i class="mdi mdi-map-marker me-1"></i>{{ $locLabel }}
                                                                 </span>
                                                             </div>
-                                                            <div class="fw-bold text-dark mb-1" style="font-size: 11px; line-height: 1.2;">
+                                                            <div class="fw-bold text-dark mb-1" style="font-size: 13.5px; line-height: 1.25;">
                                                                 {{ $room['hotel_name'] }}
                                                             </div>
-                                                            <div class="fw-bold text-primary" style="font-size: 12px;">
-                                                                {{ $roomTypeDisplay }} 
-                                                                @if(!$isPending)
-                                                                    <span class="text-muted" style="font-size: 10px;">({{ $room['total_capacity'] }} Beds)</span>
-                                                                @endif
+                                                            <div class="fw-bold text-primary" style="font-size: 15px; letter-spacing: 0.5px;">
+                                                                {{ $roomTypeDisplay }}
                                                             </div>
                                                             @if(!empty($room['room_gender']) && $room['room_gender'] !== 'Any' && !$isPending)
                                                                 <div class="mt-1">
-                                                                    <span class="badge {{ strtolower($room['room_gender']) === 'female' ? 'bg-danger text-white' : (strtolower($room['room_gender']) === 'male' ? 'bg-primary text-white' : 'bg-success text-white') }}" style="font-size: 9px; letter-spacing: 0.5px;">
+                                                                    <span class="badge {{ strtolower($room['room_gender']) === 'female' ? 'bg-danger text-white' : (strtolower($room['room_gender']) === 'male' ? 'bg-primary text-white' : 'bg-success text-white') }}" style="font-size: 10.5px; letter-spacing: 0.5px; padding: 3px 8px; font-weight: 700;">
                                                                         {{ strtoupper($room['room_gender']) }} ROOM
                                                                     </span>
                                                                 </div>
                                                             @endif
                                                             @if(!$isPending)
-                                                                <div class="no-print mt-1 d-flex gap-1 flex-wrap">
+                                                                <div class="no-print mt-1 d-flex gap-1 flex-wrap justify-content-center">
                                                                     <button type="button" 
                                                                             class="btn btn-xs btn-outline-secondary btn-adjust-bed py-0 px-1"
-                                                                            style="font-size: 10px;"
+                                                                            style="font-size: 11px;"
                                                                             data-hotel="{{ $room['hotel_name'] }}"
                                                                             data-room="{{ $room['room_number'] }}"
                                                                             data-type="{{ $room['room_type'] }}"
@@ -931,7 +1022,7 @@
                                                                     @if(!empty($realRoomIds))
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-danger btn-unassign-room-all py-0 px-1"
-                                                                                style="font-size: 10px;"
+                                                                                style="font-size: 11px;"
                                                                                 data-room="{{ $room['room_number'] }}"
                                                                                 data-hotel="{{ $room['hotel_name'] }}"
                                                                                 data-ids="{{ implode(',', $realRoomIds) }}"
@@ -944,16 +1035,16 @@
                                                         </td>
                                                         <td rowspan="{{ $rowspan }}" class="room-no-cell col-room-no">
                                                             @if($isPending)
-                                                                <span class="badge bg-warning text-dark fs-12 px-2 py-1 fw-bold">PENDING</span>
-                                                                <small class="d-block text-muted mt-1 fw-semibold" style="font-size: 10px;">{{ $totalOccupants }} Pilgrims</small>
+                                                                <span class="badge bg-warning text-dark px-2 py-1 fw-bold" style="font-size: 14px;">PENDING</span>
+                                                                <small class="d-block text-muted mt-1 fw-semibold" style="font-size: 11.5px;">{{ $totalOccupants }} Pilgrims</small>
                                                             @else
-                                                                <span class="fs-14 fw-bold text-danger">{{ $roomDisplayNo }}</span>
-                                                                <small class="d-block text-muted fw-semibold" style="font-size: 10px;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }} Booked</small>
+                                                                <span class="fw-bold text-danger" style="font-size: 24px; letter-spacing: 1px;">{{ $roomDisplayNo }}</span>
+                                                                <small class="d-block text-muted fw-semibold" style="font-size: 11.5px;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }} Booked</small>
                                                             @endif
                                                         </td>
                                                     @endif
 
-                                                    <td class="text-center {{ strtoupper($occ['gender']) === 'FEMALE' ? 'gender-female' : 'gender-male' }} text-uppercase col-gender">
+                                                    <td class="text-center {{ strtoupper($occ['gender']) === 'FEMALE' ? 'gender-female' : 'gender-male' }} text-uppercase col-gender" style="font-size: 14px; font-weight: 800;">
                                                         {{ strtoupper($occ['gender']) }}
                                                     </td>
                                                 </tr>
@@ -1206,12 +1297,12 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold small text-dark">Room Type <span class="text-danger">*</span></label>
                             <select name="room_type" id="assignModalRoomType" class="form-select" required>
-                                <option value="Double">Double (2 Beds)</option>
-                                <option value="Triple">Triple (3 Beds)</option>
-                                <option value="Quad" selected>Quad (4 Beds)</option>
-                                <option value="Quint">Quint (5 Beds)</option>
-                                <option value="Six">Six / Sharing (6 Beds)</option>
-                                <option value="Single">Single (1 Bed)</option>
+                                <option value="Double">Double</option>
+                                <option value="Triple">Triple</option>
+                                <option value="Quad" selected>Quad</option>
+                                <option value="Quint">Quint</option>
+                                <option value="Six">Six / Sharing</option>
+                                <option value="Single">Single</option>
                                 <option value="Suite">Suite</option>
                             </select>
                         </div>
@@ -1359,6 +1450,52 @@
                 if (adjustModal) adjustModal.show();
             });
         });
+
+        // AJAX submit for Adjust Bed Form
+        const adjustBedForm = document.getElementById('adjustBedForm');
+        if (adjustBedForm) {
+            adjustBedForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const origHtml = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+
+                const formData = new FormData(this);
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(data => { throw data; });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (adjustModal) adjustModal.hide();
+                    alert(data.message || 'Room bed capacity updated successfully!');
+                    window.location.reload();
+                })
+                .catch(err => {
+                    console.error('Adjust bed error:', err);
+                    let msg = 'Failed to update bed capacity.';
+                    if (err.errors) {
+                        msg = Object.values(err.errors).flat().join('\n');
+                    } else if (err.message) {
+                        msg = err.message;
+                    }
+                    alert(msg);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origHtml;
+                });
+            });
+        }
 
         // ═══════════════════════════════════════
         // CHECKBOX SELECTION & BULK ROOM ASSIGNMENT
@@ -1549,7 +1686,98 @@
             else if (maleCount > 0 && femaleCount === 0) genderSelect.value = 'Male';
             else if (maleCount > 0 && femaleCount > 0) genderSelect.value = 'Family';
 
+            // Smart suggest Hotel and Location from selected pilgrims
+            let detectedHotel = '';
+            let detectedLocation = '';
+            checked.forEach(cb => {
+                const bHotel = cb.getAttribute('data-booked-hotel');
+                const bLoc = cb.getAttribute('data-location');
+                if (!detectedHotel && bHotel && !bHotel.toLowerCase().includes('pending') && !bHotel.toLowerCase().includes('unspecified')) {
+                    detectedHotel = bHotel;
+                }
+                if (!detectedLocation && bLoc && bLoc.toLowerCase() !== 'unassigned') {
+                    detectedLocation = bLoc;
+                }
+            });
+
+            const hotelInput = document.getElementById('assignModalHotelInput');
+            if (hotelInput && detectedHotel) {
+                hotelInput.value = detectedHotel;
+            }
+            const hotelSelect = document.getElementById('assignModalHotelSelect');
+            if (hotelSelect && detectedHotel) {
+                for (let opt of hotelSelect.options) {
+                    if (opt.value && detectedHotel.toLowerCase().includes(opt.value.toLowerCase())) {
+                        hotelSelect.value = opt.value;
+                        break;
+                    }
+                }
+            }
+            const locSelect = document.getElementById('assignModalLocation');
+            if (locSelect && detectedLocation) {
+                locSelect.value = detectedLocation.toLowerCase();
+            }
+
             if (assignModal) assignModal.show();
+        });
+
+        // ═══════════════════════════════════════
+        // SELECT ENTIRE BOOKING / FAMILY HANDLER
+        // ═══════════════════════════════════════
+        document.querySelectorAll('.btn-select-entire-booking').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const bId = this.getAttribute('data-booking-id');
+                const bookedHotel = this.getAttribute('data-booked-hotel') || '';
+                const bookedType = this.getAttribute('data-booked-type') || 'Quad';
+                const location = this.getAttribute('data-location') || 'makkah';
+
+                // Uncheck all pilgrims first
+                pilgrimCheckboxes.forEach(cb => cb.checked = false);
+
+                // Check all pilgrims belonging to this booking
+                const familyCbs = document.querySelectorAll(`.pilgrim-check[data-booking-id="${bId}"]`);
+                familyCbs.forEach(cb => cb.checked = true);
+
+                updateSelectionState();
+
+                // Open assign modal and pre-populate
+                const openBtn = document.getElementById('btnOpenAssignModal');
+                if (openBtn) {
+                    openBtn.click();
+                    setTimeout(() => {
+                        if (bookedHotel && !bookedHotel.toLowerCase().includes('pending') && !bookedHotel.toLowerCase().includes('unspecified')) {
+                            const hInp = document.getElementById('assignModalHotelInput');
+                            if (hInp) hInp.value = bookedHotel;
+                            const hSel = document.getElementById('assignModalHotelSelect');
+                            if (hSel) {
+                                for (let opt of hSel.options) {
+                                    if (opt.value && bookedHotel.toLowerCase().includes(opt.value.toLowerCase())) {
+                                        hSel.value = opt.value;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (location && location.toLowerCase() !== 'unassigned') {
+                            const lSel = document.getElementById('assignModalLocation');
+                            if (lSel) lSel.value = location.toLowerCase();
+                        }
+                        if (bookedType) {
+                            const rSel = document.getElementById('assignModalRoomType');
+                            if (rSel) {
+                                for (let opt of rSel.options) {
+                                    if (opt.value.toLowerCase() === bookedType.toLowerCase()) {
+                                        rSel.value = opt.value;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }, 50);
+                }
+            });
         });
 
         // Open Assign by Haji ID Modal

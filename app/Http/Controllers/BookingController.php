@@ -39,8 +39,9 @@ class BookingController extends Controller
         $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->get();
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
         $nextHbNumber = \App\Models\BookingPerson::generateNextHbNumber();
+        $nextHajjId   = \App\Models\BookingPerson::generateNextHajjId();
 
-        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages', 'nextHbNumber'));
+        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages', 'nextHbNumber', 'nextHajjId'));
     }
 
     public function store(Request $request)
@@ -178,6 +179,11 @@ class BookingController extends Controller
                         $personData['given_name'] = !empty($person['given_name']) ? trim($person['given_name']) : null;
                         $personData['surname'] = !empty($person['surname']) ? trim($person['surname']) : null;
                         $personData['hb_number'] = $bookingHbNumber;
+                        if (!empty($person['hajj_id'])) {
+                            $personData['hajj_id'] = \App\Models\BookingPerson::formatHajjId($person['hajj_id']);
+                        } else {
+                            $personData['hajj_id'] = \App\Models\BookingPerson::generateNextHajjId();
+                        }
                         $issueDate = !empty($person['date_of_issue']) ? $person['date_of_issue'] : (!empty($person['passport_issue_date']) ? $person['passport_issue_date'] : null);
                         $personData['date_of_issue'] = $issueDate;
                         $personData['passport_issue_date'] = $issueDate;
@@ -433,6 +439,11 @@ class BookingController extends Controller
                         $pData['given_name'] = !empty($p['given_name']) ? trim($p['given_name']) : null;
                         $pData['surname'] = !empty($p['surname']) ? trim($p['surname']) : null;
                         $pData['hb_number'] = $bookingHbNumber;
+                        if (!empty($p['hajj_id'])) {
+                            $pData['hajj_id'] = \App\Models\BookingPerson::formatHajjId($p['hajj_id']);
+                        } else {
+                            $pData['hajj_id'] = \App\Models\BookingPerson::generateNextHajjId();
+                        }
                         $issueDate = !empty($p['date_of_issue']) ? $p['date_of_issue'] : (!empty($p['passport_issue_date']) ? $p['passport_issue_date'] : null);
                         $pData['date_of_issue'] = $issueDate;
                         $pData['passport_issue_date'] = $issueDate;

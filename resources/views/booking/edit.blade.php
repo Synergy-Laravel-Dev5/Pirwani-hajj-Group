@@ -706,7 +706,7 @@
                                             <div class="col-md-2">
                                                 <label class="form-label" style="font-size:12px;">Hajj ID</label>
                                                 <input type="text" name="persons[{{ $i }}][hajj_id]" id="person_hajj_id_{{ $i }}"
-                                                    class="form-control form-control-sm" placeholder="e.g. PW26057"
+                                                    class="form-control form-control-sm" placeholder="e.g. PW27001"
                                                     value="{{ $person->hajj_id ?? '' }}">
                                             </div>
                                             <div class="col-md-2">
@@ -2433,7 +2433,7 @@
                     <div class="col-md-2">
                         <label class="form-label" style="font-size:12px;">Hajj ID</label>
                         <input type="text" name="persons[${idx}][hajj_id]" id="person_hajj_id_${idx}"
-                               class="form-control form-control-sm" placeholder="e.g. PW26057">
+                               class="form-control form-control-sm" placeholder="e.g. PW27001">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label" style="font-size:12px;">HB #</label>
