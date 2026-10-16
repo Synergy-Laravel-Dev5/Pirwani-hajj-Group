@@ -392,8 +392,12 @@
                                     <span>Passport No</span>
                                 </label>
                                 <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-doi">
+                                    <span>Date of Issue (DOI)</span>
+                                </label>
+                                <label class="column-filter-item">
                                     <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-exp">
-                                    <span>Passport Expiry</span>
+                                    <span>Passport Expiry Date</span>
                                 </label>
                                 <label class="column-filter-item">
                                     <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="cnic" checked>
@@ -443,7 +447,8 @@
                                     <th style="width: 80px;" class="col-gender">GENDER</th>
                                     <th style="width: 100px;" class="col-dob col-hidden">DOB / AGE</th>
                                     <th style="width: 110px;" class="col-passport">PASSPORT</th>
-                                    <th style="width: 105px;" class="col-passport-exp col-hidden">EXPIRY</th>
+                                    <th style="width: 110px;" class="col-passport-doi col-hidden">DATE OF ISSUE</th>
+                                    <th style="width: 115px;" class="col-passport-exp col-hidden">EXPIRY DATE</th>
                                     <th style="width: 120px;" class="col-cnic">CNIC</th>
                                     <th style="width: 110px;" class="col-phone">PHONE</th>
                                     <th style="width: 110px;" class="col-voucher">VOUCHER #</th>
@@ -573,6 +578,24 @@
                                             {{ $person->passport_number ?: '—' }}
                                         </td>
 
+                                        {{-- Date of Issue --}}
+                                        @php
+                                            $rawDoi = $person->date_of_issue ?: $person->passport_issue_date;
+                                            $passportDoi = null;
+                                            if (!empty($rawDoi)) {
+                                                try {
+                                                    $passportDoi = \Carbon\Carbon::parse($rawDoi);
+                                                } catch (\Exception $e) {}
+                                            }
+                                        @endphp
+                                        <td class="text-center col-passport-doi col-hidden">
+                                            @if ($passportDoi)
+                                                <span>{{ $passportDoi->format('d M Y') }}</span>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+
                                         {{-- Passport Expiry --}}
                                         <td class="text-center col-passport-exp col-hidden">
                                             @if ($passportExp)
@@ -655,7 +678,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="19" class="text-center py-5">
+                                        <td colspan="20" class="text-center py-5">
                                             <div class="py-4">
                                                 <i class="mdi mdi-account-search text-muted" style="font-size: 48px;"></i>
                                                 <h5 class="fw-bold text-muted mt-2">No Booking Persons Found</h5>

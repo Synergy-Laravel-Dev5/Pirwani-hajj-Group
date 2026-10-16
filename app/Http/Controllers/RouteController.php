@@ -4,11 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Route as RouteModel;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RouteController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_view');
+        }
+
         $routes = RouteModel::latest()->get();
         $trashCount = RouteModel::onlyTrashed()->count();
 
@@ -17,11 +24,19 @@ class RouteController extends Controller
 
     public function create()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_create');
+        }
+
         return view('route.create');
     }
 
     public function store(Request $request)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_create');
+        }
+
         $request->validate([
             'start_place' => 'required|string|max:255',
             'end_place'   => 'required|string|max:255',
@@ -55,12 +70,20 @@ class RouteController extends Controller
 
     public function edit($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_edit');
+        }
+
         $route = RouteModel::findOrFail($id);
         return view('route.edit', compact('route'));
     }
 
     public function update(Request $request, $id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_edit');
+        }
+
         $route = RouteModel::findOrFail($id);
 
         $request->validate([
@@ -82,6 +105,10 @@ class RouteController extends Controller
 
     public function destroy($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_trash');
+        }
+
         $route = RouteModel::findOrFail($id);
 
         logUserActivity('Route Deleted', 'Start: ' . $route->start_place . ' | End: ' . $route->end_place, $route->id, 'Route');
@@ -93,12 +120,20 @@ class RouteController extends Controller
 
     public function trash()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_trash_view');
+        }
+
         $routes = RouteModel::onlyTrashed()->latest()->get();
         return view('route.trash', compact('routes'));
     }
 
     public function restore($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('route_restore');
+        }
+
         $route = RouteModel::onlyTrashed()->findOrFail($id);
         $route->restore();
 

@@ -202,21 +202,27 @@
                                         </a>
                                     </li>
                                 @endcan
-                                <li>
-                                    <a class="tp-link" href="{{ route('flight.index') }}">
-                                        Flights
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="tp-link" href="{{ route('route.index') }}">
-                                        Routes
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="tp-link" href="{{ route('travel-route.index') }}">
-                                        Travel Routes
-                                    </a>
-                                </li>
+                                @can('flight_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('flight.index') }}">
+                                            Flights
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('route_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('route.index') }}">
+                                            Routes
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('travel_route_view')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('travel-route.index') }}">
+                                            Travel Routes
+                                        </a>
+                                    </li>
+                                @endcan
                                 @can('train_view')
                                     <li>
                                         <a class="tp-link" href="{{ route('train.index') }}">

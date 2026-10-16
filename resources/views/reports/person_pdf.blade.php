@@ -193,8 +193,18 @@
                             <br><span style="font-size: 7.5px; color: #555;">S/O, D/O, W/O: {{ $p->father_name }}</span>
                         @endif
                     </td>
-                    <td class="center {{ $isFemale ? 'gender-female' : 'gender-male' }}">{{ $pGender }}</td>
-                    <td class="center fw-bold">{{ $p->passport_number ?: '—' }}</td>
+                    <td class="center fw-bold">
+                        {{ $p->passport_number ?: '—' }}
+                        @php
+                            $rawDoi = $p->date_of_issue ?: $p->passport_issue_date;
+                        @endphp
+                        @if(!empty($rawDoi))
+                            <br><span style="font-size: 7px; color: #555; font-weight: normal;">DOI: {{ date('d/m/Y', strtotime($rawDoi)) }}</span>
+                        @endif
+                        @if(!empty($p->passport_expiry_date))
+                            <br><span style="font-size: 7px; color: #b91c1c; font-weight: normal;">EXP: {{ date('d/m/Y', strtotime($p->passport_expiry_date)) }}</span>
+                        @endif
+                    </td>
                     <td class="center">{{ $p->cnic ?: '—' }}</td>
                     <td class="center">{{ $p->phone ?: '—' }}</td>
                     <td class="center">{{ $voucherNo }}</td>

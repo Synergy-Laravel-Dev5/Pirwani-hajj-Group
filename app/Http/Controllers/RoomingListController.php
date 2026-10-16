@@ -112,14 +112,16 @@ class RoomingListController extends Controller
                     .room-divider { border-top: 2px solid #000000 !important; }
                 </style></head><body>';
                 echo '<table>';
-                echo '<tr><th colspan="21" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
-                echo '<tr><td colspan="21" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+                echo '<tr><th colspan="23" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
+                echo '<tr><td colspan="23" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
                 echo '<tr>
                     <th>SR</th>
                     <th>PICTURE</th>
                     <th>HAJJ ID</th>
                     <th>HB NUMBER</th>
                     <th>PASSPORT NO</th>
+                    <th>DATE OF ISSUE</th>
+                    <th>PASSPORT EXPIRY</th>
                     <th>PILGRIM FULL NAME</th>
                     <th>GIVEN NAME</th>
                     <th>SURNAME</th>
@@ -150,6 +152,8 @@ class RoomingListController extends Controller
                     if (empty($room['occupants'])) {
                         echo '<tr class="room-divider">';
                         echo '<td class="center">' . ($sr++) . '</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
                         echo '<td class="center">—</td>';
                         echo '<td class="center">—</td>';
                         echo '<td class="center">—</td>';
@@ -199,6 +203,8 @@ class RoomingListController extends Controller
                             echo '<td class="center">' . htmlspecialchars(!empty($occ['hajj_id']) ? $occ['hajj_id'] : '—') . '</td>';
                             echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars(!empty($occ['hb_number']) ? $occ['hb_number'] : '—') . '</td>';
                             echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($occ['passport'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['date_of_issue'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['passport_expiry_date'] ?? '—') . '</td>';
                             echo '<td><strong>' . htmlspecialchars($occ['name'] ?? '—') . '</strong></td>';
                             echo '<td>' . htmlspecialchars($occ['given_name'] ?? '—') . '</td>';
                             echo '<td>' . htmlspecialchars($occ['surname'] ?? '—') . '</td>';
@@ -234,14 +240,14 @@ class RoomingListController extends Controller
         $sheet->setShowGridLines(true);
 
         // Title Block
-        $sheet->mergeCells('A1:W1');
+        $sheet->mergeCells('A1:Y1');
         $sheet->setCellValue('A1', 'PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E293B'));
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(28);
 
         // Subtitle / Filters summary Block
-        $sheet->mergeCells('A2:W2');
+        $sheet->mergeCells('A2:Y2');
         $sheet->setCellValue('A2', $filterSummary);
         $sheet->getStyle('A2')->getFont()->setSize(10)->setItalic(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('64748B'));
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -254,24 +260,26 @@ class RoomingListController extends Controller
             'C' => ['title' => 'HAJJ ID', 'width' => 14],
             'D' => ['title' => 'HB NUMBER', 'width' => 14],
             'E' => ['title' => 'PASSPORT NO', 'width' => 16],
-            'F' => ['title' => 'PILGRIM FULL NAME', 'width' => 28],
-            'G' => ['title' => 'GIVEN NAME', 'width' => 20],
-            'H' => ['title' => 'SURNAME', 'width' => 20],
-            'I' => ['title' => 'GENDER', 'width' => 12],
-            'J' => ['title' => 'LOCATION', 'width' => 14],
-            'K' => ['title' => 'HOTEL / BUILDING', 'width' => 26],
-            'L' => ['title' => 'ROOM TYPE', 'width' => 15],
-            'M' => ['title' => 'ROOM NUMBER', 'width' => 16],
-            'N' => ['title' => 'TOTAL BEDS', 'width' => 12],
-            'O' => ['title' => 'OCCUPIED', 'width' => 12],
-            'P' => ['title' => 'AVAILABLE', 'width' => 12],
-            'Q' => ['title' => 'ROOM GENDER', 'width' => 14],
-            'R' => ['title' => 'BOOKING REF', 'width' => 16],
-            'S' => ['title' => 'CLIENT / AGENT', 'width' => 24],
-            'T' => ['title' => 'PHONE', 'width' => 16],
-            'U' => ['title' => 'CHECK IN', 'width' => 14],
-            'V' => ['title' => 'CHECK OUT', 'width' => 14],
-            'W' => ['title' => 'ROOM NOTES', 'width' => 22],
+            'F' => ['title' => 'DATE OF ISSUE', 'width' => 16],
+            'G' => ['title' => 'PASSPORT EXPIRY', 'width' => 16],
+            'H' => ['title' => 'PILGRIM FULL NAME', 'width' => 28],
+            'I' => ['title' => 'GIVEN NAME', 'width' => 20],
+            'J' => ['title' => 'SURNAME', 'width' => 20],
+            'K' => ['title' => 'GENDER', 'width' => 12],
+            'L' => ['title' => 'LOCATION', 'width' => 14],
+            'M' => ['title' => 'HOTEL / BUILDING', 'width' => 26],
+            'N' => ['title' => 'ROOM TYPE', 'width' => 15],
+            'O' => ['title' => 'ROOM NUMBER', 'width' => 16],
+            'P' => ['title' => 'TOTAL BEDS', 'width' => 12],
+            'Q' => ['title' => 'OCCUPIED', 'width' => 12],
+            'R' => ['title' => 'AVAILABLE', 'width' => 12],
+            'S' => ['title' => 'ROOM GENDER', 'width' => 14],
+            'T' => ['title' => 'BOOKING REF', 'width' => 16],
+            'U' => ['title' => 'CLIENT / AGENT', 'width' => 24],
+            'V' => ['title' => 'PHONE', 'width' => 16],
+            'W' => ['title' => 'CHECK IN', 'width' => 14],
+            'X' => ['title' => 'CHECK OUT', 'width' => 14],
+            'Y' => ['title' => 'ROOM NOTES', 'width' => 22],
         ];
 
         $headerRow = 4;
@@ -283,7 +291,7 @@ class RoomingListController extends Controller
         }
 
         // Header Styling
-        $headerRange = 'A' . $headerRow . ':W' . $headerRow;
+        $headerRange = 'A' . $headerRow . ':Y' . $headerRow;
         $sheet->getStyle($headerRange)->applyFromArray([
             'font' => [
                 'bold' => true,
@@ -328,33 +336,35 @@ class RoomingListController extends Controller
                 $sheet->setCellValue('C' . $currentRow, '—');
                 $sheet->setCellValue('D' . $currentRow, '—');
                 $sheet->setCellValue('E' . $currentRow, '—');
-                $sheet->setCellValue('F' . $currentRow, '(Empty Room)');
+                $sheet->setCellValue('F' . $currentRow, '—');
                 $sheet->setCellValue('G' . $currentRow, '—');
-                $sheet->setCellValue('H' . $currentRow, '—');
+                $sheet->setCellValue('H' . $currentRow, '(Empty Room)');
                 $sheet->setCellValue('I' . $currentRow, '—');
-                $sheet->setCellValue('J' . $currentRow, $locLabel);
-                $sheet->setCellValue('K' . $currentRow, $room['hotel_name']);
-                $sheet->setCellValue('L' . $currentRow, $room['room_type']);
-                $sheet->setCellValue('M' . $currentRow, $roomDisplayNo);
-                $sheet->setCellValue('N' . $currentRow, $room['total_capacity']);
-                $sheet->setCellValue('O' . $currentRow, 0);
+                $sheet->setCellValue('J' . $currentRow, '—');
+                $sheet->setCellValue('K' . $currentRow, '—');
+                $sheet->setCellValue('L' . $currentRow, $locLabel);
+                $sheet->setCellValue('M' . $currentRow, $room['hotel_name']);
+                $sheet->setCellValue('N' . $currentRow, $room['room_type']);
+                $sheet->setCellValue('O' . $currentRow, $roomDisplayNo);
                 $sheet->setCellValue('P' . $currentRow, $room['total_capacity']);
-                $sheet->setCellValue('Q' . $currentRow, $room['room_gender'] ?? 'Any');
-                $sheet->setCellValue('R' . $currentRow, '—');
-                $sheet->setCellValue('S' . $currentRow, '—');
+                $sheet->setCellValue('Q' . $currentRow, 0);
+                $sheet->setCellValue('R' . $currentRow, $room['total_capacity']);
+                $sheet->setCellValue('S' . $currentRow, $room['room_gender'] ?? 'Any');
                 $sheet->setCellValue('T' . $currentRow, '—');
-                $sheet->setCellValue('U' . $currentRow, $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—');
-                $sheet->setCellValue('V' . $currentRow, $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—');
-                $sheet->setCellValue('W' . $currentRow, $room['notes'] ?? '');
+                $sheet->setCellValue('U' . $currentRow, '—');
+                $sheet->setCellValue('V' . $currentRow, '—');
+                $sheet->setCellValue('W' . $currentRow, $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—');
+                $sheet->setCellValue('X' . $currentRow, $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—');
+                $sheet->setCellValue('Y' . $currentRow, $room['notes'] ?? '');
 
-                $rowRange = 'A' . $currentRow . ':W' . $currentRow;
+                $rowRange = 'A' . $currentRow . ':Y' . $currentRow;
                 $sheet->getStyle($rowRange)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
                 $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('B' . $currentRow . ':E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('G' . $currentRow . ':Q' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('U' . $currentRow . ':V' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('B' . $currentRow . ':G' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('I' . $currentRow . ':S' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('W' . $currentRow . ':X' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-                $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('DC2626'));
+                $sheet->getStyle('O' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('DC2626'));
                 $sheet->getStyle($rowRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
                 $sheet->getStyle($rowRange)->getBorders()->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM);
 
@@ -402,45 +412,47 @@ class RoomingListController extends Controller
                     $sheet->setCellValue('C' . $currentRow, !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—');
                     $sheet->setCellValue('D' . $currentRow, !empty($occ['hb_number']) ? $occ['hb_number'] : '—');
                     $sheet->setCellValue('E' . $currentRow, $occ['passport'] ?? '—');
-                    $sheet->setCellValue('F' . $currentRow, $occ['name'] ?? '—');
-                    $sheet->setCellValue('G' . $currentRow, $occ['given_name'] ?? '—');
-                    $sheet->setCellValue('H' . $currentRow, $occ['surname'] ?? '—');
+                    $sheet->setCellValue('F' . $currentRow, $occ['date_of_issue'] ?? '—');
+                    $sheet->setCellValue('G' . $currentRow, $occ['passport_expiry_date'] ?? '—');
+                    $sheet->setCellValue('H' . $currentRow, $occ['name'] ?? '—');
+                    $sheet->setCellValue('I' . $currentRow, $occ['given_name'] ?? '—');
+                    $sheet->setCellValue('J' . $currentRow, $occ['surname'] ?? '—');
 
                     $occGender = strtoupper($occ['gender'] ?? 'MALE');
-                    $sheet->setCellValue('I' . $currentRow, $occGender);
+                    $sheet->setCellValue('K' . $currentRow, $occGender);
 
-                    $sheet->setCellValue('J' . $currentRow, $locLabel);
-                    $sheet->setCellValue('K' . $currentRow, $room['hotel_name']);
-                    $sheet->setCellValue('L' . $currentRow, $room['room_type']);
-                    $sheet->setCellValue('M' . $currentRow, $roomDisplayNo);
-                    $sheet->setCellValue('N' . $currentRow, $room['total_capacity']);
-                    $sheet->setCellValue('O' . $currentRow, $room['occupied_beds']);
-                    $sheet->setCellValue('P' . $currentRow, $room['available_beds']);
-                    $sheet->setCellValue('Q' . $currentRow, $room['room_gender'] ?? 'Any');
-                    $sheet->setCellValue('R' . $currentRow, $occ['booking_number'] ?? '—');
-                    $sheet->setCellValue('S' . $currentRow, $occ['client_name'] ?? '—');
-                    $sheet->setCellValue('T' . $currentRow, $occ['phone'] ?? '—');
-                    $sheet->setCellValue('U' . $currentRow, $occ['check_in'] ?? '—');
-                    $sheet->setCellValue('V' . $currentRow, $occ['check_out'] ?? '—');
-                    $sheet->setCellValue('W' . $currentRow, $room['notes'] ?? '');
+                    $sheet->setCellValue('L' . $currentRow, $locLabel);
+                    $sheet->setCellValue('M' . $currentRow, $room['hotel_name']);
+                    $sheet->setCellValue('N' . $currentRow, $room['room_type']);
+                    $sheet->setCellValue('O' . $currentRow, $roomDisplayNo);
+                    $sheet->setCellValue('P' . $currentRow, $room['total_capacity']);
+                    $sheet->setCellValue('Q' . $currentRow, $room['occupied_beds']);
+                    $sheet->setCellValue('R' . $currentRow, $room['available_beds']);
+                    $sheet->setCellValue('S' . $currentRow, $room['room_gender'] ?? 'Any');
+                    $sheet->setCellValue('T' . $currentRow, $occ['booking_number'] ?? '—');
+                    $sheet->setCellValue('U' . $currentRow, $occ['client_name'] ?? '—');
+                    $sheet->setCellValue('V' . $currentRow, $occ['phone'] ?? '—');
+                    $sheet->setCellValue('W' . $currentRow, $occ['check_in'] ?? '—');
+                    $sheet->setCellValue('X' . $currentRow, $occ['check_out'] ?? '—');
+                    $sheet->setCellValue('Y' . $currentRow, $room['notes'] ?? '');
 
                     // Alignments
-                    $rowRange = 'A' . $currentRow . ':W' . $currentRow;
+                    $rowRange = 'A' . $currentRow . ':Y' . $currentRow;
                     $sheet->getStyle($rowRange)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
                     $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('B' . $currentRow . ':E' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('I' . $currentRow . ':Q' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('U' . $currentRow . ':V' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('B' . $currentRow . ':G' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('K' . $currentRow . ':S' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('W' . $currentRow . ':X' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
                     // Gender Styling
                     if ($occGender === 'FEMALE') {
-                        $sheet->getStyle('I' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('9D174D'));
+                        $sheet->getStyle('K' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('9D174D'));
                     } else {
-                        $sheet->getStyle('I' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E3A8A'));
+                        $sheet->getStyle('K' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E3A8A'));
                     }
 
                     // Room No Styling
-                    $sheet->getStyle('M' . $currentRow)->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('DC2626'));
+                    $sheet->getStyle('O' . $currentRow)->getFont()->setBold(true)->setSize(11)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('DC2626'));
                     $sheet->getStyle('D' . $currentRow)->getFont()->setBold(true);
                     $sheet->getStyle('E' . $currentRow)->getFont()->setBold(true);
 
@@ -932,6 +944,8 @@ class RoomingListController extends Controller
                         'father_name'       => $p->father_name ?? null,
                         'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
                         'passport'          => $p->passport_number ?: '—',
+                        'date_of_issue'     => ($p->date_of_issue ?: $p->passport_issue_date) ? date('d M Y', strtotime($p->date_of_issue ?: $p->passport_issue_date)) : null,
+                        'passport_expiry_date' => $p->passport_expiry_date ? date('d M Y', strtotime($p->passport_expiry_date)) : null,
                         'gender'            => $gender,
                         'photo'             => $p->photo,
                         'cnic'              => $p->cnic,
@@ -989,6 +1003,8 @@ class RoomingListController extends Controller
                             'father_name'       => $p->father_name ?? null,
                             'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
                             'passport'          => $p->passport_number ?: '—',
+                            'date_of_issue'     => ($p->date_of_issue ?: $p->passport_issue_date) ? date('d M Y', strtotime($p->date_of_issue ?: $p->passport_issue_date)) : null,
+                            'passport_expiry_date' => $p->passport_expiry_date ? date('d M Y', strtotime($p->passport_expiry_date)) : null,
                             'gender'            => $gender,
                             'photo'             => $p->photo,
                             'cnic'              => $p->cnic,

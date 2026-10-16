@@ -652,6 +652,14 @@
                                         <span>Passport No</span>
                                     </label>
                                     <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-doi">
+                                        <span>Date of Issue (DOI)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-exp">
+                                        <span>Passport Expiry Date</span>
+                                    </label>
+                                    <label class="column-filter-item">
                                         <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="cnic">
                                         <span>CNIC</span>
                                     </label>
@@ -701,6 +709,8 @@
                                         <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">HUSBAND / FATHER NAME</th>
                                         <th style="width: 100px;" class="col-dob col-hidden">DOB</th>
                                         <th style="width: 110px;" class="col-passport">PASSPORT</th>
+                                        <th style="width: 110px;" class="col-passport-doi col-hidden">DATE OF ISSUE</th>
+                                        <th style="width: 115px;" class="col-passport-exp col-hidden">EXPIRY DATE</th>
                                         <th style="width: 120px;" class="col-cnic col-hidden">CNIC</th>
                                         <th style="width: 110px;" class="col-phone col-hidden">PHONE</th>
                                         <th style="width: 100px;" class="col-booking-no col-hidden">BOOKING #</th>
@@ -763,6 +773,8 @@
                                                 <td class="text-center text-muted col-father-name col-hidden">—</td>
                                                 <td class="text-center text-muted col-dob col-hidden">—</td>
                                                 <td class="text-center text-muted col-passport">—</td>
+                                                <td class="text-center text-muted col-passport-doi col-hidden">—</td>
+                                                <td class="text-center text-muted col-passport-exp col-hidden">—</td>
                                                 <td class="text-center text-muted col-cnic col-hidden">—</td>
                                                 <td class="text-center text-muted col-phone col-hidden">—</td>
                                                 <td class="text-center text-muted col-booking-no col-hidden">—</td>
@@ -855,6 +867,12 @@
                                                         {{ $occ['dob'] ?? '—' }}
                                                     </td>
                                                     <td class="text-center fw-bold text-uppercase col-passport">{{ $occ['passport'] }}</td>
+                                                    <td class="text-center col-passport-doi col-hidden small">
+                                                        {{ $occ['date_of_issue'] ?? '—' }}
+                                                    </td>
+                                                    <td class="text-center col-passport-exp col-hidden small">
+                                                        {{ $occ['passport_expiry_date'] ?? '—' }}
+                                                    </td>
                                                     <td class="text-center col-cnic col-hidden font-monospace small">
                                                         {{ $occ['cnic'] ?: '—' }}
                                                     </td>
@@ -943,7 +961,7 @@
                                         @endif
                                     @empty
                                         <tr>
-                                            <td colspan="18" class="text-center py-5 text-muted">
+                                            <td colspan="20" class="text-center py-5 text-muted">
                                                 <i class="mdi mdi-bed-empty fs-48 d-block mb-2 text-muted"></i>
                                                 <h5>No Pilgrims Found</h5>
                                                 <p>Try clearing filters above to view all bookings.</p>

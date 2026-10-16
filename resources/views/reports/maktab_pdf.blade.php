@@ -246,6 +246,15 @@
                             </span>
                             @if($mainPerson->passport_number)
                                 <span style="font-size: 8px; color: #444;"> | Pass: {{ $mainPerson->passport_number }}</span>
+                                @php
+                                    $mDoi = $mainPerson->date_of_issue ?: $mainPerson->passport_issue_date;
+                                @endphp
+                                @if(!empty($mDoi))
+                                    <span style="font-size: 7.5px; color: #555;"> (DOI: {{ date('d/m/Y', strtotime($mDoi)) }})</span>
+                                @endif
+                                @if(!empty($mainPerson->passport_expiry_date))
+                                    <span style="font-size: 7.5px; color: #b91c1c;"> (EXP: {{ date('d/m/Y', strtotime($mainPerson->passport_expiry_date)) }})</span>
+                                @endif
                             @endif
                         </div>
                         @if($otherPersons->count() > 0)
@@ -260,7 +269,18 @@
                                         <span class="{{ strtolower($oP->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}">
                                              ({{ ucfirst($oP->gender ?? 'Male') }})
                                         </span>
-                                        @if($oP->passport_number) - {{ $oP->passport_number }} @endif
+                                        @if($oP->passport_number)
+                                            - {{ $oP->passport_number }}
+                                            @php
+                                                $oDoi = $oP->date_of_issue ?: $oP->passport_issue_date;
+                                            @endphp
+                                            @if(!empty($oDoi))
+                                                <span style="font-size: 7px; color: #555;">(DOI: {{ date('d/m/Y', strtotime($oDoi)) }})</span>
+                                            @endif
+                                            @if(!empty($oP->passport_expiry_date))
+                                                <span style="font-size: 7px; color: #b91c1c;">(EXP: {{ date('d/m/Y', strtotime($oP->passport_expiry_date)) }})</span>
+                                            @endif
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

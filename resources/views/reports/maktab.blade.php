@@ -393,6 +393,14 @@
                                     <span>Passport No</span>
                                 </label>
                                 <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-doi">
+                                    <span>Date of Issue (DOI)</span>
+                                </label>
+                                <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-exp">
+                                    <span>Passport Expiry Date</span>
+                                </label>
+                                <label class="column-filter-item">
                                     <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hotel" checked>
                                     <span>Hotel & Location</span>
                                 </label>
@@ -442,6 +450,8 @@
                                     <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-surname col-hidden">SURNAME</th>
                                     <th style="width: 80px;" class="col-gender">GENDER</th>
                                     <th style="width: 110px;" class="col-passport">PASSPORT</th>
+                                    <th style="width: 110px;" class="col-passport-doi col-hidden">DATE OF ISSUE</th>
+                                    <th style="width: 115px;" class="col-passport-exp col-hidden">EXPIRY DATE</th>
                                     <th style="width: 200px; text-align: left; padding-left: 10px;" class="col-hotel">HOTEL & LOCATION</th>
                                     <th style="width: 140px;" class="col-room">ROOM DETAILS</th>
                                     <th style="width: 130px;" class="col-maktab">MAKTAB / CAMP</th>
@@ -522,6 +532,8 @@
                                             <td class="text-center text-muted col-surname col-hidden">—</td>
                                             <td class="text-center col-gender">—</td>
                                             <td class="text-center col-passport">{{ $booking?->passport_number ?: '—' }}</td>
+                                            <td class="text-center text-muted col-passport-doi col-hidden">—</td>
+                                            <td class="text-center text-muted col-passport-exp col-hidden">—</td>
 
                                             {{-- Hotel & Location Cell --}}
                                             <td style="padding-left: 10px;" class="col-hotel">
@@ -722,6 +734,41 @@
                                                     {{ $p->passport_number ?: '—' }}
                                                 </td>
 
+                                                {{-- Date of Issue --}}
+                                                @php
+                                                    $rawDoi = $p->date_of_issue ?: $p->passport_issue_date;
+                                                    $pDoi = null;
+                                                    if (!empty($rawDoi)) {
+                                                        try {
+                                                            $pDoi = \Carbon\Carbon::parse($rawDoi);
+                                                        } catch (\Exception $e) {}
+                                                    }
+
+                                                    $rawExp = $p->passport_expiry_date;
+                                                    $pExp = null;
+                                                    if (!empty($rawExp)) {
+                                                        try {
+                                                            $pExp = \Carbon\Carbon::parse($rawExp);
+                                                        } catch (\Exception $e) {}
+                                                    }
+                                                @endphp
+                                                <td class="text-center col-passport-doi col-hidden">
+                                                    @if ($pDoi)
+                                                        <span>{{ $pDoi->format('d M Y') }}</span>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
+
+                                                {{-- Passport Expiry --}}
+                                                <td class="text-center col-passport-exp col-hidden">
+                                                    @if ($pExp)
+                                                        <span>{{ $pExp->format('d M Y') }}</span>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
+
                                                 {{-- Spanned Columns --}}
                                                 @if($occIdx === 0)
                                                     {{-- Hotel & Location Cell --}}
@@ -847,7 +894,7 @@
                                     @endif
                                 @empty
                                     <tr>
-                                        <td colspan="17" class="text-center py-5">
+                                        <td colspan="19" class="text-center py-5">
                                             <div class="py-4">
                                                 <i class="mdi mdi-tent text-muted" style="font-size: 48px;"></i>
                                                 <h5 class="fw-bold text-muted mt-2">No Maktab Records Found</h5>

@@ -110,6 +110,29 @@ class PermissionTableSeeder extends Seeder
             ['name' => 'train_trash', 'guard_name' => 'web', 'group_name' => 'Train'],
             ['name' => 'train_trash_view', 'guard_name' => 'web', 'group_name' => 'Train'],
             ['name' => 'train_restore', 'guard_name' => 'web', 'group_name' => 'Train'],
+
+            ['name' => 'flight_view', 'guard_name' => 'web', 'group_name' => 'Flight'],
+            ['name' => 'flight_create', 'guard_name' => 'web', 'group_name' => 'Flight'],
+            ['name' => 'flight_show', 'guard_name' => 'web', 'group_name' => 'Flight'],
+            ['name' => 'flight_edit', 'guard_name' => 'web', 'group_name' => 'Flight'],
+            ['name' => 'flight_trash', 'guard_name' => 'web', 'group_name' => 'Flight'],
+            ['name' => 'flight_trash_view', 'guard_name' => 'web', 'group_name' => 'Flight'],
+            ['name' => 'flight_restore', 'guard_name' => 'web', 'group_name' => 'Flight'],
+
+            ['name' => 'route_view', 'guard_name' => 'web', 'group_name' => 'Route'],
+            ['name' => 'route_create', 'guard_name' => 'web', 'group_name' => 'Route'],
+            ['name' => 'route_edit', 'guard_name' => 'web', 'group_name' => 'Route'],
+            ['name' => 'route_trash', 'guard_name' => 'web', 'group_name' => 'Route'],
+            ['name' => 'route_trash_view', 'guard_name' => 'web', 'group_name' => 'Route'],
+            ['name' => 'route_restore', 'guard_name' => 'web', 'group_name' => 'Route'],
+
+            ['name' => 'travel_route_view', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
+            ['name' => 'travel_route_create', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
+            ['name' => 'travel_route_show', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
+            ['name' => 'travel_route_edit', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
+            ['name' => 'travel_route_trash', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
+            ['name' => 'travel_route_trash_view', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
+            ['name' => 'travel_route_restore', 'guard_name' => 'web', 'group_name' => 'Travel Route'],
         ];
 
         foreach ($permissions as $permission) {

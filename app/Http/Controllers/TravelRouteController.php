@@ -6,11 +6,18 @@ use App\Models\TravelRoute;
 use App\Models\Route as RouteModel;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TravelRouteController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_view');
+        }
+
         $travelRoutes = TravelRoute::with(['vehicle', 'routes'])->latest()->get();
         $trashCount = TravelRoute::onlyTrashed()->count();
 
@@ -19,6 +26,10 @@ class TravelRouteController extends Controller
 
     public function create()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_create');
+        }
+
         $vehicles = Vehicle::where('status', 'active')->latest()->get();
         $routes = RouteModel::where('status', 'active')->latest()->get();
 
@@ -27,6 +38,10 @@ class TravelRouteController extends Controller
 
     public function store(Request $request)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_create');
+        }
+
         $request->validate([
             'name'         => 'required|string|max:255',
             'arrival_date' => 'nullable|date',
@@ -72,12 +87,20 @@ class TravelRouteController extends Controller
 
     public function show($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_view');
+        }
+
         $travelRoute = TravelRoute::with(['vehicle', 'routes'])->findOrFail($id);
         return view('travel_route.show', compact('travelRoute'));
     }
 
     public function edit($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_edit');
+        }
+
         $travelRoute = TravelRoute::with('routes')->findOrFail($id);
         $vehicles = Vehicle::latest()->get();
         $routes = RouteModel::latest()->get();
@@ -88,6 +111,10 @@ class TravelRouteController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_edit');
+        }
+
         $travelRoute = TravelRoute::findOrFail($id);
 
         $request->validate([
@@ -119,6 +146,10 @@ class TravelRouteController extends Controller
 
     public function destroy($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_trash');
+        }
+
         $travelRoute = TravelRoute::findOrFail($id);
 
         logUserActivity('Travel Route Deleted', 'Name: ' . $travelRoute->name, $travelRoute->id, 'TravelRoute');
@@ -130,12 +161,20 @@ class TravelRouteController extends Controller
 
     public function trash()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_trash_view');
+        }
+
         $travelRoutes = TravelRoute::onlyTrashed()->with(['vehicle', 'routes'])->latest()->get();
         return view('travel_route.trash', compact('travelRoutes'));
     }
 
     public function restore($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('travel_route_restore');
+        }
+
         $travelRoute = TravelRoute::onlyTrashed()->findOrFail($id);
         $travelRoute->restore();
 

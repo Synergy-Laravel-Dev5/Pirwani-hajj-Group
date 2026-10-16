@@ -264,7 +264,15 @@
                             <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td>
                             <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
                             <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td>
-                            <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ $occ['passport'] }}</td>
+                            <td style="text-align: center; font-weight: bold; text-transform: uppercase;">
+                                {{ $occ['passport'] }}
+                                @if(!empty($occ['date_of_issue']))
+                                    <div style="font-size: 6.5px; color: #555; font-weight: normal; margin-top: 1px;">DOI: {{ date('d/m/Y', strtotime($occ['date_of_issue'])) }}</div>
+                                @endif
+                                @if(!empty($occ['passport_expiry_date']))
+                                    <div style="font-size: 6.5px; color: #b91c1c; font-weight: normal; margin-top: 1px;">EXP: {{ date('d/m/Y', strtotime($occ['passport_expiry_date'])) }}</div>
+                                @endif
+                            </td>
                             <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase; color: #000;">
                                 <div>{{ $occ['name'] }}</div>
                                 <div style="font-size: 7.5px; color: #0d6efd; font-weight: bold; margin-top: 1px;">

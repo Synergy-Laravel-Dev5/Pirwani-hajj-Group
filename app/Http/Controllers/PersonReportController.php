@@ -211,8 +211,8 @@ class PersonReportController extends Controller
                 .gender-female { color: #9D174D; font-weight: bold; }
             </style></head><body>';
             echo '<table>';
-            echo '<tr><th colspan="14" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL BOOKING PERSON & PILGRIM MANIFEST</th></tr>';
-            echo '<tr><td colspan="14" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+            echo '<tr><th colspan="16" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL BOOKING PERSON & PILGRIM MANIFEST</th></tr>';
+            echo '<tr><td colspan="16" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
             echo '<tr>
                 <th>SR</th>
                 <th>HAJJ ID</th>
@@ -223,6 +223,8 @@ class PersonReportController extends Controller
                 <th>HUSBAND / FATHER NAME</th>
                 <th>GENDER</th>
                 <th>PASSPORT NO</th>
+                <th>DATE OF ISSUE</th>
+                <th>PASSPORT EXPIRY DATE</th>
                 <th>CNIC</th>
                 <th>PHONE / CONTACT</th>
                 <th>VOUCHER / BOOKING REF</th>
@@ -239,6 +241,10 @@ class PersonReportController extends Controller
                 $pGender = strtoupper($p->gender ?? 'MALE');
                 $genderClass = ($pGender === 'FEMALE') ? 'gender-female' : 'gender-male';
 
+                $rawDoi = $p->date_of_issue ?: $p->passport_issue_date;
+                $doiStr = !empty($rawDoi) ? date('d M Y', strtotime($rawDoi)) : '—';
+                $expStr = !empty($p->passport_expiry_date) ? date('d M Y', strtotime($p->passport_expiry_date)) : '—';
+
                 echo '<tr>';
                 echo '<td class="center">' . ($sr++) . '</td>';
                 echo '<td class="center"><strong>' . htmlspecialchars($p->hajj_id ?? '—') . '</strong></td>';
@@ -249,6 +255,8 @@ class PersonReportController extends Controller
                 echo '<td>' . htmlspecialchars($p->father_name ?? '—') . '</td>';
                 echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($pGender) . '</td>';
                 echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($p->passport_number ?? '—') . '</td>';
+                echo '<td class="center">' . htmlspecialchars($doiStr) . '</td>';
+                echo '<td class="center">' . htmlspecialchars($expStr) . '</td>';
                 echo '<td class="center">' . htmlspecialchars($p->cnic ?? '—') . '</td>';
                 echo '<td class="center">' . htmlspecialchars($p->phone ?? '—') . '</td>';
                 echo '<td class="center">' . htmlspecialchars($voucherNo) . '</td>';

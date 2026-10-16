@@ -5,11 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Flight;
 use App\Models\Airline;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class FlightController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_view');
+        }
+
         $flights = Flight::with('airline')->latest()->get();
         $trashCount = Flight::onlyTrashed()->count();
 
@@ -18,18 +25,30 @@ class FlightController extends Controller
 
     public function show($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_view');
+        }
+
         $flight = Flight::with(['airline', 'sectors', 'pnrs'])->findOrFail($id);
         return view('flight.show', compact('flight'));
     }
 
     public function create()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_create');
+        }
+
         $airlines = Airline::where('status', 'active')->latest()->get();
         return view('flight.create', compact('airlines'));
     }
 
     public function store(Request $request)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_create');
+        }
+
         $request->validate([
             'airline_id'         => 'nullable|exists:airlines,id',
             'name'               => 'nullable|string|max:255',
@@ -109,6 +128,10 @@ class FlightController extends Controller
 
     public function edit($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_edit');
+        }
+
         $flight = Flight::with(['sectors', 'pnrs'])->findOrFail($id);
         $airlines = Airline::where('status', 'active')->latest()->get();
 
@@ -117,6 +140,10 @@ class FlightController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_edit');
+        }
+
         $flight = Flight::findOrFail($id);
 
         $request->validate([
@@ -186,6 +213,10 @@ class FlightController extends Controller
 
     public function destroy($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_trash');
+        }
+
         $flight = Flight::findOrFail($id);
 
         logUserActivity('Flight Deleted', 'Name: ' . $flight->name, $flight->id, 'Flight');
@@ -197,12 +228,20 @@ class FlightController extends Controller
 
     public function trash()
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_trash_view');
+        }
+
         $flights = Flight::onlyTrashed()->with('airline')->latest()->get();
         return view('flight.trash', compact('flights'));
     }
 
     public function restore($id)
     {
+        if (!isCompanyUser()) {
+            $this->authorize('flight_restore');
+        }
+
         $flight = Flight::onlyTrashed()->findOrFail($id);
         $flight->restore();
 
