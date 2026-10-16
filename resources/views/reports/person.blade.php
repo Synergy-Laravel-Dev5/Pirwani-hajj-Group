@@ -368,8 +368,16 @@
                                     <span>Full Name / Pilgrim</span>
                                 </label>
                                 <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="given-name">
+                                    <span>Given Name</span>
+                                </label>
+                                <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="surname">
+                                    <span>Surname</span>
+                                </label>
+                                <label class="column-filter-item">
                                     <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="father-name">
-                                    <span>Father Name</span>
+                                    <span>Husband / Father Name</span>
                                 </label>
                                 <label class="column-filter-item">
                                     <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="gender" checked>
@@ -429,7 +437,9 @@
                                     <th style="width: 95px;" class="col-hajj-id">HAJJ ID</th>
                                     <th style="width: 90px;" class="col-hb">HB</th>
                                     <th style="width: 220px; text-align: left; padding-left: 10px;" class="col-name">FULL NAME</th>
-                                    <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">FATHER NAME</th>
+                                    <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-given-name col-hidden">GIVEN NAME</th>
+                                    <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-surname col-hidden">SURNAME</th>
+                                    <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">HUSBAND / FATHER NAME</th>
                                     <th style="width: 80px;" class="col-gender">GENDER</th>
                                     <th style="width: 100px;" class="col-dob col-hidden">DOB / AGE</th>
                                     <th style="width: 110px;" class="col-passport">PASSPORT</th>
@@ -524,6 +534,16 @@
                                             @if (!empty($person->surname) && $person->surname !== $person->full_name)
                                                 <small class="text-muted">{{ $person->given_name }} {{ $person->surname }}</small>
                                             @endif
+                                        </td>
+
+                                        {{-- Given Name --}}
+                                        <td style="padding-left: 10px;" class="col-given-name col-hidden">
+                                            <span class="text-dark fw-semibold text-uppercase">{{ $person->given_name ?: '—' }}</span>
+                                        </td>
+
+                                        {{-- Surname --}}
+                                        <td style="padding-left: 10px;" class="col-surname col-hidden">
+                                            <span class="text-dark fw-semibold text-uppercase">{{ $person->surname ?: '—' }}</span>
                                         </td>
 
                                         {{-- Father Name --}}
@@ -635,7 +655,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="17" class="text-center py-5">
+                                        <td colspan="19" class="text-center py-5">
                                             <div class="py-4">
                                                 <i class="mdi mdi-account-search text-muted" style="font-size: 48px;"></i>
                                                 <h5 class="fw-bold text-muted mt-2">No Booking Persons Found</h5>

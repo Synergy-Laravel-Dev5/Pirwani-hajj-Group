@@ -54,6 +54,13 @@ class BookingPerson extends Model
             }
         });
 
+        static::saving(function ($person) {
+            if (empty($person->dob)) $person->dob = null;
+            if (empty($person->date_of_issue)) $person->date_of_issue = null;
+            if (empty($person->passport_issue_date)) $person->passport_issue_date = null;
+            if (empty($person->passport_expiry_date)) $person->passport_expiry_date = null;
+        });
+
         static::updating(function ($person) {
             if (!empty($person->hb_number)) {
                 $person->hb_number = self::formatHbNumber($person->hb_number);

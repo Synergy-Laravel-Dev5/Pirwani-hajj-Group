@@ -1098,7 +1098,7 @@
                             <th style="width:40px">#</th>
                             <th style="width:50px">Photo</th>
                             <th>Full Name</th>
-                            <th>Father Name</th>
+                            <th>Husband / Father Name</th>
                             <th>DOB</th>
                             <th>Passport #</th>
                             <th>Issue Date</th>

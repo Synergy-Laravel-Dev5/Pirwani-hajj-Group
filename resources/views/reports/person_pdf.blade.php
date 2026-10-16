@@ -186,8 +186,11 @@
                     <td class="center">{{ $p->hb_number ?: '—' }}</td>
                     <td style="padding-left: 6px;">
                         <strong>{{ $p->full_name }}</strong>
+                        @if(!empty($p->given_name) || !empty($p->surname))
+                            <br><span style="font-size: 7.5px; color: #444;">{{ trim(($p->given_name ?? '') . ' ' . ($p->surname ?? '')) }}</span>
+                        @endif
                         @if(!empty($p->father_name))
-                            <br><span style="font-size: 7.5px; color: #555;">S/O, D/O: {{ $p->father_name }}</span>
+                            <br><span style="font-size: 7.5px; color: #555;">S/O, D/O, W/O: {{ $p->father_name }}</span>
                         @endif
                     </td>
                     <td class="center {{ $isFemale ? 'gender-female' : 'gender-male' }}">{{ $pGender }}</td>

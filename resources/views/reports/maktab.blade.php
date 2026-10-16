@@ -377,6 +377,14 @@
                                     <span>Pilgrim Full Name</span>
                                 </label>
                                 <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="given-name">
+                                    <span>Given Name</span>
+                                </label>
+                                <label class="column-filter-item">
+                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="surname">
+                                    <span>Surname</span>
+                                </label>
+                                <label class="column-filter-item">
                                     <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="gender" checked>
                                     <span>Gender</span>
                                 </label>
@@ -430,6 +438,8 @@
                                     <th style="width: 95px;" class="col-hajj-id">HAJJ ID</th>
                                     <th style="width: 90px;" class="col-hb col-hidden">HB</th>
                                     <th style="width: 220px; text-align: left; padding-left: 10px;" class="col-pilgrim">PILGRIM FULL NAME</th>
+                                    <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-given-name col-hidden">GIVEN NAME</th>
+                                    <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-surname col-hidden">SURNAME</th>
                                     <th style="width: 80px;" class="col-gender">GENDER</th>
                                     <th style="width: 110px;" class="col-passport">PASSPORT</th>
                                     <th style="width: 200px; text-align: left; padding-left: 10px;" class="col-hotel">HOTEL & LOCATION</th>
@@ -508,6 +518,8 @@
                                             <td style="padding-left: 10px;" class="col-pilgrim">
                                                 <strong class="text-dark">{{ $booking?->client?->name ?? 'Direct Pilgrim' }}</strong>
                                             </td>
+                                            <td class="text-center text-muted col-given-name col-hidden">—</td>
+                                            <td class="text-center text-muted col-surname col-hidden">—</td>
                                             <td class="text-center col-gender">—</td>
                                             <td class="text-center col-passport">{{ $booking?->passport_number ?: '—' }}</td>
 
@@ -690,6 +702,16 @@
                                                     @endif
                                                 </td>
 
+                                                {{-- Given Name --}}
+                                                <td style="padding-left: 10px;" class="col-given-name col-hidden">
+                                                    <span class="text-dark fw-semibold text-uppercase">{{ $p->given_name ?: '—' }}</span>
+                                                </td>
+
+                                                {{-- Surname --}}
+                                                <td style="padding-left: 10px;" class="col-surname col-hidden">
+                                                    <span class="text-dark fw-semibold text-uppercase">{{ $p->surname ?: '—' }}</span>
+                                                </td>
+
                                                 {{-- Gender --}}
                                                 <td class="text-center fw-bold col-gender {{ $pIsFemale ? 'gender-female' : 'gender-male' }}">
                                                     {{ strtoupper($p->gender ?: 'MALE') }}
@@ -825,7 +847,7 @@
                                     @endif
                                 @empty
                                     <tr>
-                                        <td colspan="15" class="text-center py-5">
+                                        <td colspan="17" class="text-center py-5">
                                             <div class="py-4">
                                                 <i class="mdi mdi-tent text-muted" style="font-size: 48px;"></i>
                                                 <h5 class="fw-bold text-muted mt-2">No Maktab Records Found</h5>

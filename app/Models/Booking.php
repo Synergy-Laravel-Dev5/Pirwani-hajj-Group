@@ -63,6 +63,17 @@ class Booking extends Model
         'room_breakdown' => 'array',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($booking) {
+            if (empty($booking->departure_date)) $booking->departure_date = null;
+            if (empty($booking->arrival_date)) $booking->arrival_date = null;
+            if (empty($booking->departure_time)) $booking->departure_time = null;
+            if (empty($booking->arrival_time)) $booking->arrival_time = null;
+            if (empty($booking->visa_dob)) $booking->visa_dob = null;
+        });
+    }
+
     public function package()
     {
         return $this->belongsTo(Package::class);

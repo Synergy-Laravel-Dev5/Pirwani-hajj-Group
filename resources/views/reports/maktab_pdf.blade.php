@@ -238,6 +238,9 @@
                             <strong style="font-size: 9.5px; text-transform: uppercase;">
                                 {{ $mainPerson->full_name ?? ($mainPerson->given_name . ' ' . $mainPerson->surname) }}
                             </strong>
+                            @if(!empty($mainPerson->given_name) || !empty($mainPerson->surname))
+                                <div style="font-size: 7.5px; color: #444;">{{ trim(($mainPerson->given_name ?? '') . ' ' . ($mainPerson->surname ?? '')) }}</div>
+                            @endif
                             <span class="{{ strtolower($mainPerson->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}" style="font-size: 8px;">
                                 ({{ ucfirst($mainPerson->gender ?? 'Male') }})
                             </span>
@@ -251,6 +254,9 @@
                                 @foreach($otherPersons as $oP)
                                     <div>
                                         • {{ $oP->full_name }} 
+                                        @if(!empty($oP->given_name) || !empty($oP->surname))
+                                            <span style="font-size: 7.5px; color: #555;">({{ trim(($oP->given_name ?? '') . ' ' . ($oP->surname ?? '')) }})</span>
+                                        @endif
                                         <span class="{{ strtolower($oP->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}">
                                              ({{ ucfirst($oP->gender ?? 'Male') }})
                                         </span>

@@ -9,6 +9,8 @@ use App\Models\Package;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class BookingController extends Controller
@@ -43,6 +45,11 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
+        // Sanitize package_type to lowercase before validation
+        if ($request->has('package_type')) {
+            $request->merge(['package_type' => strtolower(trim((string)$request->package_type)) ?: 'hajj']);
+        }
+
         $request->validate([
             'booking_for'     => 'required|in:client,company',
             'client_id'       => 'required_if:booking_for,client|nullable|exists:clients,id',
@@ -75,9 +82,8 @@ class BookingController extends Controller
                 $hotelName = trim($hotel['hotel_name'] ?? '');
                 $roomNumber = trim($hotel['room_number'] ?? '');
                 $roomType = $hotel['room_type'] ?? null;
-                $checkIn = $hotel['check_in'] ?? null;
-                $checkOut = $hotel['check_out'] ?? null;
-
+                $checkIn = !empty($hotel['check_in']) ? $hotel['check_in'] : null;
+                $checkOut = !empty($hotel['check_out']) ? $hotel['check_out'] : null;
                 $location = $hotel['location'] ?? null;
 
                 if (!empty($hotelName) && !empty($roomNumber)) {
@@ -95,126 +101,164 @@ class BookingController extends Controller
         $clientId  = $request->booking_for === 'client'  ? $request->client_id  : null;
         $companyId = $request->booking_for === 'company' ? $request->company_id : null;
 
-        $total = (($request->package_cost ?? 0) * ($request->no_of_pax ?? 1))
-            + ($request->visa_charges ?? 0)
-            + ($request->flight_charges ?? 0)
-            + ($request->other_charges ?? 0)
-            + ($request->qurbani_charges ?? 0)
-            - ($request->discount ?? 0);
+        $packageCost    = (float) ($request->package_cost ?? 0);
+        $noOfPax        = max(1, (int) ($request->no_of_pax ?: 1));
+        $visaCharges    = (float) ($request->visa_charges ?? 0);
+        $flightCharges  = (float) ($request->flight_charges ?? 0);
+        $otherCharges   = (float) ($request->other_charges ?? 0);
+        $qurbaniCharges = (float) ($request->qurbani_charges ?? 0);
+        $discount       = (float) ($request->discount ?? 0);
+        $totalReceived  = (float) ($request->total_received ?? 0);
 
-        $booking = Booking::create(array_merge(
+        $total = ($packageCost * $noOfPax)
+            + $visaCharges
+            + $flightCharges
+            + $otherCharges
+            + $qurbaniCharges
+            - $discount;
+        $balance = $total - $totalReceived;
+
+        $bookingData = array_merge(
             $request->except(['persons', 'hotels', 'transports', 'visas', 'flight_persons', '_token']),
             [
                 'package_id'      => $request->package_id ?: null,
                 'client_id'       => $clientId,
                 'company_id'      => $companyId,
                 'package_type'    => $request->package_type ?? 'hajj',
-                'camp'            => $request->camp,
+                'camp'            => $request->camp ?: null,
                 'room_breakdown'  => $request->room_breakdown ?: null,
                 'qurbani_option'  => $request->qurbani_option ?? 'not_included',
-                'qurbani_qty'     => $request->qurbani_qty ?? 0,
-                'qurbani_charges' => $request->qurbani_charges ?? 0,
-                'package_cost'    => $request->package_cost ?? 0,
-                'visa_charges'    => $request->visa_charges ?? 0,
-                'flight_charges'  => $request->flight_charges ?? 0,
-                'other_charges'   => $request->other_charges ?? 0,
-                'discount'        => $request->discount ?? 0,
-                'total_received'  => $request->total_received ?? 0,
+                'qurbani_qty'     => (int) ($request->qurbani_qty ?? 0),
+                'qurbani_charges' => $qurbaniCharges,
+                'package_cost'    => $packageCost,
+                'no_of_pax'       => $noOfPax,
+                'visa_charges'    => $visaCharges,
+                'flight_charges'  => $flightCharges,
+                'other_charges'   => $otherCharges,
+                'discount'        => $discount,
+                'total_received'  => $totalReceived,
                 'total_amount'    => $total,
-                'balance'         => $total - ($request->total_received ?? 0),
+                'balance'         => $balance,
                 'remarks'         => $request->remarks ?: null,
+                'departure_date'  => !empty($request->departure_date) ? $request->departure_date : null,
+                'arrival_date'    => !empty($request->arrival_date) ? $request->arrival_date : null,
+                'departure_time'  => !empty($request->departure_time) ? $request->departure_time : null,
+                'arrival_time'    => !empty($request->arrival_time) ? $request->arrival_time : null,
+                'visa_dob'        => !empty($request->visa_dob) ? $request->visa_dob : null,
             ]
-        ));
+        );
 
-        if ($request->has('persons')) {
-            $uploadDir = public_path('uploads/booking_persons');
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
+        DB::beginTransaction();
+        try {
+            $booking = Booking::create($bookingData);
 
-            // Determine unified HB number for all persons in this booking
-            $bookingHbNumber = null;
-            if (is_array($request->persons)) {
+            if ($request->has('persons') && is_array($request->persons)) {
+                $uploadDir = public_path('uploads/booking_persons');
+                if (!file_exists($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+
+                // Determine unified HB number for all persons in this booking
+                $bookingHbNumber = null;
                 foreach ($request->persons as $p) {
                     if (!empty($p['hb_number'])) {
                         $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($p['hb_number']);
                         break;
                     }
                 }
-            }
-            if (empty($bookingHbNumber)) {
-                $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber();
-            }
+                if (empty($bookingHbNumber)) {
+                    $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber();
+                }
 
-            foreach ($request->persons as $index => $person) {
-                $name = !empty($person['full_name']) ? trim($person['full_name']) : trim(($person['given_name'] ?? '') . ' ' . ($person['surname'] ?? ''));
-                if (!empty($name) || !empty($person['passport_number'])) {
-                    $personData = $person;
-                    $personData['full_name'] = $name ?: 'Passenger';
-                    $personData['hb_number'] = $bookingHbNumber;
-                    $issueDate = !empty($person['date_of_issue']) ? $person['date_of_issue'] : (!empty($person['passport_issue_date']) ? $person['passport_issue_date'] : null);
-                    $personData['date_of_issue'] = $issueDate;
-                    $personData['passport_issue_date'] = $issueDate;
+                foreach ($request->persons as $index => $person) {
+                    $name = !empty($person['full_name']) ? trim($person['full_name']) : trim(($person['given_name'] ?? '') . ' ' . ($person['surname'] ?? ''));
+                    if (!empty($name) || !empty($person['passport_number'])) {
+                        $personData = $person;
+                        $personData['full_name'] = $name ?: 'Passenger';
+                        $personData['given_name'] = !empty($person['given_name']) ? trim($person['given_name']) : null;
+                        $personData['surname'] = !empty($person['surname']) ? trim($person['surname']) : null;
+                        $personData['hb_number'] = $bookingHbNumber;
+                        $issueDate = !empty($person['date_of_issue']) ? $person['date_of_issue'] : (!empty($person['passport_issue_date']) ? $person['passport_issue_date'] : null);
+                        $personData['date_of_issue'] = $issueDate;
+                        $personData['passport_issue_date'] = $issueDate;
+                        $personData['dob'] = !empty($person['dob']) ? $person['dob'] : null;
+                        $personData['passport_expiry_date'] = !empty($person['passport_expiry_date']) ? $person['passport_expiry_date'] : null;
 
-                    if ($request->hasFile("persons.{$index}.photo")) {
-                        $file = $request->file("persons.{$index}.photo");
-                        $filename = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                        $file->move($uploadDir, $filename);
-                        $personData['photo'] = 'uploads/booking_persons/' . $filename;
+                        if ($request->hasFile("persons.{$index}.photo")) {
+                            try {
+                                $file = $request->file("persons.{$index}.photo");
+                                $filename = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                                $file->move($uploadDir, $filename);
+                                $personData['photo'] = 'uploads/booking_persons/' . $filename;
+                            } catch (\Throwable $fe) {
+                                Log::warning('Person photo upload skipped: ' . $fe->getMessage());
+                            }
+                        }
+
+                        unset($personData['existing_photo']);
+                        $booking->persons()->create($personData);
                     }
-
-                    unset($personData['existing_photo']);
-                    $booking->persons()->create($personData);
                 }
             }
-        }
 
-        if ($request->has('hotels')) {
-            foreach ($request->hotels as $hotel) {
-                if (!empty($hotel['hotel_name'])) {
-                    $hotelData = $hotel;
-                    $hotelData['no_of_rooms'] = (!empty($hotel['no_of_rooms']) && is_numeric($hotel['no_of_rooms'])) ? (int)$hotel['no_of_rooms'] : 1;
-                    $hotelData['no_of_nights'] = (!empty($hotel['no_of_nights']) && is_numeric($hotel['no_of_nights'])) ? (int)$hotel['no_of_nights'] : 1;
-                    $hotelData['check_in'] = !empty($hotel['check_in']) ? $hotel['check_in'] : null;
-                    $hotelData['check_out'] = !empty($hotel['check_out']) ? $hotel['check_out'] : null;
-                    $hotelData['room_type'] = !empty($hotel['room_type']) ? $hotel['room_type'] : 'quad';
-                    $hotelData['room_number'] = !empty($hotel['room_number']) ? trim($hotel['room_number']) : null;
-                    $hotelData['gender'] = !empty($hotel['gender']) ? trim($hotel['gender']) : 'Any';
-                    $hotelData['location'] = !empty($hotel['location']) ? $hotel['location'] : 'makkah';
-                    $booking->hotels()->create($hotelData);
+            if ($request->has('hotels') && is_array($request->hotels)) {
+                foreach ($request->hotels as $hotel) {
+                    if (!empty($hotel['hotel_name'])) {
+                        $hotelData = $hotel;
+                        $hotelData['no_of_rooms'] = (!empty($hotel['no_of_rooms']) && is_numeric($hotel['no_of_rooms'])) ? (int)$hotel['no_of_rooms'] : 1;
+                        $hotelData['no_of_nights'] = (!empty($hotel['no_of_nights']) && is_numeric($hotel['no_of_nights'])) ? (int)$hotel['no_of_nights'] : 1;
+                        $hotelData['check_in'] = !empty($hotel['check_in']) ? $hotel['check_in'] : null;
+                        $hotelData['check_out'] = !empty($hotel['check_out']) ? $hotel['check_out'] : null;
+                        $hotelData['room_type'] = !empty($hotel['room_type']) ? $hotel['room_type'] : 'quad';
+                        $hotelData['room_number'] = !empty($hotel['room_number']) ? trim($hotel['room_number']) : null;
+                        $hotelData['gender'] = !empty($hotel['gender']) ? trim($hotel['gender']) : 'Any';
+                        $hotelData['location'] = !empty($hotel['location']) ? $hotel['location'] : 'makkah';
+                        unset($hotelData['hotel_voucher']);
+                        $booking->hotels()->create($hotelData);
+                    }
                 }
             }
-        }
 
-        if ($request->has('transports')) {
-            foreach ($request->transports as $transport) {
-                if (!empty($transport['route'])) {
-                    $tData = $transport;
-                    $tData['transport_type'] = !empty($transport['transport_type']) ? $transport['transport_type'] : 'bus';
-                    $tData['notes'] = $transport['notes'] ?? null;
-                    $booking->transports()->create($tData);
+            if ($request->has('transports') && is_array($request->transports)) {
+                foreach ($request->transports as $transport) {
+                    if (!empty($transport['route'])) {
+                        $tData = $transport;
+                        $tData['transport_type'] = !empty($transport['transport_type']) ? $transport['transport_type'] : 'bus';
+                        $tData['notes'] = $transport['notes'] ?? null;
+                        $booking->transports()->create($tData);
+                    }
                 }
             }
-        }
 
-        if ($request->has('visas')) {
-            foreach ($request->visas as $visa) {
-                if (!empty($visa['passport_number']) || !empty($visa['given_name'])) {
-                    $vData = $visa;
-                    $vData['status'] = !empty($visa['status']) ? $visa['status'] : 'pending';
-                    $booking->visas()->create($vData);
+            if ($request->has('visas') && is_array($request->visas)) {
+                foreach ($request->visas as $visa) {
+                    if (!empty($visa['passport_number']) || !empty($visa['given_name'])) {
+                        $vData = $visa;
+                        $vData['status'] = !empty($visa['status']) ? $visa['status'] : 'pending';
+                        $vData['date_of_birth'] = !empty($visa['date_of_birth']) ? $visa['date_of_birth'] : null;
+                        $booking->visas()->create($vData);
+                    }
                 }
             }
+
+            logUserActivity(
+                'Booking Created',
+                'Type: ' . $request->booking_for . ' | Package: ' . $booking->package_type . ' | Total: ' . $booking->total_amount,
+                $booking->id,
+                'Booking'
+            );
+
+            DB::commit();
+
+            return redirect()->route('booking.index')->with('success', 'Booking created successfully!');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Booking store error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace'     => $e->getTraceAsString(),
+            ]);
+            return back()->withInput()->with('error', 'Booking save failed: ' . $e->getMessage());
         }
-
-        logUserActivity(
-            'Booking Created',
-            'Type: ' . $request->booking_for . ' | Package: ' . $booking->package_type . ' | Total: ' . $booking->total_amount,
-            $booking->id,
-            'Booking'
-        );
-
-        return redirect()->route('booking.index')->with('success', 'Booking created successfully!');
     }
 
     public function show($id)
@@ -251,6 +295,11 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
+        // Sanitize package_type to lowercase before validation
+        if ($request->has('package_type')) {
+            $request->merge(['package_type' => strtolower(trim((string)$request->package_type)) ?: 'hajj']);
+        }
+
         $request->validate([
             'booking_for'     => 'required|in:client,company',
             'client_id'       => 'required_if:booking_for,client|nullable|exists:clients,id',
@@ -283,9 +332,8 @@ class BookingController extends Controller
                 $hotelName = trim($h['hotel_name'] ?? '');
                 $roomNumber = trim($h['room_number'] ?? '');
                 $roomType = $h['room_type'] ?? null;
-                $checkIn = $h['check_in'] ?? null;
-                $checkOut = $h['check_out'] ?? null;
-
+                $checkIn = !empty($h['check_in']) ? $h['check_in'] : null;
+                $checkOut = !empty($h['check_out']) ? $h['check_out'] : null;
                 $location = $h['location'] ?? null;
 
                 if (!empty($hotelName) && !empty($roomNumber)) {
@@ -303,131 +351,169 @@ class BookingController extends Controller
         $clientId  = $request->booking_for === 'client'  ? $request->client_id  : null;
         $companyId = $request->booking_for === 'company' ? $request->company_id : null;
 
-        $total = (($request->package_cost ?? 0) * ($request->no_of_pax ?? 1))
-            + ($request->visa_charges ?? 0)
-            + ($request->flight_charges ?? 0)
-            + ($request->other_charges ?? 0)
-            + ($request->qurbani_charges ?? 0)
-            - ($request->discount ?? 0);
+        $packageCost    = (float) ($request->package_cost ?? 0);
+        $noOfPax        = max(1, (int) ($request->no_of_pax ?: 1));
+        $visaCharges    = (float) ($request->visa_charges ?? 0);
+        $flightCharges  = (float) ($request->flight_charges ?? 0);
+        $otherCharges   = (float) ($request->other_charges ?? 0);
+        $qurbaniCharges = (float) ($request->qurbani_charges ?? 0);
+        $discount       = (float) ($request->discount ?? 0);
+        $totalReceived  = (float) ($request->total_received ?? 0);
 
-        $booking->update(array_merge(
+        $total = ($packageCost * $noOfPax)
+            + $visaCharges
+            + $flightCharges
+            + $otherCharges
+            + $qurbaniCharges
+            - $discount;
+        $balance = $total - $totalReceived;
+
+        $bookingData = array_merge(
             $request->except(['persons', 'hotels', 'transports', 'visas', 'flight_persons', '_token', '_method']),
             [
                 'package_id'      => $request->package_id ?: null,
                 'client_id'       => $clientId,
                 'company_id'      => $companyId,
                 'package_type'    => $request->package_type ?? ($booking->package_type ?? 'hajj'),
-                'camp'            => $request->camp,
+                'camp'            => $request->camp ?: null,
                 'room_breakdown'  => $request->room_breakdown ?: null,
                 'qurbani_option'  => $request->qurbani_option ?? 'not_included',
-                'qurbani_qty'     => $request->qurbani_qty ?? 0,
-                'qurbani_charges' => $request->qurbani_charges ?? 0,
-                'package_cost'    => $request->package_cost ?? 0,
-                'visa_charges'    => $request->visa_charges ?? 0,
-                'flight_charges'  => $request->flight_charges ?? 0,
-                'other_charges'   => $request->other_charges ?? 0,
-                'discount'        => $request->discount ?? 0,
-                'total_received'  => $request->total_received ?? 0,
+                'qurbani_qty'     => (int) ($request->qurbani_qty ?? 0),
+                'qurbani_charges' => $qurbaniCharges,
+                'package_cost'    => $packageCost,
+                'no_of_pax'       => $noOfPax,
+                'visa_charges'    => $visaCharges,
+                'flight_charges'  => $flightCharges,
+                'other_charges'   => $otherCharges,
+                'discount'        => $discount,
+                'total_received'  => $totalReceived,
                 'total_amount'    => $total,
-                'balance'         => $total - ($request->total_received ?? 0),
+                'balance'         => $balance,
                 'remarks'         => $request->remarks ?: null,
+                'departure_date'  => !empty($request->departure_date) ? $request->departure_date : null,
+                'arrival_date'    => !empty($request->arrival_date) ? $request->arrival_date : null,
+                'departure_time'  => !empty($request->departure_time) ? $request->departure_time : null,
+                'arrival_time'    => !empty($request->arrival_time) ? $request->arrival_time : null,
+                'visa_dob'        => !empty($request->visa_dob) ? $request->visa_dob : null,
             ]
-        ));
+        );
 
-        $booking->persons()->delete();
-        if ($request->has('persons')) {
-            $uploadDir = public_path('uploads/booking_persons');
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
+        DB::beginTransaction();
+        try {
+            $booking->update($bookingData);
 
-            // Determine unified HB number for all persons in this booking
-            $bookingHbNumber = null;
-            if (is_array($request->persons)) {
+            $booking->persons()->delete();
+            if ($request->has('persons') && is_array($request->persons)) {
+                $uploadDir = public_path('uploads/booking_persons');
+                if (!file_exists($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+
+                // Determine unified HB number for all persons in this booking
+                $bookingHbNumber = null;
                 foreach ($request->persons as $p) {
                     if (!empty($p['hb_number'])) {
                         $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($p['hb_number']);
                         break;
                     }
                 }
-            }
-            if (empty($bookingHbNumber)) {
-                $bookingHbNumber = $booking->persons()->whereNotNull('hb_number')->where('hb_number', '!=', '')->value('hb_number');
-            }
-            if (empty($bookingHbNumber)) {
-                $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber($booking->id);
-            }
-            $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($bookingHbNumber);
+                if (empty($bookingHbNumber)) {
+                    $bookingHbNumber = $booking->persons()->whereNotNull('hb_number')->where('hb_number', '!=', '')->value('hb_number');
+                }
+                if (empty($bookingHbNumber)) {
+                    $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber($booking->id);
+                }
+                $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($bookingHbNumber);
 
-            foreach ($request->persons as $index => $p) {
-                $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
-                if (!empty($name) || !empty($p['passport_number'])) {
-                    $pData = $p;
-                    $pData['full_name'] = $name ?: 'Passenger';
-                    $pData['hb_number'] = $bookingHbNumber;
-                    $issueDate = !empty($p['date_of_issue']) ? $p['date_of_issue'] : (!empty($p['passport_issue_date']) ? $p['passport_issue_date'] : null);
-                    $pData['date_of_issue'] = $issueDate;
-                    $pData['passport_issue_date'] = $issueDate;
+                foreach ($request->persons as $index => $p) {
+                    $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
+                    if (!empty($name) || !empty($p['passport_number'])) {
+                        $pData = $p;
+                        $pData['full_name'] = $name ?: 'Passenger';
+                        $pData['given_name'] = !empty($p['given_name']) ? trim($p['given_name']) : null;
+                        $pData['surname'] = !empty($p['surname']) ? trim($p['surname']) : null;
+                        $pData['hb_number'] = $bookingHbNumber;
+                        $issueDate = !empty($p['date_of_issue']) ? $p['date_of_issue'] : (!empty($p['passport_issue_date']) ? $p['passport_issue_date'] : null);
+                        $pData['date_of_issue'] = $issueDate;
+                        $pData['passport_issue_date'] = $issueDate;
+                        $pData['dob'] = !empty($p['dob']) ? $p['dob'] : null;
+                        $pData['passport_expiry_date'] = !empty($p['passport_expiry_date']) ? $p['passport_expiry_date'] : null;
 
-                    if ($request->hasFile("persons.{$index}.photo")) {
-                        $file = $request->file("persons.{$index}.photo");
-                        $filename = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                        $file->move($uploadDir, $filename);
-                        $pData['photo'] = 'uploads/booking_persons/' . $filename;
-                    } elseif (!empty($p['existing_photo'])) {
-                        $pData['photo'] = $p['existing_photo'];
+                        if ($request->hasFile("persons.{$index}.photo")) {
+                            try {
+                                $file = $request->file("persons.{$index}.photo");
+                                $filename = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                                $file->move($uploadDir, $filename);
+                                $pData['photo'] = 'uploads/booking_persons/' . $filename;
+                            } catch (\Throwable $fe) {
+                                Log::warning('Person photo upload skipped on update: ' . $fe->getMessage());
+                            }
+                        } elseif (!empty($p['existing_photo'])) {
+                            $pData['photo'] = $p['existing_photo'];
+                        }
+
+                        unset($pData['existing_photo']);
+                        $booking->persons()->create($pData);
                     }
-
-                    unset($pData['existing_photo']);
-                    $booking->persons()->create($pData);
                 }
             }
-        }
 
-        $booking->hotels()->delete();
-        if ($request->has('hotels')) {
-            foreach ($request->hotels as $h) {
-                if (!empty($h['hotel_name'])) {
-                    $hData = $h;
-                    $hData['no_of_rooms'] = (!empty($h['no_of_rooms']) && is_numeric($h['no_of_rooms'])) ? (int)$h['no_of_rooms'] : 1;
-                    $hData['no_of_nights'] = (!empty($h['no_of_nights']) && is_numeric($h['no_of_nights'])) ? (int)$h['no_of_nights'] : 1;
-                    $hData['check_in'] = !empty($h['check_in']) ? $h['check_in'] : null;
-                    $hData['check_out'] = !empty($h['check_out']) ? $h['check_out'] : null;
-                    $hData['room_type'] = !empty($h['room_type']) ? $h['room_type'] : 'quad';
-                    $hData['room_number'] = !empty($h['room_number']) ? trim($h['room_number']) : null;
-                    $hData['gender'] = !empty($h['gender']) ? trim($h['gender']) : 'Any';
-                    $hData['location'] = !empty($h['location']) ? $h['location'] : 'makkah';
-                    $booking->hotels()->create($hData);
+            $booking->hotels()->delete();
+            if ($request->has('hotels') && is_array($request->hotels)) {
+                foreach ($request->hotels as $h) {
+                    if (!empty($h['hotel_name'])) {
+                        $hData = $h;
+                        $hData['no_of_rooms'] = (!empty($h['no_of_rooms']) && is_numeric($h['no_of_rooms'])) ? (int)$h['no_of_rooms'] : 1;
+                        $hData['no_of_nights'] = (!empty($h['no_of_nights']) && is_numeric($h['no_of_nights'])) ? (int)$h['no_of_nights'] : 1;
+                        $hData['check_in'] = !empty($h['check_in']) ? $h['check_in'] : null;
+                        $hData['check_out'] = !empty($h['check_out']) ? $h['check_out'] : null;
+                        $hData['room_type'] = !empty($h['room_type']) ? $h['room_type'] : 'quad';
+                        $hData['room_number'] = !empty($h['room_number']) ? trim($h['room_number']) : null;
+                        $hData['gender'] = !empty($h['gender']) ? trim($h['gender']) : 'Any';
+                        $hData['location'] = !empty($h['location']) ? $h['location'] : 'makkah';
+                        unset($hData['hotel_voucher']);
+                        $booking->hotels()->create($hData);
+                    }
                 }
             }
-        }
 
-        $booking->transports()->delete();
-        if ($request->has('transports')) {
-            foreach ($request->transports as $t) {
-                if (!empty($t['route'])) {
-                    $tData = $t;
-                    $tData['transport_type'] = !empty($t['transport_type']) ? $t['transport_type'] : 'bus';
-                    $tData['notes'] = $t['notes'] ?? null;
-                    $booking->transports()->create($tData);
+            $booking->transports()->delete();
+            if ($request->has('transports') && is_array($request->transports)) {
+                foreach ($request->transports as $t) {
+                    if (!empty($t['route'])) {
+                        $tData = $t;
+                        $tData['transport_type'] = !empty($t['transport_type']) ? $t['transport_type'] : 'bus';
+                        $tData['notes'] = $t['notes'] ?? null;
+                        $booking->transports()->create($tData);
+                    }
                 }
             }
-        }
 
-        $booking->visas()->delete();
-        if ($request->has('visas')) {
-            foreach ($request->visas as $v) {
-                if (!empty($v['passport_number']) || !empty($v['given_name'])) {
-                    $vData = $v;
-                    $vData['status'] = !empty($v['status']) ? $v['status'] : 'pending';
-                    $booking->visas()->create($vData);
+            $booking->visas()->delete();
+            if ($request->has('visas') && is_array($request->visas)) {
+                foreach ($request->visas as $v) {
+                    if (!empty($v['passport_number']) || !empty($v['given_name'])) {
+                        $vData = $v;
+                        $vData['status'] = !empty($v['status']) ? $v['status'] : 'pending';
+                        $vData['date_of_birth'] = !empty($v['date_of_birth']) ? $v['date_of_birth'] : null;
+                        $booking->visas()->create($vData);
+                    }
                 }
             }
+
+            logUserActivity('Booking Updated', 'Package: ' . $booking->package_type . ' | Total: ' . $booking->total_amount, $booking->id, 'Booking');
+
+            DB::commit();
+
+            return redirect()->route('booking.index')->with('success', 'Booking updated successfully!');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Booking update error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace'     => $e->getTraceAsString(),
+            ]);
+            return back()->withInput()->with('error', 'Booking update failed: ' . $e->getMessage());
         }
-
-        logUserActivity('Booking Updated', 'Package: ' . $booking->package_type . ' | Total: ' . $booking->total_amount, $booking->id, 'Booking');
-
-        return redirect()->route('booking.index')->with('success', 'Booking updated successfully!');
     }
 
     public function destroy($id)

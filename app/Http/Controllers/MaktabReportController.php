@@ -71,11 +71,13 @@ class MaktabReportController extends Controller
                     .gender-female { color: #9D174D; font-weight: bold; }
                 </style></head><body>';
                 echo '<table>';
-                echo '<tr><th colspan="9" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL MAKTAB REPORT & MANIFEST</th></tr>';
-                echo '<tr><td colspan="9" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+                echo '<tr><th colspan="11" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL MAKTAB REPORT & MANIFEST</th></tr>';
+                echo '<tr><td colspan="11" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
                 echo '<tr>
                     <th>SR</th>
                     <th>PILGRIM FULL NAME</th>
+                    <th>GIVEN NAME</th>
+                    <th>SURNAME</th>
                     <th>GENDER</th>
                     <th>PASSPORT NO</th>
                     <th>HOTEL & LOCATION</th>
@@ -123,6 +125,8 @@ class MaktabReportController extends Controller
                         echo '<tr>';
                         echo '<td class="center">' . ($sr++) . '</td>';
                         echo '<td><strong>' . htmlspecialchars($p->full_name ?? ($p->given_name . ' ' . $p->surname)) . '</strong></td>';
+                        echo '<td>' . htmlspecialchars($p->given_name ?? '—') . '</td>';
+                        echo '<td>' . htmlspecialchars($p->surname ?? '—') . '</td>';
                         echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($pGender) . '</td>';
                         echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($p->passport_number ?? '—') . '</td>';
                         echo '<td>' . $hotelDisplay . '</td>';
@@ -146,13 +150,13 @@ class MaktabReportController extends Controller
         $sheet->setTitle('Maktab Manifest');
         $sheet->setShowGridLines(true);
 
-        $sheet->mergeCells('A1:I1');
+        $sheet->mergeCells('A1:K1');
         $sheet->setCellValue('A1', 'PIRWANI HAJJ GROUP - OFFICIAL MAKTAB REPORT & MANIFEST');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(15)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E293B'));
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(28);
 
-        $sheet->mergeCells('A2:I2');
+        $sheet->mergeCells('A2:K2');
         $sheet->setCellValue('A2', $filterSummary);
         $sheet->getStyle('A2')->getFont()->setSize(10)->setItalic(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('64748B'));
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -161,13 +165,15 @@ class MaktabReportController extends Controller
         $headers = [
             'A' => ['title' => 'SR', 'width' => 8],
             'B' => ['title' => 'PILGRIM FULL NAME', 'width' => 28],
-            'C' => ['title' => 'GENDER', 'width' => 12],
-            'D' => ['title' => 'PASSPORT NO', 'width' => 16],
-            'E' => ['title' => 'HOTEL & LOCATION', 'width' => 32],
-            'F' => ['title' => 'ROOM DETAILS', 'width' => 24],
-            'G' => ['title' => 'MAKTAB / CAMP', 'width' => 24],
-            'H' => ['title' => 'PACKAGE', 'width' => 22],
-            'I' => ['title' => 'BOOKING / VOUCHER', 'width' => 18],
+            'C' => ['title' => 'GIVEN NAME', 'width' => 20],
+            'D' => ['title' => 'SURNAME', 'width' => 20],
+            'E' => ['title' => 'GENDER', 'width' => 12],
+            'F' => ['title' => 'PASSPORT NO', 'width' => 16],
+            'G' => ['title' => 'HOTEL & LOCATION', 'width' => 32],
+            'H' => ['title' => 'ROOM DETAILS', 'width' => 24],
+            'I' => ['title' => 'MAKTAB / CAMP', 'width' => 24],
+            'J' => ['title' => 'PACKAGE', 'width' => 22],
+            'K' => ['title' => 'BOOKING / VOUCHER', 'width' => 18],
         ];
 
         $headerRow = 4;
@@ -177,7 +183,7 @@ class MaktabReportController extends Controller
             $sheet->getColumnDimension($col)->setWidth($colInfo['width']);
         }
 
-        $headerRange = 'A' . $headerRow . ':I' . $headerRow;
+        $headerRange = 'A' . $headerRow . ':K' . $headerRow;
         $sheet->getStyle($headerRange)->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']],
@@ -223,31 +229,33 @@ class MaktabReportController extends Controller
 
                 $sheet->setCellValue('A' . $currentRow, $sr++);
                 $sheet->setCellValue('B' . $currentRow, $p->full_name ?? ($p->given_name . ' ' . $p->surname));
-                $sheet->setCellValue('C' . $currentRow, $pGender);
-                $sheet->setCellValue('D' . $currentRow, $p->passport_number ?: '—');
-                $sheet->setCellValue('E' . $currentRow, $hotelText);
-                $sheet->getStyle('E' . $currentRow)->getAlignment()->setWrapText(true);
-                $sheet->setCellValue('F' . $currentRow, $roomText);
-                $sheet->getStyle('F' . $currentRow)->getAlignment()->setWrapText(true);
-                $sheet->setCellValue('G' . $currentRow, $campName);
-                $sheet->setCellValue('H' . $currentRow, $pkgTitle);
-                $sheet->setCellValue('I' . $currentRow, $voucherNo);
+                $sheet->setCellValue('C' . $currentRow, $p->given_name ?? '—');
+                $sheet->setCellValue('D' . $currentRow, $p->surname ?? '—');
+                $sheet->setCellValue('E' . $currentRow, $pGender);
+                $sheet->setCellValue('F' . $currentRow, $p->passport_number ?: '—');
+                $sheet->setCellValue('G' . $currentRow, $hotelText);
+                $sheet->getStyle('G' . $currentRow)->getAlignment()->setWrapText(true);
+                $sheet->setCellValue('H' . $currentRow, $roomText);
+                $sheet->getStyle('H' . $currentRow)->getAlignment()->setWrapText(true);
+                $sheet->setCellValue('I' . $currentRow, $campName);
+                $sheet->setCellValue('J' . $currentRow, $pkgTitle);
+                $sheet->setCellValue('K' . $currentRow, $voucherNo);
 
-                $rowRange = 'A' . $currentRow . ':I' . $currentRow;
+                $rowRange = 'A' . $currentRow . ':K' . $currentRow;
                 $sheet->getStyle($rowRange)->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
                 $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('C' . $currentRow . ':D' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('F' . $currentRow . ':G' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('E' . $currentRow . ':F' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('I' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('K' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
                 if ($pGender === 'FEMALE') {
-                    $sheet->getStyle('C' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('9D174D'));
+                    $sheet->getStyle('E' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('9D174D'));
                 } else {
-                    $sheet->getStyle('C' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E3A8A'));
+                    $sheet->getStyle('E' . $currentRow)->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1E3A8A'));
                 }
 
-                $sheet->getStyle('D' . $currentRow)->getFont()->setBold(true);
-                $sheet->getStyle('G' . $currentRow)->getFont()->setBold(true);
+                $sheet->getStyle('F' . $currentRow)->getFont()->setBold(true);
+                $sheet->getStyle('I' . $currentRow)->getFont()->setBold(true);
                 $sheet->getStyle($rowRange)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
                 $sheet->getStyle($rowRange)->getBorders()->getAllBorders()->getColor()->setRGB('CBD5E1');
 

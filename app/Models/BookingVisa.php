@@ -18,6 +18,13 @@ class BookingVisa extends Model
         'status',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($visa) {
+            if (empty($visa->date_of_birth)) $visa->date_of_birth = null;
+        });
+    }
+
     public function booking()
     {
         return $this->belongsTo(Booking::class);

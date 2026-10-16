@@ -632,8 +632,16 @@
                                         <span>Full Name / Pilgrim</span>
                                     </label>
                                     <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="given-name">
+                                        <span>Given Name</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="surname">
+                                        <span>Surname</span>
+                                    </label>
+                                    <label class="column-filter-item">
                                         <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="father-name">
-                                        <span>Father Name</span>
+                                        <span>Husband / Father Name</span>
                                     </label>
                                     <label class="column-filter-item">
                                         <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="dob">
@@ -688,7 +696,9 @@
                                         <th style="width: 95px;" class="col-hajj-id">HAJJ ID</th>
                                         <th style="width: 90px;" class="col-hb">HB</th>
                                         <th style="width: 220px; text-align: left; padding-left: 10px;" class="col-name">FULL NAME</th>
-                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">FATHER NAME</th>
+                                        <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-given-name col-hidden">GIVEN NAME</th>
+                                        <th style="width: 140px; text-align: left; padding-left: 10px;" class="col-surname col-hidden">SURNAME</th>
+                                        <th style="width: 150px; text-align: left; padding-left: 10px;" class="col-father-name col-hidden">HUSBAND / FATHER NAME</th>
                                         <th style="width: 100px;" class="col-dob col-hidden">DOB</th>
                                         <th style="width: 110px;" class="col-passport">PASSPORT</th>
                                         <th style="width: 120px;" class="col-cnic col-hidden">CNIC</th>
@@ -748,6 +758,8 @@
                                                 <td class="text-center text-muted col-hajj-id">—</td>
                                                 <td class="text-center text-muted col-hb">—</td>
                                                 <td class="text-muted fst-italic col-name"><em>(Empty Room - {{ $room['total_capacity'] }} Beds Available)</em></td>
+                                                <td class="text-center text-muted col-given-name col-hidden">—</td>
+                                                <td class="text-center text-muted col-surname col-hidden">—</td>
                                                 <td class="text-center text-muted col-father-name col-hidden">—</td>
                                                 <td class="text-center text-muted col-dob col-hidden">—</td>
                                                 <td class="text-center text-muted col-passport">—</td>
@@ -829,6 +841,12 @@
                                                                 </button>
                                                             @endif
                                                         </div>
+                                                    </td>
+                                                    <td style="text-align: left; padding-left: 10px;" class="col-given-name col-hidden fw-semibold text-muted text-uppercase">
+                                                        {{ $occ['given_name'] ?? '—' }}
+                                                    </td>
+                                                    <td style="text-align: left; padding-left: 10px;" class="col-surname col-hidden fw-semibold text-muted text-uppercase">
+                                                        {{ $occ['surname'] ?? '—' }}
                                                     </td>
                                                     <td style="text-align: left; padding-left: 10px;" class="col-father-name col-hidden fw-semibold text-muted text-uppercase">
                                                         {{ $occ['father_name'] ?? '—' }}
@@ -925,7 +943,7 @@
                                         @endif
                                     @empty
                                         <tr>
-                                            <td colspan="16" class="text-center py-5 text-muted">
+                                            <td colspan="18" class="text-center py-5 text-muted">
                                                 <i class="mdi mdi-bed-empty fs-48 d-block mb-2 text-muted"></i>
                                                 <h5>No Pilgrims Found</h5>
                                                 <p>Try clearing filters above to view all bookings.</p>

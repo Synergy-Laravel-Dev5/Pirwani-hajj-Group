@@ -20,6 +20,14 @@ class BookingHotel extends Model
         'hotel_voucher'
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($hotel) {
+            if (empty($hotel->check_in)) $hotel->check_in = null;
+            if (empty($hotel->check_out)) $hotel->check_out = null;
+        });
+    }
+
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id');

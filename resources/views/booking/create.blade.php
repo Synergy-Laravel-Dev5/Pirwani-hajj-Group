@@ -49,7 +49,7 @@
                     <span class="text-danger fw-semibold">Balance: <strong id="bar_balance">0.00</strong></span>
                 </div>
 
-                <form action="{{ route('booking.store') }}" method="POST" id="bookingForm" enctype="multipart/form-data">
+                <form action="{{ route('booking.store') }}" method="POST" id="bookingForm" enctype="multipart/form-data" novalidate>
                     @csrf
 
                     {{-- TAB NAV --}}
@@ -2021,9 +2021,9 @@
                                class="form-control form-control-sm" placeholder="Muhammad Khan" oninput="onPersonManualName(${idx})">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label" style="font-size:12px;">Father Name</label>
+                        <label class="form-label" style="font-size:12px;">Husband / Father Name</label>
                         <input type="text" name="persons[${idx}][father_name]" id="person_father_name_${idx}"
-                               class="form-control form-control-sm" placeholder="e.g. Abdul Rehman">
+                               class="form-control form-control-sm" placeholder="Husband or Father Name">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label" style="font-size:12px;">Date of Birth</label>
@@ -2790,6 +2790,61 @@
         const mainBookingForm = document.querySelector('form[action*="booking"]');
         if (mainBookingForm) {
             mainBookingForm.addEventListener('submit', function(e) {
+                // 1. Validate Client / Company
+                const forClientRadio = document.getElementById('for_client');
+                const forCompanyRadio = document.getElementById('for_company');
+                const clientSelectEl = document.getElementById('clientSelect');
+                const companySelectEl = document.getElementById('companySelect');
+
+                if (forClientRadio && forClientRadio.checked) {
+                    if (!clientSelectEl || !clientSelectEl.value) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        const detailsTabLink = document.querySelector('a[href="#tab-details"]');
+                        if (detailsTabLink && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                            bootstrap.Tab.getOrCreateInstance(detailsTabLink).show();
+                        }
+                        alert('⚠️ Please select a Client before saving the booking.');
+                        if ($(clientSelectEl).data('select2')) {
+                            $(clientSelectEl).select2('open');
+                        } else {
+                            clientSelectEl.focus();
+                        }
+                        return false;
+                    }
+                } else if (forCompanyRadio && forCompanyRadio.checked) {
+                    if (!companySelectEl || !companySelectEl.value) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        const detailsTabLink = document.querySelector('a[href="#tab-details"]');
+                        if (detailsTabLink && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                            bootstrap.Tab.getOrCreateInstance(detailsTabLink).show();
+                        }
+                        alert('⚠️ Please select a Company before saving the booking.');
+                        if ($(companySelectEl).data('select2')) {
+                            $(companySelectEl).select2('open');
+                        } else {
+                            companySelectEl.focus();
+                        }
+                        return false;
+                    }
+                }
+
+                // 2. Validate Pax
+                const paxInput = document.getElementById('no_of_pax');
+                if (paxInput && (parseInt(paxInput.value) || 0) < 1) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const detailsTabLink = document.querySelector('a[href="#tab-details"]');
+                    if (detailsTabLink && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                        bootstrap.Tab.getOrCreateInstance(detailsTabLink).show();
+                    }
+                    alert('⚠️ No of Pax must be at least 1.');
+                    paxInput.focus();
+                    return false;
+                }
+
+                // 3. Form Submit Check for Full Rooms - STRICT HARD BLOCK
                 const fullRoomInputs = document.querySelectorAll('.hotel-room-number-input[data-is-full="true"]');
                 if (fullRoomInputs.length > 0) {
                     e.preventDefault();
@@ -2814,6 +2869,13 @@
                     
                     fullRoomInputs[0].focus();
                     return false;
+                }
+
+                // Visual feedback on valid submit
+                const submitBtn = mainBookingForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin me-1"></i> Saving Booking...';
                 }
             });
         }
