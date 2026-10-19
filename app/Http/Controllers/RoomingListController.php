@@ -202,14 +202,10 @@ class RoomingListController extends Controller
                             }
                             echo '<td class="center">' . htmlspecialchars(!empty($occ['hajj_id']) ? $occ['hajj_id'] : '—') . '</td>';
                             echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars(!empty($occ['hb_number']) ? $occ['hb_number'] : '—') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['passport'] ?? '—') . '</td>';
+                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($occ['passport'] ?? '—') . '</td>';
                             echo '<td class="center">' . htmlspecialchars($occ['date_of_issue'] ?? '—') . '</td>';
                             echo '<td class="center">' . htmlspecialchars($occ['passport_expiry_date'] ?? '—') . '</td>';
-                            $displayName = $occ['name'] ?? '—';
-                            if (!empty($occ['is_family_head']) && ($occ['booking_pax'] ?? 1) > 1) {
-                                $displayName .= ' (Family Head)';
-                            }
-                            echo '<td><strong>' . htmlspecialchars($displayName) . '</strong></td>';
+                            echo '<td><strong>' . htmlspecialchars($occ['name'] ?? '—') . '</strong></td>';
                             echo '<td>' . htmlspecialchars($occ['given_name'] ?? '—') . '</td>';
                             echo '<td>' . htmlspecialchars($occ['surname'] ?? '—') . '</td>';
                             echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($occGender) . '</td>';
@@ -418,11 +414,7 @@ class RoomingListController extends Controller
                     $sheet->setCellValue('E' . $currentRow, $occ['passport'] ?? '—');
                     $sheet->setCellValue('F' . $currentRow, $occ['date_of_issue'] ?? '—');
                     $sheet->setCellValue('G' . $currentRow, $occ['passport_expiry_date'] ?? '—');
-                    $displayName = $occ['name'] ?? '—';
-                    if (!empty($occ['is_family_head']) && ($occ['booking_pax'] ?? 1) > 1) {
-                        $displayName .= ' (Family Head)';
-                    }
-                    $sheet->setCellValue('H' . $currentRow, $displayName);
+                    $sheet->setCellValue('H' . $currentRow, $occ['name'] ?? '—');
                     $sheet->setCellValue('I' . $currentRow, $occ['given_name'] ?? '—');
                     $sheet->setCellValue('J' . $currentRow, $occ['surname'] ?? '—');
 
@@ -867,7 +859,7 @@ class RoomingListController extends Controller
         $unassignedOccupants = [];
 
         foreach ($allBookings as $b) {
-            $persons = $b->persons ? $b->persons->sortBy('id')->values() : collect();
+            $persons = $b->persons;
             
             // If booking has no persons created yet, generate virtual representation
             if (!$persons || $persons->count() === 0) {
@@ -902,15 +894,14 @@ class RoomingListController extends Controller
                     4 => 'Quad',
                     5 => 'Quint',
                     6 => 'Six / Sharing',
-                    default => 'Sharing (' . $pax . ')',
+                    default => 'Sharing (' . $pax . ' Beds)',
                 };
             }
             if (in_array(strtolower($bookedRoomType), ['six', 'sharing', '6', 'six-bed', '6-bed'])) {
                 $bookedRoomType = 'Six / Sharing';
             }
 
-            foreach ($persons as $pIdx => $p) {
-                $isFamilyHead = ($pIdx === 0);
+            foreach ($persons as $p) {
                 $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
                 $hbNumber = !empty($p->hb_number) ? BookingPerson::formatHbNumber($p->hb_number) : '';
                 $gender = !empty($p->gender) ? ucfirst(strtolower($p->gender)) : 'Male';
@@ -945,8 +936,6 @@ class RoomingListController extends Controller
                         'allocation_id'     => null,
                         'person_id'         => $p->id,
                         'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
-                        'is_family_head'    => $isFamilyHead,
-                        'person_order'      => $pIdx,
                         'hajj_id'           => $hajjId,
                         'hb_number'         => $hbNumber,
                         'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
@@ -1006,8 +995,6 @@ class RoomingListController extends Controller
                             'allocation_id'     => $alloc->id ?? null,
                             'person_id'         => $p->id,
                             'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
-                            'is_family_head'    => $isFamilyHead,
-                            'person_order'      => $pIdx,
                             'hajj_id'           => $hajjId,
                             'hb_number'         => $hbNumber,
                             'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
@@ -1051,8 +1038,13 @@ class RoomingListController extends Controller
                             $groupKey = strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
 
                             if (!isset($groupedRooms[$groupKey])) {
-                                $customCap = HotelRoomCapacity::findCustomCapacity($hName, $displayRoomNo, $loc);
-                                $baseCap = ($customCap && $customCap->bed_capacity > 0) ? (int) $customCap->bed_capacity : HotelRoomCapacity::standardTypeCapacity($rType);
+                                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $displayRoomNo, $rType, $loc);
+                                $customCap = HotelRoomCapacity::where(function ($q) use ($displayRoomNo) {
+                                    foreach (HotelRoomCapacity::normalizeRoomNumber($displayRoomNo) as $v) {
+                                        $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                                    }
+                                })->first();
+
                                 $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;
                                 $effectiveCap = max(1, $baseCap);
                                 $roomGender = !empty($customCap->gender) && $customCap->gender !== 'Any' ? $customCap->gender : $rGender;
@@ -1234,40 +1226,6 @@ class RoomingListController extends Controller
             $totalBedsOccupied += $unassignedPilgrimsCount;
         }
 
-        // Sort occupants in every room (including __pending_allocation__) so that:
-        // 1) Occupants from the same booking stay grouped together (booking_id ASC)
-        // 2) The Family Head (Person #1, order 0) appears strictly FIRST
-        // 3) Other family members follow in order (person_order ASC)
-        $occupantSorter = function ($a, $b) {
-            $bIdA = $a['booking_id'] ?? 0;
-            $bIdB = $b['booking_id'] ?? 0;
-            if ($bIdA !== $bIdB) {
-                return $bIdA <=> $bIdB;
-            }
-            $isHeadA = !empty($a['is_family_head']) ? 1 : 0;
-            $isHeadB = !empty($b['is_family_head']) ? 1 : 0;
-            if ($isHeadA !== $isHeadB) {
-                return $isHeadB <=> $isHeadA; // 1 (Family Head) comes first
-            }
-            $ordA = $a['person_order'] ?? 0;
-            $ordB = $b['person_order'] ?? 0;
-            if ($ordA !== $ordB) {
-                return $ordA <=> $ordB;
-            }
-            return strcmp($a['name'] ?? '', $b['name'] ?? '');
-        };
-
-        foreach ($groupedRooms as &$room) {
-            if (!empty($room['occupants'])) {
-                usort($room['occupants'], $occupantSorter);
-            }
-        }
-        unset($room);
-
-        if (!empty($unassignedOccupants)) {
-            usort($unassignedOccupants, $occupantSorter);
-        }
-
         return compact(
             'groupedRooms',
             'unassignedOccupants',
@@ -1312,7 +1270,9 @@ class RoomingListController extends Controller
         $location = $request->location ? trim($request->location) : null;
         $gender = $request->gender ? trim($request->gender) : 'Any';
 
-        $record = HotelRoomCapacity::findCustomCapacity($hotelName, $roomNumber, $location);
+        $record = HotelRoomCapacity::whereRaw('LOWER(TRIM(hotel_name)) = ?', [strtolower($hotelName)])
+            ->whereRaw('LOWER(TRIM(room_number)) = ?', [strtolower($roomNumber)])
+            ->first();
 
         if (!$record) {
             $record = new HotelRoomCapacity();
