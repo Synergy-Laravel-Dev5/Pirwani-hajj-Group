@@ -26,7 +26,11 @@ class BookingController extends Controller
 
         $trashCount = Booking::onlyTrashed()->count();
 
-        return view('booking.index', compact('bookings', 'trashCount', 'package', 'year'));
+        $totalPax = $bookings->sum(function($b) {
+            return max($b->persons->count(), (int)($b->no_of_pax ?: 0));
+        });
+
+        return view('booking.index', compact('bookings', 'trashCount', 'package', 'year', 'totalPax'));
     }
 
     public function create()
@@ -40,8 +44,20 @@ class BookingController extends Controller
         $packages  = Package::with(['accommodations', 'transportFlights', 'transports', 'transportTrains'])->latest()->get();
         $nextHbNumber = \App\Models\BookingPerson::generateNextHbNumber();
         $nextHajjId   = \App\Models\BookingPerson::generateNextHajjId();
+        $vehicles  = \App\Models\Vehicle::where('status', 'active')->orderBy('vehicle_type')->orderBy('brand_name')->get();
+        if ($vehicles->isEmpty()) {
+            $vehicles = \App\Models\Vehicle::all();
+        }
+        $routes = \App\Models\Route::where('status', 'active')->orderBy('start_place')->get();
+        if ($routes->isEmpty()) {
+            $routes = \App\Models\Route::all();
+        }
+        $travelRoutes = \App\Models\TravelRoute::where('status', 'active')->orderBy('name')->get();
+        if ($travelRoutes->isEmpty()) {
+            $travelRoutes = \App\Models\TravelRoute::all();
+        }
 
-        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages', 'nextHbNumber', 'nextHajjId'));
+        return view('booking.create', compact('clients', 'companies', 'years', 'airlines', 'hotels', 'roomTypes', 'packages', 'nextHbNumber', 'nextHajjId', 'vehicles', 'routes', 'travelRoutes'));
     }
 
     public function store(Request $request)
@@ -190,6 +206,8 @@ class BookingController extends Controller
                         $personData['dob'] = !empty($person['dob']) ? $person['dob'] : null;
                         $personData['passport_expiry_date'] = !empty($person['passport_expiry_date']) ? $person['passport_expiry_date'] : null;
 
+                        $personData['ticket_status'] = !empty($person['ticket_status']) ? $person['ticket_status'] : 'on_ticket';
+
                         if ($request->hasFile("persons.{$index}.photo")) {
                             try {
                                 $file = $request->file("persons.{$index}.photo");
@@ -201,7 +219,18 @@ class BookingController extends Controller
                             }
                         }
 
-                        unset($personData['existing_photo']);
+                        if ($request->hasFile("persons.{$index}.passport_image")) {
+                            try {
+                                $pFile = $request->file("persons.{$index}.passport_image");
+                                $pFilename = 'pass_' . time() . '_' . $index . '_' . uniqid() . '.' . $pFile->getClientOriginalExtension();
+                                $pFile->move($uploadDir, $pFilename);
+                                $personData['passport_image'] = 'uploads/booking_persons/' . $pFilename;
+                            } catch (\Throwable $pe) {
+                                Log::warning('Person passport upload skipped: ' . $pe->getMessage());
+                            }
+                        }
+
+                        unset($personData['existing_photo'], $personData['existing_passport_image']);
                         $booking->persons()->create($personData);
                     }
                 }
@@ -292,9 +321,20 @@ class BookingController extends Controller
         if (empty($bookingHbNumber)) {
             $bookingHbNumber = \App\Models\BookingPerson::generateNextHbNumber($booking->id);
         }
-        $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($bookingHbNumber);
+        $vehicles  = \App\Models\Vehicle::where('status', 'active')->orderBy('vehicle_type')->orderBy('brand_name')->get();
+        if ($vehicles->isEmpty()) {
+            $vehicles = \App\Models\Vehicle::all();
+        }
+        $routes = \App\Models\Route::where('status', 'active')->orderBy('start_place')->get();
+        if ($routes->isEmpty()) {
+            $routes = \App\Models\Route::all();
+        }
+        $travelRoutes = \App\Models\TravelRoute::where('status', 'active')->orderBy('name')->get();
+        if ($travelRoutes->isEmpty()) {
+            $travelRoutes = \App\Models\TravelRoute::all();
+        }
 
-        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'roomTypes', 'packages', 'bookingHbNumber'));
+        return view('booking.edit', compact('booking', 'clients', 'companies', 'years', 'transactionsPaid', 'airlines', 'hotels', 'roomTypes', 'packages', 'bookingHbNumber', 'vehicles', 'routes', 'travelRoutes'));
     }
 
     public function update(Request $request, $id)
@@ -450,6 +490,8 @@ class BookingController extends Controller
                         $pData['dob'] = !empty($p['dob']) ? $p['dob'] : null;
                         $pData['passport_expiry_date'] = !empty($p['passport_expiry_date']) ? $p['passport_expiry_date'] : null;
 
+                        $pData['ticket_status'] = !empty($p['ticket_status']) ? $p['ticket_status'] : 'on_ticket';
+
                         if ($request->hasFile("persons.{$index}.photo")) {
                             try {
                                 $file = $request->file("persons.{$index}.photo");
@@ -463,7 +505,20 @@ class BookingController extends Controller
                             $pData['photo'] = $p['existing_photo'];
                         }
 
-                        unset($pData['existing_photo']);
+                        if ($request->hasFile("persons.{$index}.passport_image")) {
+                            try {
+                                $pFile = $request->file("persons.{$index}.passport_image");
+                                $pFilename = 'pass_' . time() . '_' . $index . '_' . uniqid() . '.' . $pFile->getClientOriginalExtension();
+                                $pFile->move($uploadDir, $pFilename);
+                                $pData['passport_image'] = 'uploads/booking_persons/' . $pFilename;
+                            } catch (\Throwable $pe) {
+                                Log::warning('Person passport upload skipped on update: ' . $pe->getMessage());
+                            }
+                        } elseif (!empty($p['existing_passport_image'])) {
+                            $pData['passport_image'] = $p['existing_passport_image'];
+                        }
+
+                        unset($pData['existing_photo'], $pData['existing_passport_image']);
                         $booking->persons()->create($pData);
                     }
                 }

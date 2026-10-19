@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\HajjApplication;
 use App\Models\Package;
+use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -142,9 +143,64 @@ class HajjApplicationController extends Controller
         ]);
 
         $application = HajjApplication::findOrFail($id);
-        $application->update(['status' => $request->status]);
+        $oldStatus = $application->status;
+        $newStatus = $request->status;
 
-        return back()->with('success', 'Application status updated successfully.');
+        $clientId = $application->client_id;
+        $clientMessage = '';
+
+        if ($newStatus === 'approved') {
+            $clientName = trim($application->given_name . ' ' . ($application->surname ?? ''));
+            if (empty($clientName)) {
+                $clientName = 'Applicant #' . $application->id;
+            }
+
+            // Find existing client by cnic, passport, or phone
+            $client = null;
+            if (!empty($application->client_id)) {
+                $client = Client::find($application->client_id);
+            }
+            if (!$client && !empty($application->cnic_no)) {
+                $client = Client::where('cnic', $application->cnic_no)->first();
+            }
+            if (!$client && !empty($application->passport_no)) {
+                $client = Client::where('passport_number', $application->passport_no)->first();
+            }
+            if (!$client && !empty($application->mobile_no)) {
+                $client = Client::where('phone', $application->mobile_no)->first();
+            }
+
+            if (!$client) {
+                $client = Client::create([
+                    'name'            => $clientName,
+                    'package_id'      => $application->package_id,
+                    'phone'           => $application->mobile_no,
+                    'cnic'            => $application->cnic_no,
+                    'passport_number' => $application->passport_no,
+                    'type'            => 'customer',
+                    'status'          => 'active',
+                ]);
+                $clientId = $client->id;
+                $clientMessage = " & Client '{$clientName}' auto-created in system!";
+            } else {
+                $clientId = $client->id;
+                $client->update(array_filter([
+                    'name'            => $client->name ?: $clientName,
+                    'package_id'      => $client->package_id ?: $application->package_id,
+                    'phone'           => $client->phone ?: $application->mobile_no,
+                    'cnic'            => $client->cnic ?: $application->cnic_no,
+                    'passport_number' => $client->passport_number ?: $application->passport_no,
+                ]));
+                $clientMessage = " & linked to Client '{$client->name}'!";
+            }
+        }
+
+        $application->update([
+            'status' => $newStatus,
+            'client_id' => $clientId,
+        ]);
+
+        return back()->with('success', 'Application status updated to ' . ucfirst($newStatus) . $clientMessage);
     }
 
     /**

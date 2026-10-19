@@ -482,39 +482,221 @@ class RoomingListController extends Controller
     }
 
     /**
-     * Bulk Assign Selected Pilgrims (via Checkboxes) to a Room
+     * Resolve Pilgrim IDs from any user input string (Haji IDs, HB numbers, Passports, Booking refs, Names)
+     */
+    private function resolvePilgrimsFromInput(?string $input, array $existingIds = []): array
+    {
+        $personIds = $existingIds;
+        if (empty($input)) {
+            return array_values(array_unique(array_filter($personIds)));
+        }
+
+        $rawTokens = preg_split('/[,;\/\n\r]+/', trim($input), -1, PREG_SPLIT_NO_EMPTY);
+        $allTokens = [];
+
+        foreach ($rawTokens as $rt) {
+            $rt = trim($rt);
+            if (empty($rt)) continue;
+
+            // Check if token is a range: e.g. 27001-27003 or PW27001-PW27003
+            if (preg_match('/^(?:PW)?(?:27)?(\d+)\s*[-–—to]+\s*(?:PW)?(?:27)?(\d+)$/i', $rt, $rm)) {
+                $start = min((int)$rm[1], (int)$rm[2]);
+                $end = max((int)$rm[1], (int)$rm[2]);
+                if (($end - $start) <= 50) {
+                    for ($n = $start; $n <= $end; $n++) {
+                        $allTokens[] = (string)$n;
+                    }
+                    continue;
+                }
+            }
+
+            // Handle space separated "PW 27001" or "HB 0005"
+            $spaceParts = preg_split('/\s+/', $rt, -1, PREG_SPLIT_NO_EMPTY);
+            if (count($spaceParts) === 2 && (preg_match('/^(?:PW|HB|BK)$/i', $spaceParts[0]) && preg_match('/^\d+$/', $spaceParts[1]))) {
+                $allTokens[] = $spaceParts[0] . $spaceParts[1];
+            } elseif (count($spaceParts) > 1 && !preg_match('/[a-z]{3,}/i', $rt)) {
+                foreach ($spaceParts as $sp) {
+                    $allTokens[] = $sp;
+                }
+            } else {
+                $allTokens[] = $rt;
+            }
+        }
+
+        $allTokens = array_unique(array_filter($allTokens));
+
+        $candidateHajjIds    = [];
+        $candidateHbNumbers  = [];
+        $candidatePassports  = [];
+        $candidatePersonIds  = [];
+        $candidateBookingIds = [];
+        $nameTerms           = [];
+
+        foreach ($allTokens as $token) {
+            $cleanToken   = trim($token);
+            $upper        = strtoupper($cleanToken);
+            $noPunct      = preg_replace('/[^A-Za-z0-9]/', '', $cleanToken);
+            $upperNoPunct = strtoupper($noPunct);
+
+            // 1. HB Number (e.g. HB0005, HB 5, HB-0005)
+            if (preg_match('/^HB\s*[-_]?\s*(\d+)$/i', $cleanToken, $m)) {
+                $candidateHbNumbers[] = 'HB' . str_pad((int)$m[1], 4, '0', STR_PAD_LEFT);
+                continue;
+            }
+
+            // 2. Booking Reference (e.g. BK-1, Booking #1)
+            if (preg_match('/^(?:BK|BOOKING)\s*[-_#]?\s*(\d+)$/i', $cleanToken, $m)) {
+                $candidateBookingIds[] = (int)$m[1];
+                continue;
+            }
+
+            // 3. Hajj ID format: e.g. PW27001, PW-27001, 27001, or 001
+            if (preg_match('/^(?:PW)?\s*[-_]?\s*(?:27)?\s*[-_]?\s*(\d{1,5})$/i', $cleanToken, $m)) {
+                $num = (int)$m[1];
+                $hId = 'PW27' . str_pad($num, 3, '0', STR_PAD_LEFT);
+                $candidateHajjIds[] = $hId;
+                $candidateHajjIds[] = $upperNoPunct;
+                $candidateHajjIds[] = $cleanToken;
+                // If small number > 100, could also be a direct person ID
+                if ($num > 100 && $num < 27000) {
+                    $candidatePersonIds[] = $num;
+                }
+                continue;
+            }
+
+            // 4. Passport or direct code
+            $candidatePassports[] = $upper;
+            $candidatePassports[] = $cleanToken;
+
+            if (is_numeric($cleanToken)) {
+                $candidatePersonIds[] = (int)$cleanToken;
+            }
+
+            if (strlen($cleanToken) >= 3 && !is_numeric($cleanToken)) {
+                $nameTerms[] = $cleanToken;
+            }
+        }
+
+        $candidateHajjIds    = array_unique(array_filter($candidateHajjIds));
+        $candidateHbNumbers  = array_unique(array_filter($candidateHbNumbers));
+        $candidatePassports  = array_unique(array_filter($candidatePassports));
+        $candidatePersonIds  = array_unique(array_filter($candidatePersonIds));
+        $candidateBookingIds = array_unique(array_filter($candidateBookingIds));
+
+        $matchedPersons = BookingPerson::whereHas('booking', function ($bq) {
+            $bq->whereNull('deleted_at')
+               ->whereNotIn('status', ['cancelled', 'rejected']);
+        })->where(function ($q) use (
+            $candidateHajjIds,
+            $candidateHbNumbers,
+            $candidatePassports,
+            $candidatePersonIds,
+            $candidateBookingIds,
+            $nameTerms
+        ) {
+            $hasWhere = false;
+            if (!empty($candidateHajjIds)) {
+                $q->whereIn('hajj_id', $candidateHajjIds);
+                $hasWhere = true;
+            }
+            if (!empty($candidateHbNumbers)) {
+                $hasWhere ? $q->orWhereIn('hb_number', $candidateHbNumbers) : $q->whereIn('hb_number', $candidateHbNumbers);
+                $hasWhere = true;
+            }
+            if (!empty($candidatePassports)) {
+                $hasWhere ? $q->orWhereIn('passport_number', $candidatePassports) : $q->whereIn('passport_number', $candidatePassports);
+                $hasWhere = true;
+            }
+            if (!empty($candidateBookingIds)) {
+                $hasWhere ? $q->orWhereIn('booking_id', $candidateBookingIds) : $q->whereIn('booking_id', $candidateBookingIds);
+                $hasWhere = true;
+            }
+            if (!empty($candidatePersonIds)) {
+                $hasWhere ? $q->orWhereIn('id', $candidatePersonIds) : $q->whereIn('id', $candidatePersonIds);
+                $hasWhere = true;
+            }
+            foreach ($nameTerms as $nt) {
+                $hasWhere ? $q->orWhere('full_name', 'LIKE', '%' . $nt . '%') : $q->where('full_name', 'LIKE', '%' . $nt . '%');
+                $hasWhere = true;
+            }
+        })->pluck('id')->toArray();
+
+        return array_values(array_unique(array_merge($personIds, $matchedPersons)));
+    }
+
+    /**
+     * AJAX Live Lookup for Pilgrims by Haji ID, HB number, Passport, or Name
+     */
+    public function lookupPilgrims(Request $request)
+    {
+        $term = trim($request->get('term', ''));
+        if (empty($term)) {
+            return response()->json(['success' => true, 'pilgrims' => [], 'count' => 0]);
+        }
+
+        $personIds = $this->resolvePilgrimsFromInput($term);
+        if (empty($personIds)) {
+            return response()->json(['success' => true, 'pilgrims' => [], 'count' => 0]);
+        }
+
+        $persons = BookingPerson::with(['roomAllocations', 'booking.hotels'])
+            ->whereIn('id', $personIds)
+            ->get();
+
+        $list = [];
+        foreach ($persons as $p) {
+            $latestAlloc = $p->roomAllocations->last();
+            $bHotel = $p->booking?->hotels?->first();
+            $rNum = $latestAlloc?->room_number ?: ($p->room_number ?: ($bHotel?->room_number ?: null));
+            $isPending = empty($rNum) || in_array(strtoupper(trim((string)$rNum)), ['PENDING', 'UNASSIGNED', '—', '-']);
+
+            $list[] = [
+                'id'              => $p->id,
+                'name'            => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
+                'hajj_id'         => $p->hajj_id ?: '—',
+                'hb_number'       => $p->hb_number ?: ($p->booking ? 'HB' . str_pad($p->booking->id, 4, '0', STR_PAD_LEFT) : '—'),
+                'passport_number' => $p->passport_number ?: '—',
+                'gender'          => $p->gender ?: 'Male',
+                'booking_id'      => $p->booking_id,
+                'hotel_name'      => $latestAlloc?->hotel_name ?: ($p->hotel_name ?: ($bHotel?->hotel_name ?: 'Anjum Makkah')),
+                'room_number'     => $isPending ? '' : $rNum,
+                'room_type'       => $latestAlloc?->room_type ?: ($p->room_type ?: ($bHotel?->room_type ? ucfirst($bHotel->room_type) : 'Quad')),
+                'location'        => $latestAlloc?->location ?: ($p->location ?: ($bHotel?->location ?: 'makkah')),
+                'is_pending'      => $isPending,
+            ];
+        }
+
+        return response()->json([
+            'success'  => true,
+            'pilgrims' => $list,
+            'count'    => count($list),
+        ]);
+    }
+
+    /**
+     * Assign Selected Pilgrims (via Checkboxes or Haji ID) to a Room
      */
     public function assignRoom(Request $request)
     {
         $request->validate([
             'person_ids'   => 'nullable|array',
             'haji_ids'     => 'nullable|string',
-            'hotel_name'   => 'required|string|max:191',
+            'hotel_name'   => 'nullable|string|max:191',
             'room_number'  => 'nullable|string|max:100',
             'room_type'    => 'nullable|string|max:100',
             'location'     => 'nullable|string|max:100',
             'gender'       => 'nullable|string|max:50',
         ]);
 
-        $personIds  = $request->person_ids ? (array)$request->person_ids : [];
-
-        // If haji_ids provided (single or comma/space-separated)
+        // Prioritize haji_ids if user explicitly entered them in the Haji ID input
+        $personIds = [];
         if (!empty($request->haji_ids)) {
-            $rawHaji = preg_split('/[\s,]+/', trim($request->haji_ids), -1, PREG_SPLIT_NO_EMPTY);
-            if (!empty($rawHaji)) {
-                $matchedByHaji = BookingPerson::where(function ($q) use ($rawHaji) {
-                    $q->whereIn('hajj_id', $rawHaji)
-                      ->orWhereIn('hb_number', $rawHaji)
-                      ->orWhereIn('passport_number', $rawHaji)
-                      ->orWhereIn('id', $rawHaji);
-                    foreach ($rawHaji as $h) {
-                        $q->orWhere('hajj_id', 'LIKE', '%' . $h . '%')
-                          ->orWhere('hb_number', 'LIKE', '%' . $h . '%');
-                    }
-                })->pluck('id')->toArray();
+            $personIds = $this->resolvePilgrimsFromInput($request->haji_ids);
+        }
 
-                $personIds = array_unique(array_merge($personIds, $matchedByHaji));
-            }
+        // If no haji_ids or couldn't resolve, fallback to person_ids from checkboxes
+        if (empty($personIds) && !empty($request->person_ids)) {
+            $personIds = array_values(array_unique(array_filter((array)$request->person_ids)));
         }
 
         if (empty($personIds)) {
@@ -525,11 +707,40 @@ class RoomingListController extends Controller
             return back()->with('error', $errMsg);
         }
 
-        $hotelName  = trim($request->hotel_name);
-        $roomNumber = !empty($request->room_number) ? trim($request->room_number) : null;
-        $roomType   = $request->room_type ? trim($request->room_type) : 'Quad';
-        $location   = $request->location ? trim($request->location) : 'makkah';
+        $hotelName  = trim((string)$request->hotel_name);
+        $rawRoomNo  = trim((string)$request->room_number);
+        $roomNumber = (!empty($rawRoomNo) && !in_array(strtoupper($rawRoomNo), ['PENDING', 'UNASSIGNED', '—', '-'])) ? $rawRoomNo : null;
+        $roomType   = $request->room_type ? ucfirst(trim($request->room_type)) : 'Quad';
+        $location   = $request->location ? strtolower(trim($request->location)) : 'makkah';
         $gender     = $request->gender ? trim($request->gender) : 'Any';
+
+        if (empty($location) || $location === 'unassigned') {
+            $location = 'makkah';
+        }
+
+        // If hotelName is empty or placeholder, resolve a valid registered hotel
+        $isInvalidHotel = empty($hotelName) || in_array(strtolower($hotelName), [
+            'pending room allocation',
+            'pending allocation',
+            'unassigned',
+            'unspecified hotel',
+            '—',
+            '-'
+        ]);
+
+        if ($isInvalidHotel) {
+            $firstPerson = BookingPerson::with('booking.hotels')->find($personIds[0] ?? 0);
+            $matchedBHotel = $firstPerson?->booking?->hotels?->first(fn($h) => strtolower($h->location) === $location && !empty($h->hotel_name));
+            if (!$matchedBHotel) {
+                $matchedBHotel = $firstPerson?->booking?->hotels?->first(fn($h) => !empty($h->hotel_name));
+            }
+            if ($matchedBHotel && !empty($matchedBHotel->hotel_name)) {
+                $hotelName = $matchedBHotel->hotel_name;
+            } else {
+                $firstRegHotel = Hotel::orderBy('name')->first();
+                $hotelName = $firstRegHotel ? $firstRegHotel->name : 'Anjum Makkah';
+            }
+        }
 
         $updatedCount = 0;
         foreach ($personIds as $pid) {
@@ -539,17 +750,8 @@ class RoomingListController extends Controller
                     // Update or create allocation for this person at this specific location & hotel stage
                     $allocation = BookingPersonRoomAllocation::where('booking_person_id', $person->id)
                         ->where(function ($q) use ($location, $hotelName) {
-                            $q->where(function ($sub) use ($location, $hotelName) {
-                                $sub->where('location', $location)->where('hotel_name', $hotelName);
-                            })->orWhere(function ($sub) use ($location) {
-                                $sub->where('location', $location)
-                                    ->where(function ($h) {
-                                        $h->whereNull('hotel_name')
-                                          ->orWhere('hotel_name', '')
-                                          ->orWhere('hotel_name', 'Pending Room Allocation')
-                                          ->orWhere('hotel_name', 'Unspecified Hotel');
-                                    });
-                            });
+                            $q->where('location', $location)
+                              ->orWhereRaw('LOWER(TRIM(hotel_name)) = ?', [strtolower(trim($hotelName))]);
                         })->first();
 
                     if (!$allocation) {
@@ -565,7 +767,17 @@ class RoomingListController extends Controller
                     $allocation->gender      = $gender;
                     $allocation->save();
 
-                    // Also sync to person model as primary/latest room for backwards compatibility
+                    // Clean up any old duplicate or unassigned allocations for this person at this stage
+                    BookingPersonRoomAllocation::where('booking_person_id', $person->id)
+                        ->where(function ($q) use ($location) {
+                            $q->where('location', $location)
+                              ->orWhere('location', 'unassigned')
+                              ->orWhereNull('location');
+                        })
+                        ->where('id', '!=', $allocation->id)
+                        ->delete();
+
+                    // Sync to person model
                     $person->room_number = $roomNumber;
                     $person->room_type   = $roomType;
                     $person->hotel_name  = $hotelName;
@@ -578,15 +790,18 @@ class RoomingListController extends Controller
                     // Sync/Ensure BookingHotel on this booking
                     $bHotel = BookingHotel::where('booking_id', $person->booking_id)
                         ->where(function ($q) use ($location, $hotelName) {
-                            $q->where('location', $location)->orWhere('hotel_name', $hotelName);
+                            $q->where('location', $location)
+                              ->orWhereRaw('LOWER(TRIM(hotel_name)) = ?', [strtolower(trim($hotelName))]);
                         })->first();
 
                     if ($bHotel) {
-                        if (!empty($roomNumber) || empty($bHotel->room_number)) {
+                        $bHotel->hotel_name  = $hotelName;
+                        if (!empty($roomNumber)) {
                             $bHotel->room_number = $roomNumber;
-                            $bHotel->room_type = strtolower($roomType);
-                            $bHotel->save();
                         }
+                        $bHotel->room_type   = strtolower($roomType);
+                        $bHotel->gender      = $gender;
+                        $bHotel->save();
                     } else {
                         BookingHotel::create([
                             'booking_id'   => $person->booking_id,
@@ -853,7 +1068,7 @@ class RoomingListController extends Controller
             });
         }
 
-        $allBookings = $bookingQuery->latest()->get();
+        $allBookings = $bookingQuery->orderBy('id', 'asc')->get();
 
         $groupedRooms = [];
         $unassignedOccupants = [];
@@ -1029,11 +1244,13 @@ class RoomingListController extends Controller
                         if (!$hasExplicitHotel && !$hasExplicitRoom) {
                             $unassignedOccupants[] = $occData;
                         } else {
-                            $hName = $hasExplicitHotel ? $hName : 'Unspecified Hotel';
+                            $hName = $hasExplicitHotel ? $hName : ($matchedHotel?->hotel_name ?: 'Anjum Makkah');
                             $rType = ucfirst($rType ?: 'Quad');
-                            $loc = $loc ?: 'makkah';
+                            $loc = (!empty($loc) && $loc !== 'unassigned') ? $loc : 'makkah';
                             $displayRoomNo = $hasExplicitRoom ? $rNum : 'PENDING';
                             $occData['room_number'] = $displayRoomNo;
+                            $occData['hotel_name'] = $hName;
+                            $occData['location'] = $loc;
 
                             $groupKey = strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
 
@@ -1162,15 +1379,30 @@ class RoomingListController extends Controller
             }
         }
 
-        // Sort assigned rooms so the most recently assigned room is at the TOP
+        // Sort assigned rooms so the earliest created booking (e.g. HB0005) is at the TOP, matching Booking Index
         uasort($groupedRooms, function ($a, $b) {
-            $actA = $a['latest_activity'] ?? 0;
-            $actB = $b['latest_activity'] ?? 0;
-            if ($actA !== $actB) {
-                return $actB <=> $actA;
+            $minBkA = !empty($a['booking_ids']) ? min($a['booking_ids']) : PHP_INT_MAX;
+            $minBkB = !empty($b['booking_ids']) ? min($b['booking_ids']) : PHP_INT_MAX;
+            if ($minBkA !== $minBkB) {
+                return $minBkA <=> $minBkB;
             }
-            return strcmp($a['room_number'] ?? '', $b['room_number'] ?? '');
+            return strnatcasecmp($a['room_number'] ?? '', $b['room_number'] ?? '');
         });
+
+        // Ensure occupants inside each assigned room are sorted by booking ID ascending
+        foreach ($groupedRooms as &$gRoom) {
+            if (!empty($gRoom['occupants'])) {
+                usort($gRoom['occupants'], function ($oa, $ob) {
+                    $bA = (int) ($oa['booking_id'] ?? 0);
+                    $bB = (int) ($ob['booking_id'] ?? 0);
+                    if ($bA !== $bB) {
+                        return $bA <=> $bB;
+                    }
+                    return (int)($oa['person_id'] ?? 0) <=> (int)($ob['person_id'] ?? 0);
+                });
+            }
+        }
+        unset($gRoom);
 
         // Apply filters to unassigned occupants so they strictly match selected criteria
         if (!empty($hotelFilter)) {
@@ -1197,6 +1429,16 @@ class RoomingListController extends Controller
                 return $rt === $cleanType;
             }));
         }
+
+        // Sort unassigned occupants by booking ID / person ID ascending so earliest booking (HB0005) is at top
+        usort($unassignedOccupants, function ($oa, $ob) {
+            $bA = (int) ($oa['booking_id'] ?? 0);
+            $bB = (int) ($ob['booking_id'] ?? 0);
+            if ($bA !== $bB) {
+                return $bA <=> $bB;
+            }
+            return (int)($oa['person_id'] ?? 0) <=> (int)($ob['person_id'] ?? 0);
+        });
 
         $unassignedPilgrimsCount = count($unassignedOccupants);
 

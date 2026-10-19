@@ -275,12 +275,6 @@
                             </td>
                             <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase; color: #000;">
                                 <div>{{ $occ['name'] }}</div>
-                                <div style="font-size: 7.5px; color: #0d6efd; font-weight: bold; margin-top: 1px;">
-                                    Booked: {{ strtoupper($occ['booked_room_type'] ?? 'Quad') }}
-                                </div>
-                                <div style="font-size: 7px; color: #666; font-weight: normal;">
-                                    {{ $occ['client_name'] }} ({{ $occ['booking_number'] }})
-                                </div>
                             </td>
 
                             {{-- ROOM TYP (Always rendered on every row to prevent page break column shifting) --}}

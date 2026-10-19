@@ -21,4 +21,9 @@ class HajjApplication extends Model
     {
         return $this->belongsTo(Package::class);
     }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 }

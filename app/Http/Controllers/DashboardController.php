@@ -77,6 +77,13 @@ class DashboardController extends Controller
             ->where('package_year', $year);
 
         $totalBookings = $baseQuery()->count();
+        $totalPax = \App\Models\BookingPerson::whereHas('booking', function ($q) use ($package, $year) {
+            $q->where('package_type', $package)
+                ->where('package_year', $year);
+        })->count();
+        if ($totalPax === 0) {
+            $totalPax = (int) $baseQuery()->sum('no_of_pax');
+        }
 
         $bookingsThisWeek = $baseQuery()
             ->where('created_at', '>=', $weekAgo)
@@ -207,6 +214,7 @@ class DashboardController extends Controller
             'totalExpensesSarInPkr',
 
             'totalBookings',
+            'totalPax',
             'bookingsTrend',
 
             'totalRevenue',

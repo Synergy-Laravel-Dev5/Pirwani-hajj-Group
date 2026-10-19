@@ -849,19 +849,57 @@
                                 <div class="route-block border rounded p-3 mb-2 bg-light-subtle">
                                     <div class="row g-3">
                                         <div class="col-md-5">
-                                            <label class="form-label fw-semibold" style="font-size:12px;">Route</label>
-                                            <input type="text" name="transports[0][route]" class="form-control form-control-sm"
-                                                placeholder="e.g. Karachi → Jeddah → Makkah → Madinah">
+                                            <label class="form-label fw-semibold" style="font-size:12px;">Route (Travel Sector)</label>
+                                            <select name="transports[0][route]" class="form-select form-select-sm route-select" data-placeholder="-- Select Route or Type Custom --">
+                                                <option value="">-- Select Route --</option>
+                                                @if(isset($routes) && $routes->count())
+                                                    <optgroup label="Routes (Route CRUD)">
+                                                        @foreach($routes as $r)
+                                                            @php $rVal = $r->formatted_route ?: ($r->start_place . ' TO ' . $r->end_place); @endphp
+                                                            <option value="{{ $rVal }}">{{ $rVal }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endif
+                                                @if(isset($travelRoutes) && $travelRoutes->count())
+                                                    <optgroup label="Travel Routes (Itineraries)">
+                                                        @foreach($travelRoutes as $tr)
+                                                            <option value="{{ $tr->name }}">{{ $tr->name }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endif
+                                                <optgroup label="Common Routes">
+                                                    <option value="Karachi → Jeddah → Makkah → Madinah">Karachi → Jeddah → Makkah → Madinah</option>
+                                                    <option value="Jeddah Airport → Makkah Hotel">Jeddah Airport → Makkah Hotel</option>
+                                                    <option value="Makkah Hotel → Madinah Hotel">Makkah Hotel → Madinah Hotel</option>
+                                                    <option value="Madinah Hotel → Makkah Hotel">Madinah Hotel → Makkah Hotel</option>
+                                                    <option value="Makkah Hotel → Jeddah Airport">Makkah Hotel → Jeddah Airport</option>
+                                                    <option value="Madinah Hotel → Jeddah Airport">Madinah Hotel → Jeddah Airport</option>
+                                                    <option value="Makkah → Mina → Arafat → Muzdalifah → Mina">Makkah → Mina → Arafat → Muzdalifah → Mina</option>
+                                                    <option value="Ziyarat Makkah Mukarramah">Ziyarat Makkah Mukarramah</option>
+                                                    <option value="Ziyarat Madinah Munawwarah">Ziyarat Madinah Munawwarah</option>
+                                                </optgroup>
+                                            </select>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label fw-semibold" style="font-size:12px;">Transport Type</label>
+                                            <label class="form-label fw-semibold" style="font-size:12px;">Transport Type (Vehicle)</label>
                                             <select name="transports[0][transport_type]" class="form-select form-select-sm">
-                                                <option value="bus">Bus / Coach</option>
-                                                <option value="private_car">Private Car</option>
-                                                <option value="train">Train</option>
-                                                <option value="shared_van">Shared Van</option>
-                                                <option value="taxi">Taxi</option>
-                                                <option value="flight">Flight</option>
+                                                <option value="">-- Select Vehicle / Transport --</option>
+                                                @if(isset($vehicles) && $vehicles->count())
+                                                    @foreach($vehicles as $veh)
+                                                        @php
+                                                            $vehLabel = trim(($veh->vehicle_type ?: 'Vehicle') . ($veh->brand_name ? ' - ' . $veh->brand_name : '') . ($veh->plate_number ? ' (' . $veh->plate_number . ')' : ''));
+                                                            $vehVal = $veh->vehicle_type ?: $vehLabel;
+                                                        @endphp
+                                                        <option value="{{ $vehVal }}">{{ $vehLabel }}</option>
+                                                    @endforeach
+                                                @endif
+                                                <option value="Bus / Coach">Bus / Coach</option>
+                                                <option value="Coaster">Coaster</option>
+                                                <option value="Private Car">Private Car</option>
+                                                <option value="GMC / SUV">GMC / SUV</option>
+                                                <option value="Hiace / Van">Hiace / Van</option>
+                                                <option value="Train">Haramain Train</option>
+                                                <option value="Taxi">Taxi</option>
                                             </select>
                                         </div>
                                         <div class="col-md-3">
@@ -1133,13 +1171,15 @@
                 }
                 const optCount = $el.find('option').length;
                 const isShort = optCount <= 5;
+                const isTag = $el.hasClass('route-select') || $el.data('tags') === true;
                 $el.select2({
                     theme: 'bootstrap-5',
                     width: '100%',
                     dropdownAutoWidth: false,
-                    minimumResultsForSearch: isShort ? Infinity : 0,
+                    minimumResultsForSearch: isShort && !isTag ? Infinity : 0,
+                    tags: isTag,
                     placeholder: $el.data('placeholder') || ($el.find('option[value=""]').first().text() || '-- Select --'),
-                    allowClear: ($el.attr('id') === 'clientSelect' || $el.attr('id') === 'companySelect')
+                    allowClear: ($el.attr('id') === 'clientSelect' || $el.attr('id') === 'companySelect' || isTag)
                 });
             });
         }
@@ -1637,6 +1677,86 @@
             return opts;
         }
 
+        const vehicleListOptions = [
+            @if(isset($vehicles) && $vehicles->count())
+                @foreach($vehicles as $veh)
+                    @php
+                        $vehLabel = trim(($veh->vehicle_type ?: 'Vehicle') . ($veh->brand_name ? ' - ' . $veh->brand_name : '') . ($veh->plate_number ? ' (' . $veh->plate_number . ')' : ''));
+                        $vehVal = $veh->vehicle_type ?: $vehLabel;
+                    @endphp
+                    { val: @json($vehVal), label: @json($vehLabel) },
+                @endforeach
+            @endif
+            { val: "Bus / Coach", label: "Bus / Coach" },
+            { val: "Coaster", label: "Coaster" },
+            { val: "Private Car", label: "Private Car" },
+            { val: "GMC / SUV", label: "GMC / SUV" },
+            { val: "Hiace / Van", label: "Hiace / Van" },
+            { val: "Train", label: "Haramain Train" },
+            { val: "Taxi", label: "Taxi" }
+        ];
+
+        function getVehicleOptionsHtml(selectedVal) {
+            let options = '<option value="">-- Select Vehicle / Transport --</option>';
+            const selectedClean = (selectedVal || '').toLowerCase().trim();
+            vehicleListOptions.forEach(opt => {
+                const isSel = (opt.val.toLowerCase().trim() === selectedClean || opt.label.toLowerCase().trim() === selectedClean);
+                options += `<option value="${escapeHtml(opt.val)}" ${isSel ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`;
+            });
+            return options;
+        }
+
+        const routeListOptions = [
+            @if(isset($routes) && $routes->count())
+                @foreach($routes as $r)
+                    @php $rVal = $r->formatted_route ?: ($r->start_place . ' TO ' . $r->end_place); @endphp
+                    { val: @json($rVal), label: @json($rVal), group: 'Routes (Route CRUD)' },
+                @endforeach
+            @endif
+            @if(isset($travelRoutes) && $travelRoutes->count())
+                @foreach($travelRoutes as $tr)
+                    { val: @json($tr->name), label: @json($tr->name), group: 'Travel Routes' },
+                @endforeach
+            @endif
+            { val: "Karachi → Jeddah → Makkah → Madinah", label: "Karachi → Jeddah → Makkah → Madinah", group: 'Common Routes' },
+            { val: "Jeddah Airport → Makkah Hotel", label: "Jeddah Airport → Makkah Hotel", group: 'Common Routes' },
+            { val: "Makkah Hotel → Madinah Hotel", label: "Makkah Hotel → Madinah Hotel", group: 'Common Routes' },
+            { val: "Madinah Hotel → Makkah Hotel", label: "Madinah Hotel → Makkah Hotel", group: 'Common Routes' },
+            { val: "Makkah Hotel → Jeddah Airport", label: "Makkah Hotel → Jeddah Airport", group: 'Common Routes' },
+            { val: "Madinah Hotel → Jeddah Airport", label: "Madinah Hotel → Jeddah Airport", group: 'Common Routes' },
+            { val: "Makkah → Mina → Arafat → Muzdalifah → Mina", label: "Makkah → Mina → Arafat → Muzdalifah → Mina", group: 'Common Routes' },
+            { val: "Ziyarat Makkah Mukarramah", label: "Ziyarat Makkah Mukarramah", group: 'Common Routes' },
+            { val: "Ziyarat Madinah Munawwarah", label: "Ziyarat Madinah Munawwarah", group: 'Common Routes' }
+        ];
+
+        function getRouteOptionsHtml(selectedVal) {
+            let options = '<option value="">-- Select Route --</option>';
+            const selectedClean = (selectedVal || '').toLowerCase().trim();
+            let hasMatch = false;
+
+            const groups = {};
+            routeListOptions.forEach(opt => {
+                const grp = opt.group || 'Routes';
+                if (!groups[grp]) groups[grp] = [];
+                const isSel = (opt.val.toLowerCase().trim() === selectedClean);
+                if (isSel) hasMatch = true;
+                groups[grp].push({ ...opt, isSel });
+            });
+
+            if (selectedVal && selectedVal.trim() && !hasMatch) {
+                options += `<option value="${escapeHtml(selectedVal)}" selected>${escapeHtml(selectedVal)}</option>`;
+            }
+
+            for (const [groupName, items] of Object.entries(groups)) {
+                options += `<optgroup label="${escapeHtml(groupName)}">`;
+                items.forEach(item => {
+                    options += `<option value="${escapeHtml(item.val)}" ${item.isSel ? 'selected' : ''}>${escapeHtml(item.label)}</option>`;
+                });
+                options += `</optgroup>`;
+            }
+            return options;
+        }
+
         // Global hotel change listener
         document.getElementById('hotelsList').addEventListener('change', function(e) {
             if (e.target.classList.contains('hotel-loc-select')) {
@@ -1845,7 +1965,6 @@
                     const rawType = ((t.type || '') + ' ' + (t.vehicle || '')).toLowerCase();
                     if (rawType.includes('train')) tType = 'train';
                     else if (rawType.includes('car') || rawType.includes('private')) tType = 'private_car';
-                    else if (rawType.includes('flight') || rawType.includes('air')) tType = 'flight';
                     else if (rawType.includes('taxi')) tType = 'taxi';
                     else if (rawType.includes('van')) tType = 'shared_van';
 
@@ -1861,19 +1980,15 @@
                         </div>
                         <div class="row g-3">
                             <div class="col-md-5">
-                                <label class="form-label" style="font-size:12px;">Route</label>
-                                <input type="text" name="transports[${idx}][route]" class="form-control form-control-sm"
-                                       value="${escapeHtml(route)}" placeholder="Karachi → Makkah">
+                                <label class="form-label" style="font-size:12px;">Route (Travel Sector)</label>
+                                <select name="transports[${idx}][route]" class="form-select form-select-sm route-select" data-placeholder="-- Select Route or Type Custom --">
+                                    ${getRouteOptionsHtml(route)}
+                                </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label" style="font-size:12px;">Transport Type</label>
+                                <label class="form-label" style="font-size:12px;">Transport Type (Vehicle)</label>
                                 <select name="transports[${idx}][transport_type]" class="form-select form-select-sm">
-                                    <option value="bus" ${tType === 'bus' ? 'selected' : ''}>Bus / Coach</option>
-                                    <option value="private_car" ${tType === 'private_car' ? 'selected' : ''}>Private Car</option>
-                                    <option value="train" ${tType === 'train' ? 'selected' : ''}>Train</option>
-                                    <option value="shared_van" ${tType === 'shared_van' ? 'selected' : ''}>Shared Van</option>
-                                    <option value="taxi" ${tType === 'taxi' ? 'selected' : ''}>Taxi</option>
-                                    <option value="flight" ${tType === 'flight' ? 'selected' : ''}>Flight</option>
+                                    ${getVehicleOptionsHtml(tType)}
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -2084,6 +2199,17 @@
                                 <i class="mdi mdi-account text-muted fs-16"></i>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size:12px;"><i class="mdi mdi-ticket-confirmation-outline text-info me-1"></i>Ticket Option</label>
+                        <select name="persons[${idx}][ticket_status]" id="person_ticket_status_${idx}" class="form-select form-select-sm">
+                            <option value="on_ticket" selected>On Ticket (With Ticket)</option>
+                            <option value="without_ticket">Without Ticket</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" style="font-size:12px;"><i class="mdi mdi-file-document-outline text-success me-1"></i>Passport Upload (Scan/PDF)</label>
+                        <input type="file" name="persons[${idx}][passport_image]" id="person_passport_image_${idx}" class="form-control form-control-sm" accept="image/*,.pdf">
                     </div>
                 </div>
             </div>`;
@@ -2493,18 +2619,15 @@
                 </div>
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label fw-semibold" style="font-size:12px;">Route</label>
-                        <input type="text" name="transports[${routeIdx}][route]" class="form-control form-control-sm" placeholder="Route">
+                        <label class="form-label fw-semibold" style="font-size:12px;">Route (Travel Sector)</label>
+                        <select name="transports[${routeIdx}][route]" class="form-select form-select-sm route-select" data-placeholder="-- Select Route or Type Custom --">
+                            ${getRouteOptionsHtml('')}
+                        </select>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold" style="font-size:12px;">Transport Type</label>
+                        <label class="form-label fw-semibold" style="font-size:12px;">Transport Type (Vehicle)</label>
                         <select name="transports[${routeIdx}][transport_type]" class="form-select form-select-sm">
-                            <option value="bus">Bus / Coach</option>
-                            <option value="private_car">Private Car</option>
-                            <option value="train">Train</option>
-                            <option value="shared_van">Shared Van</option>
-                            <option value="taxi">Taxi</option>
-                            <option value="flight">Flight</option>
+                            ${getVehicleOptionsHtml('')}
                         </select>
                     </div>
                     <div class="col-md-3">

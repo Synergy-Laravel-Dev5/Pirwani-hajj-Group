@@ -25,6 +25,8 @@ class BookingPerson extends Model
         'cnic',
         'phone',
         'photo',
+        'ticket_status',
+        'passport_image',
         'room_number',
         'room_type',
         'hotel_name',
@@ -109,6 +111,7 @@ class BookingPerson extends Model
         $maxNum = 0;
         $all = self::whereNotNull('hajj_id')
             ->where('hajj_id', '!=', '')
+            ->whereHas('booking')
             ->pluck('hajj_id');
 
         foreach ($all as $hid) {
@@ -168,6 +171,7 @@ class BookingPerson extends Model
         $maxNum = 0;
         $all = self::whereNotNull('hb_number')
             ->where('hb_number', '!=', '')
+            ->whereHas('booking')
             ->pluck('hb_number');
 
         foreach ($all as $hb) {

@@ -195,13 +195,7 @@
                                         Room Types
                                     </a>
                                 </li>
-                                @can('airline_view')
-                                    <li>
-                                        <a class="tp-link" href="{{ route('airline.index') }}">
-                                            Airlines
-                                        </a>
-                                    </li>
-                                @endcan
+
                                 @can('flight_view')
                                     <li>
                                         <a class="tp-link" href="{{ route('flight.index') }}">
@@ -287,6 +281,12 @@
                         <a href="{{ route('report.check-in') }}">
                             <i data-feather="check-square"></i>
                             <span>Check-In Report</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('report.hotel-person') }}">
+                            <i data-feather="home"></i>
+                            <span>Hotel Person Report</span>
                         </a>
                     </li>
                     <li>

@@ -23,7 +23,15 @@
                             <!-- HEADER -->
                             <div class="card-header d-flex justify-content-between align-items-center">
 
-                                <h5 class="mb-0">Booking List</h5>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <h5 class="mb-0 me-2">Booking List</h5>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-12 px-2 py-1">
+                                        <i class="mdi mdi-book-open-outline me-1"></i>Total Bookings: <strong>{{ $bookings->count() }}</strong>
+                                    </span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle fs-12 px-2 py-1">
+                                        <i class="mdi mdi-account-group me-1"></i>Total Pax: <strong>{{ $totalPax ?? $bookings->sum('no_of_pax') }}</strong>
+                                    </span>
+                                </div>
 
                                 <div class="d-flex gap-2">
 
@@ -159,6 +167,12 @@
                                                                 <i class="mdi mdi-file-document-outline"></i>
                                                             </a>
 
+                                                            <a href="{{ route('pilgrim.bulk-badges', $booking->id) }}"
+                                                                target="_blank" class="btn btn-sm btn-outline-dark"
+                                                                title="Hajji ID Card">
+                                                                <i class="mdi mdi-badge-account-horizontal"></i>
+                                                            </a>
+
 
                                                             <!-- DELETE -->
                                                             @can('booking_trash')
@@ -185,7 +199,17 @@
                                                 </tr>
                                             @endforeach
                                         </tbody>
-
+                                        <tfoot class="table-light fw-bold">
+                                            <tr>
+                                                <td colspan="4" class="text-end text-uppercase" style="font-size:12px; letter-spacing:0.5px;">Grand Total:</td>
+                                                <td class="text-primary fw-bold fs-13">
+                                                    <i class="mdi mdi-account-group me-1"></i>{{ $totalPax ?? $bookings->sum('no_of_pax') }}
+                                                </td>
+                                                <td class="fw-bold">{{ number_format($bookings->sum('total_amount')) }}</td>
+                                                <td class="fw-bold text-danger">{{ number_format($bookings->sum('balance')) }}</td>
+                                                <td colspan="2"></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
 

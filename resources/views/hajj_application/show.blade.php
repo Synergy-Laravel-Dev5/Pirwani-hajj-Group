@@ -160,6 +160,11 @@
     <div class="action-bar d-print-none">
         <a href="{{ route('hajj-application.index') }}" class="btn btn-dark btn-sm">⬅ Back to Applications</a>
         <div class="d-flex align-items-center gap-2">
+            @if($application->client_id)
+                <a href="{{ route('client.edit', $application->client_id) }}" target="_blank" class="btn btn-success btn-sm fw-semibold">
+                    ✓ Client Created #{{ $application->client_id }}
+                </a>
+            @endif
             <form action="{{ route('hajj-application.updateStatus', $application->id) }}" method="POST" class="d-flex align-items-center gap-1">
                 @csrf
                 @method('PATCH')

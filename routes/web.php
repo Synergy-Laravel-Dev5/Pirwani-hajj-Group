@@ -34,6 +34,8 @@ use App\Http\Controllers\MaktabReportController;
 use App\Http\Controllers\PersonReportController;
 use App\Http\Controllers\FlightReportController;
 use App\Http\Controllers\RoomingListController;
+use App\Http\Controllers\HotelPersonReportController;
+use App\Http\Controllers\PilgrimPassController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -53,6 +55,9 @@ Route::controller(HajjApplicationController::class)->group(function () {
 Route::get('/booking/{booking}/hajj-agreement', [BookingController::class, 'agreement'])->middleware('signed')->name('booking.agreement');
 Route::post('/save-agreement-signature', [BookingController::class, 'saveAgreementSignature'])->name('save.agreement.signature');
 // URL::signedRoute('booking.agreement',['booking' => $booking->id]);
+
+// Public Live Mobile E-Pass (accessible by scanning QR code on ID badge)
+Route::get('pilgrim/e-pass/{id}', [PilgrimPassController::class, 'show'])->name('pilgrim.epass');
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -130,6 +135,11 @@ Route::middleware('auth')->group(function () {
                 Route::get('voucher/{booking}', 'voucher')->name('booking.voucher');
                 Route::delete('{booking}/person/{person}', 'deletePerson')->name('booking.person.delete');
             });
+
+        Route::controller(PilgrimPassController::class)->group(function () {
+            Route::get('pilgrim/badge/{id}', 'badge')->name('pilgrim.badge');
+            Route::get('booking/{booking}/badges', 'bulkBadges')->name('pilgrim.bulk-badges');
+        });
 
         Route::controller(ArrivalGroupController::class)
             ->prefix('arrival-group')
@@ -388,6 +398,15 @@ Route::middleware('auth')->group(function () {
         Route::controller(CheckInReportController::class)
             ->prefix('reports')->group(function () {
                 Route::get('check-in', 'index')->name('report.check-in');
+                Route::get('check-in/export-pdf', 'exportPdf')->name('report.check-in.export-pdf');
+                Route::get('check-in/export-excel', 'exportExcel')->name('report.check-in.export-excel');
+            });
+
+        Route::controller(HotelPersonReportController::class)
+            ->prefix('reports')->group(function () {
+                Route::get('hotel-person', 'index')->name('report.hotel-person');
+                Route::get('hotel-person/export-pdf', 'exportPdf')->name('report.hotel-person.export-pdf');
+                Route::get('hotel-person/export-excel', 'exportExcel')->name('report.hotel-person.export-excel');
             });
 
         Route::controller(MaktabReportController::class)
@@ -407,6 +426,8 @@ Route::middleware('auth')->group(function () {
         Route::controller(FlightReportController::class)
             ->prefix('reports')->group(function () {
                 Route::get('flights', 'index')->name('report.flight');
+                Route::get('flights/export-pdf', 'exportPdf')->name('report.flight.export-pdf');
+                Route::get('flights/export-excel', 'exportExcel')->name('report.flight.export-excel');
             });
 
         Route::controller(RoomingListController::class)->group(function () {
@@ -417,6 +438,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('rooming-list/adjust-bed', 'adjustBed')->name('report.rooming-list.adjust-bed');
                 Route::post('rooming-list/assign-room', 'assignRoom')->name('report.rooming-list.assign-room');
                 Route::post('rooming-list/unassign-room', 'unassignRoom')->name('report.rooming-list.unassign-room');
+                Route::get('rooming-list/lookup-pilgrims', 'lookupPilgrims')->name('report.rooming-list.lookup-pilgrims');
             });
             Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');
         });

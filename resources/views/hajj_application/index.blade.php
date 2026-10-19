@@ -100,11 +100,44 @@
                                             </td>
                                             <td>
                                                 @if ($app->status == 'approved')
-                                                    <span class="badge bg-success">Approved</span>
+                                                    <span class="badge bg-success"><i class="mdi mdi-check me-1"></i>Approved</span>
+                                                    @if($app->client_id)
+                                                        <div class="mt-1">
+                                                            <a href="{{ route('client.edit', $app->client_id) }}" target="_blank" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none">
+                                                                <i class="mdi mdi-account-check me-1"></i>Client Active
+                                                            </a>
+                                                        </div>
+                                                    @endif
                                                 @elseif($app->status == 'rejected')
                                                     <span class="badge bg-danger">Rejected</span>
                                                 @else
-                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                    <div class="dropdown d-inline-block">
+                                                        <button class="btn btn-xs btn-outline-warning dropdown-toggle py-0 px-2 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            Pending
+                                                        </button>
+                                                        <ul class="dropdown-menu shadow-sm">
+                                                            <li>
+                                                                <form action="{{ route('hajj-application.updateStatus', $app->id) }}" method="POST">
+                                                                    @csrf
+                                                                    @method('PATCH')
+                                                                    <input type="hidden" name="status" value="approved">
+                                                                    <button type="submit" class="dropdown-item text-success fw-semibold">
+                                                                        <i class="mdi mdi-check-circle me-1"></i> Approve & Create Client
+                                                                    </button>
+                                                                </form>
+                                                            </li>
+                                                            <li>
+                                                                <form action="{{ route('hajj-application.updateStatus', $app->id) }}" method="POST">
+                                                                    @csrf
+                                                                    @method('PATCH')
+                                                                    <input type="hidden" name="status" value="rejected">
+                                                                    <button type="submit" class="dropdown-item text-danger">
+                                                                        <i class="mdi mdi-close-circle me-1"></i> Reject
+                                                                    </button>
+                                                                </form>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
                                                 @endif
                                             </td>
                                             <td>{{ $app->created_at->format('d M Y, h:i A') }}</td>

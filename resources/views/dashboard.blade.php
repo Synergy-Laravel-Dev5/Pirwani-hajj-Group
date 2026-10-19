@@ -594,7 +594,12 @@
                                 </div>
                                 <p class="stat-label mb-0">{{ ucfirst($package) }} Bookings</p>
                             </div>
-                            <div class="stat-value">{{ number_format($totalBookings) }}</div>
+                            <div class="stat-value d-flex align-items-baseline gap-2">
+                                <span>{{ number_format($totalBookings) }}</span>
+                                <span class="badge bg-dark text-white fw-bold px-2 py-1" style="font-size:12px; letter-spacing:0.5px;" title="Total Pilgrims (Pax)">
+                                    <i class="mdi mdi-account-group me-1"></i>{{ number_format($totalPax ?? 0) }} Pax
+                                </span>
+                            </div>
                             <span class="badge-trend {{ $bookingsTrend >= 0 ? 'up' : 'down' }}">
                                 <i class="mdi mdi-trending-{{ $bookingsTrend >= 0 ? 'up' : 'down' }}"></i>
                                 {{ abs($bookingsTrend) }}%
@@ -840,7 +845,7 @@
                                     <div class="qs-icon" style="background:#FFF8E8;">👥</div>
                                     <div>
                                         <div class="qs-label">Total {{ ucfirst($package) }} Bookings</div>
-                                        <div class="qs-value">{{ number_format($totalBookings) }} total</div>
+                                        <div class="qs-value">{{ number_format($totalBookings) }} total ({{ number_format($totalPax ?? 0) }} Pax)</div>
                                     </div>
                                 </div>
                             </div>
