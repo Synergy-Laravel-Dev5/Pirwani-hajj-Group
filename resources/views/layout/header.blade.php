@@ -272,6 +272,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('hotel-sales.index') }}">
+                            <i data-feather="file-text"></i>
+                            <span>Hotel Sale Invoices</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('report.rooming-list') }}">
                             <i data-feather="grid"></i>
                             <span>Room Allocation Report</span>

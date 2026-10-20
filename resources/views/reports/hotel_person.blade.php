@@ -129,6 +129,71 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     }
+
+    /* Custom Checkbox Multi-Select Dropdown */
+    .custom-multiselect-wrapper {
+        position: relative;
+    }
+    .multiselect-trigger-box {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 6px !important;
+        min-height: 38px !important;
+        padding: 4px 8px !important;
+        cursor: pointer !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        user-select: none;
+    }
+    .multiselect-trigger-box:focus,
+    .multiselect-trigger-box.active {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        outline: 0;
+    }
+    .multiselect-dropdown-menu {
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        z-index: 1060 !important;
+    }
+    .multiselect-option-row {
+        cursor: pointer;
+        padding: 6px 10px;
+        transition: background-color 0.12s ease;
+        border-radius: 4px;
+        margin: 1px 0;
+    }
+    .multiselect-option-row:hover {
+        background-color: #f1f5f9;
+    }
+    .multiselect-option-row.checked-row {
+        background-color: #e0f2fe !important;
+        color: #0369a1 !important;
+        font-weight: 600;
+    }
+    .multiselect-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background-color: #e0e7ff;
+        border: 1px solid #c7d2fe;
+        color: #3730a3;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+    .multiselect-tag-pill .remove-tag {
+        cursor: pointer;
+        font-weight: bold;
+        color: #dc2626;
+        margin-left: 2px;
+    }
+    .multiselect-tag-pill .remove-tag:hover {
+        color: #991b1b;
+    }
 </style>
 
 <div class="content-page">
@@ -193,8 +258,12 @@
                     <div class="p-2 border rounded bg-white d-flex align-items-center justify-content-between shadow-sm">
                         <div>
                             <span class="text-muted small fw-semibold d-block">Active Hotel Filter:</span>
-                            <strong class="fs-14 text-dark text-truncate d-block" style="max-width: 170px;" title="{{ $hotelFilter ?: 'All Hotels' }}">
-                                {{ $hotelFilter ?: 'All Hotels' }}
+                            @php
+                                $hCount = count((array)$hotelFilter);
+                                $hDisplay = $hCount === 0 ? 'All Hotels' : ($hCount === 1 ? (is_array($hotelFilter) ? reset($hotelFilter) : $hotelFilter) : $hCount . ' Hotels Selected');
+                            @endphp
+                            <strong class="fs-14 text-dark text-truncate d-block" style="max-width: 170px;" title="{{ is_array($hotelFilter) ? implode(', ', $hotelFilter) : ($hotelFilter ?: 'All Hotels') }}">
+                                {{ $hDisplay }}
                             </strong>
                         </div>
                         <span class="badge {{ !empty($hotelFilter) && $hotelFilter !== 'all' ? 'bg-primary' : 'bg-secondary' }} text-white">
@@ -306,31 +375,91 @@
                 <div class="card-body p-3">
                     <form method="GET" action="{{ route('report.hotel-person') }}" id="hotelPersonFilterForm">
                         <div class="row g-2 align-items-end">
-                            {{-- Hotel Name --}}
+                            {{-- Hotel Name (Multi-Select) --}}
                             <div class="col-xl-3 col-md-4 col-sm-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Hotel Name</label>
-                                <input type="text" name="hotel_name" class="form-control form-control-sm" list="hotelOptionsList" 
-                                       placeholder="Type or choose hotel (e.g. Anjum, Pullman)..." value="{{ $hotelFilter }}">
-                                <datalist id="hotelOptionsList">
-                                    @foreach ($allHotelOptions as $optHotel)
-                                        <option value="{{ $optHotel }}"></option>
-                                    @endforeach
-                                </datalist>
+                                <div class="custom-multiselect-wrapper position-relative" id="hotelMultiSelectWrapper">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label small fw-semibold text-muted mb-0">Hotel Name (Multi-Select)</label>
+                                        <span class="badge bg-primary-subtle text-primary multiselect-count" id="hotelCountBadge" style="font-size: 10px;">
+                                            {{ count((array)$hotelFilter) > 0 ? count((array)$hotelFilter) . ' selected' : 'All Hotels' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Trigger Box -->
+                                    <div class="multiselect-trigger-box form-control form-control-sm d-flex justify-content-between align-items-center cursor-pointer" 
+                                         id="hotelTriggerBtn" tabindex="0">
+                                        <div class="multiselect-tags-container d-flex flex-wrap gap-1 align-items-center flex-grow-1" id="hotelTagsContainer" style="max-height: 58px; overflow-y: auto;">
+                                            @php $hSelectedCount = count((array)$hotelFilter); @endphp
+                                            @if($hSelectedCount === 0)
+                                                <span class="text-muted small placeholder-text">Choose Hotel(s)...</span>
+                                            @elseif($hSelectedCount <= 2)
+                                                @foreach((array)$hotelFilter as $selH)
+                                                    @if(!empty($selH))
+                                                        <span class="multiselect-tag-pill">
+                                                            <span class="text-truncate" style="max-width: 120px;" title="{{ $selH }}">{{ $selH }}</span>
+                                                            <span class="remove-tag" data-target="hotel" data-val="{{ $selH }}">&times;</span>
+                                                        </span>
+                                                    @endif
+                                                @endforeach
+                                            @else
+                                                <span class="badge bg-primary text-white px-2 py-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-city me-1"></i>{{ $hSelectedCount }} Hotels Selected
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 ms-1 text-muted">
+                                            @if($hSelectedCount > 0)
+                                                <span class="multiselect-quick-clear cursor-pointer text-secondary px-1 fw-bold" data-target="hotel" title="Clear all" style="font-size: 14px;">&times;</span>
+                                            @endif
+                                            <i class="mdi mdi-chevron-down fs-14"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dropdown Menu -->
+                                    <div class="multiselect-dropdown-menu card shadow border position-absolute w-100 mt-1 d-none" 
+                                         id="hotelDropdownMenu">
+                                        <div class="p-2 border-bottom bg-light">
+                                            <div class="input-group input-group-sm mb-1">
+                                                <span class="input-group-text bg-white border-end-0 py-0"><i class="mdi mdi-magnify text-muted"></i></span>
+                                                <input type="text" class="form-control form-control-sm border-start-0 multiselect-search py-1" data-target="hotel" placeholder="Search hotel name...">
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-primary py-0 px-2 btn-multiselect-all" data-target="hotel" style="font-size: 11px;">Select All</button>
+                                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 btn-multiselect-none" data-target="hotel" style="font-size: 11px;">Clear</button>
+                                                </div>
+                                                <small class="text-muted multiselect-status-label" id="hotelStatusLabel" style="font-size: 11px;">{{ $hSelectedCount }} selected</small>
+                                            </div>
+                                        </div>
+                                        <div class="overflow-auto p-1 multiselect-options-container" id="hotelOptionsContainer" style="max-height: 220px;">
+                                            @foreach($allHotelOptions as $optHotel)
+                                                @php $isHChecked = in_array($optHotel, (array)$hotelFilter); @endphp
+                                                <label class="dropdown-item d-flex align-items-center gap-2 py-1.5 px-2 rounded multiselect-option-row {{ $isHChecked ? 'checked-row' : '' }}" style="font-size: 12px;">
+                                                    <input type="checkbox" name="hotel_name[]" value="{{ $optHotel }}" class="form-check-input mt-0 multiselect-checkbox hotel-cb" {{ $isHChecked ? 'checked' : '' }}>
+                                                    <span class="option-text text-truncate">{{ $optHotel }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- City / Location --}}
                             <div class="col-xl-2 col-md-3 col-sm-6">
                                 <label class="form-label small fw-semibold text-muted mb-1">City / Location</label>
-                                <select name="location" class="form-select form-select-sm">
+                                <select name="location" class="form-select form-select-sm" id="hotelPersonLocationSelect">
                                     <option value="all" {{ ($locationFilter == 'all' || empty($locationFilter)) ? 'selected' : '' }}>All Locations</option>
                                     <option value="makkah" {{ $locationFilter == 'makkah' ? 'selected' : '' }}>🕋 Makkah</option>
-                                    <option value="azizia" {{ $locationFilter == 'azizia' ? 'selected' : '' }}>🏢 Azizia</option>
                                     <option value="madinah" {{ $locationFilter == 'madinah' ? 'selected' : '' }}>🕌 Madinah</option>
+                                    <option value="azizia" {{ ($locationFilter == 'azizia' && ($aziziaPhase ?? 'both') == 'both') ? 'selected' : '' }}>🏢 Azizia (Both Check-Ins)</option>
+                                    <option value="azizia_first" {{ ($locationFilter == 'azizia' && ($aziziaPhase ?? '') == 'first') ? 'selected' : '' }}>🏢 Azizia - 1st Check-In (Pre-Hajj)</option>
+                                    <option value="azizia_second" {{ ($locationFilter == 'azizia' && ($aziziaPhase ?? '') == 'second') ? 'selected' : '' }}>🏢 Azizia - 2nd Check-In (Post-Hajj)</option>
                                     <option value="mina" {{ $locationFilter == 'mina' ? 'selected' : '' }}>⛺ Mina</option>
                                     <option value="jeddah" {{ $locationFilter == 'jeddah' ? 'selected' : '' }}>🌊 Jeddah</option>
                                     <option value="other" {{ $locationFilter == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
                             </div>
+                            <input type="hidden" name="azizia_phase" value="{{ $aziziaPhase ?? 'both' }}">
 
                             {{-- Stay Date From --}}
                             <div class="col-xl-2 col-md-3 col-6">
@@ -344,22 +473,87 @@
                                 <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}">
                             </div>
 
-                            {{-- Package --}}
+                            {{-- Package (Multi-Select) --}}
                             <div class="col-xl-3 col-md-4 col-sm-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Package</label>
-                                <select name="package_id" class="form-select form-select-sm">
-                                    <option value="">-- All Packages --</option>
-                                    @foreach ($packages as $pkg)
-                                        @php
-                                            $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
-                                            $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
-                                            $displayText = $pkgCode ? $pkgTitle . ' (' . $pkgCode . ')' : $pkgTitle;
-                                        @endphp
-                                        <option value="{{ $pkg->id }}" {{ $packageFilter == $pkg->id ? 'selected' : '' }}>
-                                            {{ $displayText }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <div class="custom-multiselect-wrapper position-relative" id="packageMultiSelectWrapper">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label small fw-semibold text-muted mb-0">Package (Multi-Select)</label>
+                                        <span class="badge bg-primary-subtle text-primary multiselect-count" id="packageCountBadge" style="font-size: 10px;">
+                                            {{ count((array)$packageFilter) > 0 ? count((array)$packageFilter) . ' selected' : 'All Packages' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Trigger Box -->
+                                    <div class="multiselect-trigger-box form-control form-control-sm d-flex justify-content-between align-items-center cursor-pointer" 
+                                         id="packageTriggerBtn" tabindex="0">
+                                        <div class="multiselect-tags-container d-flex flex-wrap gap-1 align-items-center flex-grow-1" id="packageTagsContainer" style="max-height: 58px; overflow-y: auto;">
+                                            @php $pSelectedCount = count((array)$packageFilter); @endphp
+                                            @if($pSelectedCount === 0)
+                                                <span class="text-muted small placeholder-text">-- All Packages --</span>
+                                            @elseif($pSelectedCount <= 2)
+                                                @foreach($packages as $pkg)
+                                                    @if(in_array((string)$pkg->id, (array)$packageFilter) || in_array($pkg->id, (array)$packageFilter))
+                                                        @php
+                                                            $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
+                                                            $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
+                                                            $shortTitle = $pkgCode ? $pkgTitle . ' (' . $pkgCode . ')' : $pkgTitle;
+                                                        @endphp
+                                                        <span class="multiselect-tag-pill">
+                                                            <span class="text-truncate" style="max-width: 120px;">{{ $shortTitle }}</span>
+                                                            <span class="remove-tag" data-target="package" data-val="{{ $pkg->id }}">&times;</span>
+                                                        </span>
+                                                    @endif
+                                                @endforeach
+                                            @else
+                                                <span class="badge bg-primary text-white px-2 py-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-package-variant-closed me-1"></i>{{ $pSelectedCount }} Packages Selected
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 ms-1 text-muted">
+                                            @if($pSelectedCount > 0)
+                                                <span class="multiselect-quick-clear cursor-pointer text-secondary px-1 fw-bold" data-target="package" title="Clear all" style="font-size: 14px;">&times;</span>
+                                            @endif
+                                            <i class="mdi mdi-chevron-down fs-14"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dropdown Menu -->
+                                    <div class="multiselect-dropdown-menu card shadow border position-absolute w-100 mt-1 d-none" 
+                                         id="packageDropdownMenu">
+                                        <div class="p-2 border-bottom bg-light">
+                                            <div class="input-group input-group-sm mb-1">
+                                                <span class="input-group-text bg-white border-end-0 py-0"><i class="mdi mdi-magnify text-muted"></i></span>
+                                                <input type="text" class="form-control form-control-sm border-start-0 multiselect-search py-1" data-target="package" placeholder="Search package name or code...">
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-primary py-0 px-2 btn-multiselect-all" data-target="package" style="font-size: 11px;">Select All</button>
+                                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 btn-multiselect-none" data-target="package" style="font-size: 11px;">Clear</button>
+                                                </div>
+                                                <small class="text-muted multiselect-status-label" id="packageStatusLabel" style="font-size: 11px;">{{ $pSelectedCount }} selected</small>
+                                            </div>
+                                        </div>
+                                        <div class="overflow-auto p-1 multiselect-options-container" id="packageOptionsContainer" style="max-height: 220px;">
+                                            @foreach($packages as $pkg)
+                                                @php
+                                                    $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
+                                                    $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
+                                                    $isPChecked = in_array((string)$pkg->id, (array)$packageFilter) || in_array($pkg->id, (array)$packageFilter);
+                                                @endphp
+                                                <label class="dropdown-item d-flex align-items-center gap-2 py-1.5 px-2 rounded multiselect-option-row {{ $isPChecked ? 'checked-row' : '' }}" style="font-size: 12px;">
+                                                    <input type="checkbox" name="package_id[]" value="{{ $pkg->id }}" class="form-check-input mt-0 multiselect-checkbox package-cb" {{ $isPChecked ? 'checked' : '' }}>
+                                                    <span class="option-text text-truncate">
+                                                        @if($pkgCode)
+                                                            <span class="badge bg-dark text-white me-1 px-1 py-0" style="font-size: 10px;">{{ $pkgCode }}</span>
+                                                        @endif
+                                                        {{ $pkgTitle }}
+                                                    </span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- Search keyword --}}
@@ -382,6 +576,28 @@
                                     Reset
                                 </a>
                             </div>
+
+                            @if($locationFilter === 'azizia')
+                                <div class="col-12 mt-2">
+                                    <div class="p-2 rounded bg-warning-subtle border border-warning d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-warning text-dark fw-bold px-2 py-1 fs-12"><i class="mdi mdi-office-building me-1"></i>Azizia Check-In Filter</span>
+                                            <span class="small text-dark fw-semibold">Haji Azizia mein 2 dafa stay karte hain (Pre-Mina &amp; Post-Mina). Konsi check-in dekhni hai:</span>
+                                        </div>
+                                        <div class="btn-group btn-group-sm shadow-sm">
+                                            <a href="{{ request()->fullUrlWithQuery(['location' => 'azizia', 'azizia_phase' => 'both']) }}" class="btn btn-sm {{ ($aziziaPhase ?? 'both') === 'both' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark bg-white' }}">
+                                                <i class="mdi mdi-check-all me-1"></i>Dono Check-Ins (Both)
+                                            </a>
+                                            <a href="{{ request()->fullUrlWithQuery(['location' => 'azizia', 'azizia_phase' => 'first']) }}" class="btn btn-sm {{ ($aziziaPhase ?? '') === 'first' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark bg-white' }}">
+                                                <i class="mdi mdi-numeric-1-circle me-1"></i>1st Check-In (Pre-Hajj)
+                                            </a>
+                                            <a href="{{ request()->fullUrlWithQuery(['location' => 'azizia', 'azizia_phase' => 'second']) }}" class="btn btn-sm {{ ($aziziaPhase ?? '') === 'second' ? 'btn-dark text-white fw-bold' : 'btn-outline-dark bg-white' }}">
+                                                <i class="mdi mdi-numeric-2-circle me-1"></i>2nd Check-In (Post-Hajj)
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </form>
                 </div>
@@ -992,6 +1208,193 @@
             });
             saveColumnState(freshState);
         });
+
+        // ==========================================
+        // CUSTOM CHECKBOX MULTI-SELECT CONTROLLER (Hotel & Package)
+        // ==========================================
+        function setupMultiSelect(type, emptyPlaceholder, itemLabel) {
+            const wrapper = document.getElementById(type + 'MultiSelectWrapper');
+            if (!wrapper) return;
+
+            const triggerBtn = document.getElementById(type + 'TriggerBtn');
+            const dropdownMenu = document.getElementById(type + 'DropdownMenu');
+            const searchInput = wrapper.querySelector('.multiselect-search');
+            const optionsContainer = document.getElementById(type + 'OptionsContainer');
+            const countBadge = document.getElementById(type + 'CountBadge');
+            const statusLabel = document.getElementById(type + 'StatusLabel');
+            const tagsContainer = document.getElementById(type + 'TagsContainer');
+            const selectAllBtn = wrapper.querySelector('.btn-multiselect-all');
+            const selectNoneBtn = wrapper.querySelector('.btn-multiselect-none');
+            const quickClearBtn = wrapper.querySelector('.multiselect-quick-clear');
+
+            function toggleDropdown(show) {
+                const isCurrentlyShown = !dropdownMenu.classList.contains('d-none');
+                const shouldShow = typeof show === 'boolean' ? show : !isCurrentlyShown;
+                
+                // Close other dropdowns first
+                document.querySelectorAll('.multiselect-dropdown-menu').forEach(menu => {
+                    if (menu !== dropdownMenu) menu.classList.add('d-none');
+                });
+                document.querySelectorAll('.multiselect-trigger-box').forEach(box => {
+                    if (box !== triggerBtn) box.classList.remove('active');
+                });
+
+                if (shouldShow) {
+                    dropdownMenu.classList.remove('d-none');
+                    triggerBtn.classList.add('active');
+                    if (searchInput) {
+                        setTimeout(() => searchInput.focus(), 50);
+                    }
+                } else {
+                    dropdownMenu.classList.add('d-none');
+                    triggerBtn.classList.remove('active');
+                    if (searchInput) searchInput.value = '';
+                    filterOptions('');
+                }
+            }
+
+            // Click trigger toggles dropdown
+            triggerBtn.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-tag') || e.target.closest('.multiselect-quick-clear')) {
+                    return;
+                }
+                toggleDropdown();
+            });
+
+            // Close on click outside
+            document.addEventListener('click', function(e) {
+                if (!wrapper.contains(e.target)) {
+                    dropdownMenu.classList.add('d-none');
+                    triggerBtn.classList.remove('active');
+                }
+            });
+
+            // Filter options on search
+            function filterOptions(term) {
+                const query = term.toLowerCase().trim();
+                const optionRows = optionsContainer.querySelectorAll('.multiselect-option-row');
+                optionRows.forEach(row => {
+                    const text = row.querySelector('.option-text').textContent.toLowerCase();
+                    if (!query || text.includes(query)) {
+                        row.classList.remove('d-none');
+                    } else {
+                        row.classList.add('d-none');
+                    }
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    filterOptions(this.value);
+                });
+            }
+
+            // Update UI State from checkboxes
+            function updateState() {
+                const allCheckboxes = optionsContainer.querySelectorAll('.multiselect-checkbox');
+                const checkedBoxes = Array.from(allCheckboxes).filter(cb => cb.checked);
+                const count = checkedBoxes.length;
+
+                // Update Row Highlight Classes
+                allCheckboxes.forEach(cb => {
+                    const row = cb.closest('.multiselect-option-row');
+                    if (cb.checked) {
+                        row.classList.add('checked-row');
+                    } else {
+                        row.classList.remove('checked-row');
+                    }
+                });
+
+                // Update Count Badges
+                if (countBadge) {
+                    countBadge.textContent = count > 0 ? (count + ' selected') : ('All ' + itemLabel);
+                }
+                if (statusLabel) {
+                    statusLabel.textContent = count + ' of ' + allCheckboxes.length + ' selected';
+                }
+
+                // Update Tags Container in closed box
+                if (tagsContainer) {
+                    tagsContainer.innerHTML = '';
+                    if (count === 0) {
+                        const span = document.createElement('span');
+                        span.className = 'text-muted small placeholder-text';
+                        span.textContent = emptyPlaceholder;
+                        tagsContainer.appendChild(span);
+                    } else if (count <= 2) {
+                        checkedBoxes.forEach(cb => {
+                            const val = cb.value;
+                            const text = cb.closest('.multiselect-option-row').querySelector('.option-text').textContent.trim();
+                            const pill = document.createElement('span');
+                            pill.className = 'multiselect-tag-pill';
+                            pill.innerHTML = `<span class="text-truncate" style="max-width: 120px;" title="${text}">${text}</span><span class="remove-tag" data-target="${type}" data-val="${val}">&times;</span>`;
+                            tagsContainer.appendChild(pill);
+                        });
+                    } else {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-primary text-white px-2 py-1';
+                        badge.style.fontSize = '11px';
+                        badge.innerHTML = `<i class="mdi mdi-check-all me-1"></i>${count} ${itemLabel} Selected`;
+                        tagsContainer.appendChild(badge);
+                    }
+                }
+            }
+
+            // Checkbox change listener
+            optionsContainer.addEventListener('change', function(e) {
+                if (e.target.classList.contains('multiselect-checkbox')) {
+                    updateState();
+                }
+            });
+
+            // Select All Button
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const visibleRows = optionsContainer.querySelectorAll('.multiselect-option-row:not(.d-none) .multiselect-checkbox');
+                    visibleRows.forEach(cb => cb.checked = true);
+                    updateState();
+                });
+            }
+
+            // Clear All Button
+            if (selectNoneBtn) {
+                selectNoneBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    optionsContainer.querySelectorAll('.multiselect-checkbox').forEach(cb => cb.checked = false);
+                    updateState();
+                });
+            }
+
+            // Quick Clear in trigger box
+            if (quickClearBtn) {
+                quickClearBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    optionsContainer.querySelectorAll('.multiselect-checkbox').forEach(cb => cb.checked = false);
+                    updateState();
+                });
+            }
+
+            // Remove Individual Tag
+            wrapper.addEventListener('click', function(e) {
+                const removeBtn = e.target.closest('.remove-tag');
+                if (removeBtn && removeBtn.getAttribute('data-target') === type) {
+                    e.stopPropagation();
+                    const val = removeBtn.getAttribute('data-val');
+                    const cb = optionsContainer.querySelector(`.multiselect-checkbox[value="${val}"]`);
+                    if (cb) {
+                        cb.checked = false;
+                        updateState();
+                    }
+                }
+            });
+
+            // Initial UI sync
+            updateState();
+        }
+
+        setupMultiSelect('hotel', 'Choose Hotel(s)...', 'Hotels');
+        setupMultiSelect('package', '-- All Packages --', 'Packages');
     });
 </script>
 @endsection

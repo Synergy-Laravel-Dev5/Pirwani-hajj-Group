@@ -36,6 +36,7 @@ use App\Http\Controllers\FlightReportController;
 use App\Http\Controllers\RoomingListController;
 use App\Http\Controllers\HotelPersonReportController;
 use App\Http\Controllers\PilgrimPassController;
+use App\Http\Controllers\HotelSaleController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -188,6 +189,18 @@ Route::middleware('auth')->group(function () {
                 Route::get('edit/{id}',    'edit')->name('room-inventory.edit');
                 Route::put('update/{id}',  'update')->name('room-inventory.update');
                 Route::delete('delete/{id}', 'destroy')->name('room-inventory.delete');
+            });
+
+        Route::controller(HotelSaleController::class)
+            ->prefix('hotel-sales')
+            ->group(function () {
+                Route::get('/',            'index')->name('hotel-sales.index');
+                Route::get('create',       'create')->name('hotel-sales.create');
+                Route::post('store',       'store')->name('hotel-sales.store');
+                Route::get('show/{id}',    'show')->name('hotel-sales.show');
+                Route::get('edit/{id}',    'edit')->name('hotel-sales.edit');
+                Route::put('update/{id}',  'update')->name('hotel-sales.update');
+                Route::delete('delete/{id}', 'destroy')->name('hotel-sales.delete');
             });
 
         Route::controller(ExpenseController::class)

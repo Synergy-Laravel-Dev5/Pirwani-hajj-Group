@@ -589,6 +589,48 @@
             {{-- OFFICIAL MANIFEST TABLE VIEW (EXACT MATCH TO PDF) --}}
             @if(($viewMode ?? 'manifest') === 'manifest')
                 <div class="card shadow-sm border-0 mb-4">
+                    @php
+                        $activeLocKey = strtolower(trim($locationFilter ?? 'all'));
+                        $activeLocTitle = match($activeLocKey) {
+                            'makkah'  => 'MAKKAH HOTEL ALLOCATION',
+                            'madinah' => 'MADINAH HOTEL ALLOCATION',
+                            'azizia'  => 'AZIZIA BUILDING ALLOCATION',
+                            'mina'    => 'MINA / ARAFAT CAMPS ALLOCATION',
+                            'other'   => 'OTHER / JEDDAH ALLOCATION',
+                            default   => 'ALL LOCATIONS & STAGES (MAKKAH / MADINAH / AZIZIA / MINA)',
+                        };
+                        $activeLocBadge = match($activeLocKey) {
+                            'makkah'  => 'bg-success text-white',
+                            'madinah' => 'bg-info text-dark',
+                            'azizia'  => 'bg-warning text-dark',
+                            'mina'    => 'bg-dark text-white',
+                            default   => 'bg-primary text-white',
+                        };
+                    @endphp
+                    {{-- Prominent Location & Stage Header --}}
+                    <div class="px-3 py-2 bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="badge {{ $activeLocBadge }} fs-13 px-3 py-1.5 shadow-sm">
+                                <i class="mdi mdi-map-marker-radius me-1"></i>{{ $activeLocTitle }}
+                            </span>
+                            @if(!empty($hotelFilter) && count((array)$hotelFilter) > 0)
+                                <span class="badge bg-dark text-white fs-12 px-2 py-1 shadow-sm">
+                                    <i class="mdi mdi-city me-1"></i>{{ implode(', ', (array)$hotelFilter) }}
+                                </span>
+                            @endif
+                            @if(!empty($roomTypeFilter) && $roomTypeFilter !== 'all')
+                                <span class="badge bg-secondary text-white fs-12 px-2 py-1 shadow-sm">
+                                    <i class="mdi mdi-door me-1"></i>{{ strtoupper($roomTypeFilter) }} ROOM
+                                </span>
+                            @endif
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small fw-semibold">
+                                Total Pax: <strong class="text-primary fs-14">{{ number_format($totalBedsOccupied) }}</strong>
+                                &bull; Pending: <strong class="text-warning fs-14">{{ number_format($unassignedPilgrimsCount ?? 0) }}</strong>
+                            </span>
+                        </div>
+                    </div>
                     <div class="card-header bg-white border-bottom py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
                         <div class="d-flex align-items-center gap-2">
                             <span class="fw-bold text-dark fs-14">
@@ -727,7 +769,7 @@
                                     @php $globalSr = 1; @endphp
                                     @forelse($groupedRooms as $roomKey => $room)
                                         @php
-                                            $occupants = $room['occupants'];
+                                            $occupants = array_values($room['occupants']);
                                             $totalOccupants = count($occupants);
                                             $rowspan = max(1, $totalOccupants);
                                             
@@ -735,10 +777,13 @@
                                             $isPending = ($rawNum === 'PENDING' || $rawNum === 'UNASSIGNED' || empty($rawNum));
                                             $roomDisplayNo = $isPending ? 'PENDING' : (str_starts_with(strtoupper($rawNum), 'R') ? strtoupper($rawNum) : ('R' . $rawNum));
                                             
-                                            $roomTypeDisplay = strtoupper($room['room_type']);
-                                            if ($isPending) {
-                                                $roomTypeDisplay = 'PENDING ALLOCATION';
-                                            } elseif (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
+                                            $rawRoomType = trim($room['room_type'] ?? '');
+                                            if (empty($rawRoomType) || in_array(strtolower($rawRoomType), ['pending allocation', 'pending', 'unassigned'])) {
+                                                $firstOcc = $occupants[0] ?? null;
+                                                $rawRoomType = $firstOcc['booked_room_type'] ?? ($firstOcc['room_type'] ?? 'Quad');
+                                            }
+                                            $roomTypeDisplay = strtoupper($rawRoomType);
+                                            if (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
                                                 $roomTypeDisplay = 'SIX';
                                             }
 
@@ -799,7 +844,7 @@
                                             </tr>
                                         @else
                                             @foreach($occupants as $oIdx => $occ)
-                                                <tr class="{{ $oIdx === 0 ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}">
+                                                <tr class="{{ $loop->first ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}">
                                                     <td class="text-center no-print">
                                                         @if(!empty($occ['real_person_id']))
                                                             <input type="checkbox" class="form-check-input pilgrim-check" 
@@ -809,11 +854,12 @@
                                                                    data-room="{{ $room['room_number'] ?? '' }}"
                                                                    data-location="{{ $room['location'] ?? '' }}"
                                                                    data-name="{{ $occ['name'] }}"
+                                                                   data-haji="{{ $occ['hajj_id'] ?? '' }}"
                                                                    data-hb="{{ $occ['hb_number'] }}"
                                                                    data-passport="{{ $occ['passport'] }}"
                                                                    data-gender="{{ $occ['gender'] }}"
                                                                    data-booking="{{ $occ['booking_number'] }}"
-                                                                   data-booked-type="{{ $occ['booked_room_type'] ?? 'Quad' }}"
+                                                                   data-booked-type="{{ (!empty($occ['booked_room_type']) && !in_array(strtolower($occ['booked_room_type']), ['pending allocation', 'pending'])) ? $occ['booked_room_type'] : ($occ['room_type'] ?? 'Quad') }}"
                                                                    data-status="{{ $isPending ? 'pending' : 'assigned' }}">
                                                         @else
                                                             <span class="text-muted" style="font-size: 10px;">—</span>
@@ -839,6 +885,11 @@
                                                     </td>
                                                     <td style="text-align: left; padding-left: 10px;" class="fw-bold text-uppercase text-dark col-name">
                                                         <span class="d-inline-block">{{ $occ['name'] }}</span>
+                                                        @if($isPending)
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 9.5px; font-weight: 700;">
+                                                                {{ strtoupper($occ['booked_room_type'] ?? ($occ['room_type'] ?? 'QUAD')) }}
+                                                            </span>
+                                                        @endif
                                                         @if(!$isPending && !empty($occ['real_person_id']))
                                                             <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
                                                                     data-id="{{ $occ['real_person_id'] }}"
@@ -858,7 +909,7 @@
                                                                     data-name="{{ $occ['name'] }}"
                                                                     data-hotel="{{ $occ['hotel_name'] ?? ($occ['booked_hotel_name'] ?? '') }}"
                                                                     data-location="{{ $occ['location'] ?? 'makkah' }}"
-                                                                    data-type="{{ $occ['room_type'] ?? ($occ['booked_room_type'] ?? 'Quad') }}"
+                                                                    data-type="{{ (!empty($occ['booked_room_type']) && !in_array(strtolower($occ['booked_room_type']), ['pending allocation', 'pending'])) ? $occ['booked_room_type'] : ($occ['room_type'] ?? 'Quad') }}"
                                                                     data-gender="{{ $occ['gender'] ?? 'Any' }}"
                                                                     title="Assign Room to {{ $occ['name'] }} ({{ $occ['hajj_id'] }})" style="font-size: 10px; font-weight: 700; border-radius: 4px;">
                                                                 <i class="mdi mdi-door-open me-1"></i> Assign
@@ -897,7 +948,7 @@
                                                         {{ $occ['client_name'] ?: '—' }}
                                                     </td>
                                                     
-                                                    @if($oIdx === 0)
+                                                    @if($loop->first)
                                                         <td rowspan="{{ $rowspan }}" class="room-typ-cell col-room-typ">
                                                             <div class="mb-1">
                                                                 <span class="badge {{ $locBadgeClass }} px-2 py-1" style="font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">
@@ -907,10 +958,12 @@
                                                             <div class="fw-bold text-dark mb-1" style="font-size: 11px; line-height: 1.2;">
                                                                 {{ $room['hotel_name'] }}
                                                             </div>
-                                                            <div class="fw-bold text-primary" style="font-size: 12px;">
+                                                            <div class="fw-bold text-primary" style="font-size: 13px;">
                                                                 {{ $roomTypeDisplay }} 
                                                                 @if(!$isPending)
                                                                     <span class="text-muted" style="font-size: 10px;">({{ $room['total_capacity'] }} Beds)</span>
+                                                                @else
+                                                                    <span class="badge bg-warning text-dark px-1.5 py-0.5 ms-1" style="font-size: 9px; font-weight: 700;">PENDING #</span>
                                                                 @endif
                                                             </div>
                                                             @if(!empty($room['room_gender']) && $room['room_gender'] !== 'Any' && !$isPending)
@@ -1511,11 +1564,222 @@
             updateSelectionState();
         });
 
-        // Open Assign Modal
+        // Reusable Helper to Populate and Open Assign Modal for Pilgrims
+        function populateAndOpenAssignModal(checkboxesList, fallbackBtn = null) {
+            const hiddenInputs = document.getElementById('hiddenPersonInputs');
+            const pillsContainer = document.getElementById('selectedPilgrimsPills');
+            const modalCount = document.getElementById('modalSelectedCount');
+            const modalTypesSummary = document.getElementById('modalTypesSummary');
+            const hInp = document.getElementById('assignModalHajiIds');
+            const roomTypeSelect = document.getElementById('assignModalRoomType');
+            const locSelect = document.getElementById('assignModalLocation');
+            const hSelect = document.getElementById('assignModalHotelSelect');
+            const hInput = document.getElementById('assignModalHotelInput');
+            const genderSelect = document.getElementById('assignModalGender');
+
+            if (hiddenInputs) hiddenInputs.innerHTML = '';
+            if (pillsContainer) pillsContainer.innerHTML = '';
+
+            const hajiIds = [];
+            let femaleCount = 0;
+            let maleCount = 0;
+            const bookedTypes = {};
+            let prefilledHotel = '';
+            let prefilledLocation = '';
+            let prefilledType = '';
+
+            const seenPids = new Set();
+            checkboxesList.forEach(cb => {
+                const pid = cb.value;
+                if (!pid || seenPids.has(pid)) return;
+                seenPids.add(pid);
+
+                const name = cb.getAttribute('data-name') || '';
+                const haji = cb.getAttribute('data-haji') || '';
+                const hb = cb.getAttribute('data-hb') || '';
+                const gender = cb.getAttribute('data-gender') || 'Male';
+                const bType = cb.getAttribute('data-booked-type') || 'Quad';
+                const hotel = cb.getAttribute('data-hotel') || '';
+                const loc = cb.getAttribute('data-location') || '';
+
+                if (haji) hajiIds.push(haji);
+                if (hotel && !prefilledHotel && hotel !== 'Pending Room Allocation' && hotel !== 'Unspecified Hotel') {
+                    prefilledHotel = hotel;
+                }
+                if (loc && !prefilledLocation && loc !== 'unassigned') {
+                    prefilledLocation = loc;
+                }
+                if (bType && !prefilledType) prefilledType = bType;
+
+                if (gender.toLowerCase() === 'female') femaleCount++;
+                else maleCount++;
+
+                bookedTypes[bType] = (bookedTypes[bType] || 0) + 1;
+
+                if (hiddenInputs) {
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden';
+                    inp.name = 'person_ids[]';
+                    inp.value = pid;
+                    hiddenInputs.appendChild(inp);
+                }
+
+                if (pillsContainer) {
+                    const pill = document.createElement('span');
+                    pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
+                    pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji || '—'})</strong> <small class="opacity-75">[${hb || bType}]</small>`;
+                    pillsContainer.appendChild(pill);
+                }
+            });
+
+            if (fallbackBtn && seenPids.size === 0) {
+                const pid = fallbackBtn.getAttribute('data-id');
+                const haji = fallbackBtn.getAttribute('data-haji') || '';
+                const name = fallbackBtn.getAttribute('data-name') || '';
+                const hb = fallbackBtn.getAttribute('data-hb') || '';
+                const hotel = fallbackBtn.getAttribute('data-hotel') || '';
+                const location = fallbackBtn.getAttribute('data-location') || 'makkah';
+                const type = fallbackBtn.getAttribute('data-type') || 'Quad';
+                const gender = fallbackBtn.getAttribute('data-gender') || 'Any';
+
+                if (haji) hajiIds.push(haji);
+                prefilledHotel = hotel;
+                prefilledLocation = location;
+                prefilledType = type;
+                if (gender.toLowerCase() === 'female') femaleCount++;
+                else maleCount++;
+
+                if (hiddenInputs) {
+                    const inp = document.createElement('input');
+                    inp.type = 'hidden';
+                    inp.name = 'person_ids[]';
+                    inp.value = pid;
+                    hiddenInputs.appendChild(inp);
+                }
+
+                if (pillsContainer) {
+                    const pill = document.createElement('span');
+                    pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
+                    pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji})</strong> <small class="opacity-75">[${hb}]</small>`;
+                    pillsContainer.appendChild(pill);
+                }
+            }
+
+            const totalSelected = seenPids.size || (fallbackBtn ? 1 : 0);
+            if (modalCount) modalCount.innerText = totalSelected;
+
+            // Populate Haji IDs in text box (e.g. PW27001, PW27002)
+            if (hInp) hInp.value = hajiIds.join(', ');
+
+            // Types summary
+            if (modalTypesSummary) {
+                const typeArr = Object.entries(bookedTypes).map(([k, v]) => `${v} ${k}`);
+                modalTypesSummary.innerText = typeArr.length ? ('Booked: ' + typeArr.join(', ')) : (hajiIds.join(', '));
+            }
+
+            // Location
+            if (locSelect) {
+                const curFilter = "{{ strtolower(trim($locationFilter ?? 'makkah')) }}";
+                locSelect.value = (prefilledLocation && prefilledLocation !== 'unassigned') ? prefilledLocation.toLowerCase() : ((curFilter && curFilter !== 'all') ? curFilter : 'makkah');
+            }
+
+            // Hotel
+            if (!prefilledHotel || prefilledHotel === 'Pending Room Allocation' || prefilledHotel === 'Unspecified Hotel') {
+                if (hSelect && hSelect.options.length > 1) {
+                    hSelect.selectedIndex = 1;
+                    prefilledHotel = hSelect.value;
+                }
+            }
+            if (hInput) hInput.value = prefilledHotel;
+            if (hSelect && prefilledHotel) {
+                for (let opt of hSelect.options) {
+                    if (opt.value && opt.value.toLowerCase() === prefilledHotel.toLowerCase()) {
+                        hSelect.value = opt.value;
+                        break;
+                    }
+                }
+            }
+
+            // Smart suggest room type based on count or booked type
+            if (roomTypeSelect) {
+                const distinctTypes = Object.keys(bookedTypes);
+                if (distinctTypes.length === 1) {
+                    const onlyType = distinctTypes[0].toLowerCase();
+                    if (onlyType.includes('double')) roomTypeSelect.value = 'Double';
+                    else if (onlyType.includes('triple')) roomTypeSelect.value = 'Triple';
+                    else if (onlyType.includes('quad')) roomTypeSelect.value = 'Quad';
+                    else if (onlyType.includes('quint')) roomTypeSelect.value = 'Quint';
+                    else if (onlyType.includes('six') || onlyType.includes('sharing')) roomTypeSelect.value = 'Six';
+                    else if (onlyType.includes('single')) roomTypeSelect.value = 'Single';
+                } else if (prefilledType) {
+                    const pt = prefilledType.toLowerCase();
+                    if (pt.includes('double')) roomTypeSelect.value = 'Double';
+                    else if (pt.includes('triple')) roomTypeSelect.value = 'Triple';
+                    else if (pt.includes('quad')) roomTypeSelect.value = 'Quad';
+                    else if (pt.includes('quint')) roomTypeSelect.value = 'Quint';
+                    else if (pt.includes('six') || pt.includes('sharing')) roomTypeSelect.value = 'Six';
+                    else if (pt.includes('single')) roomTypeSelect.value = 'Single';
+                } else {
+                    if (totalSelected === 1) roomTypeSelect.value = 'Single';
+                    else if (totalSelected === 2) roomTypeSelect.value = 'Double';
+                    else if (totalSelected === 3) roomTypeSelect.value = 'Triple';
+                    else if (totalSelected === 4) roomTypeSelect.value = 'Quad';
+                    else if (totalSelected === 5) roomTypeSelect.value = 'Quint';
+                    else if (totalSelected >= 6) roomTypeSelect.value = 'Six';
+                }
+            }
+
+            // Smart suggest gender
+            if (genderSelect) {
+                if (femaleCount > 0 && maleCount === 0) genderSelect.value = 'Female';
+                else if (maleCount > 0 && femaleCount === 0) genderSelect.value = 'Male';
+                else if (maleCount > 0 && femaleCount > 0) genderSelect.value = 'Family';
+            }
+
+            // Reset Room Number input
+            const rInput = document.getElementById('assignModalRoomNumber');
+            const chkPending = document.getElementById('chkRoomPendingToggle');
+            const rHelp = document.getElementById('roomNumberHelpText');
+            if (chkPending) chkPending.checked = false;
+            if (rInput) {
+                rInput.value = '';
+                rInput.disabled = false;
+                rInput.required = true;
+                rInput.placeholder = 'e.g. 101, 204, 402';
+            }
+            if (rHelp) rHelp.innerText = `Enter room number to allocate ${totalSelected} pilgrim(s) (${hajiIds.join(', ')}).`;
+
+            const lookupStatus = document.getElementById('hajiLookupStatus');
+            const lookupResults = document.getElementById('liveLookupResults');
+            if (lookupStatus) lookupStatus.innerHTML = '';
+            if (lookupResults) {
+                lookupResults.classList.add('d-none');
+                lookupResults.innerHTML = '';
+            }
+
+            if (assignModal) {
+                assignModal.show();
+                setTimeout(() => {
+                    if (rInput) rInput.focus();
+                }, 350);
+            }
+        }
+
+        // Open Assign Modal from Bulk Action Bar
         document.getElementById('btnOpenAssignModal')?.addEventListener('click', function() {
-            const checked = document.querySelectorAll('.pilgrim-check:checked');
+            const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
             if (checked.length === 0) {
                 alert('Please select at least one pilgrim first.');
+                return;
+            }
+            populateAndOpenAssignModal(checked);
+        });
+
+        // Open Assign by Haji ID Modal (from Bulk Action Bar or Header Button)
+        function openAssignByHajiIdModal() {
+            const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
+            if (checked.length > 0) {
+                populateAndOpenAssignModal(checked);
                 return;
             }
 
@@ -1524,90 +1788,9 @@
             const modalCount = document.getElementById('modalSelectedCount');
             const modalTypesSummary = document.getElementById('modalTypesSummary');
 
-            hiddenInputs.innerHTML = '';
-            pillsContainer.innerHTML = '';
-            modalCount.innerText = checked.length;
-
-            let femaleCount = 0;
-            let maleCount = 0;
-            const bookedTypes = {};
-
-            const seenPids = new Set();
-            checked.forEach(cb => {
-                const pid = cb.value;
-                if (seenPids.has(pid)) return;
-                seenPids.add(pid);
-
-                const name = cb.getAttribute('data-name');
-                const hb = cb.getAttribute('data-hb') || '';
-                const gender = cb.getAttribute('data-gender') || 'Male';
-                const bType = cb.getAttribute('data-booked-type') || 'Quad';
-
-                if (gender.toLowerCase() === 'female') femaleCount++;
-                else maleCount++;
-
-                bookedTypes[bType] = (bookedTypes[bType] || 0) + 1;
-
-                // Hidden input
-                const inp = document.createElement('input');
-                inp.type = 'hidden';
-                inp.name = 'person_ids[]';
-                inp.value = pid;
-                hiddenInputs.appendChild(inp);
-
-                // Badge Pill
-                const pill = document.createElement('span');
-                pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
-                pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} ${hb ? '(' + hb + ')' : ''} <small class="opacity-75">[${bType}]</small>`;
-                pillsContainer.appendChild(pill);
-            });
-            modalCount.innerText = seenPids.size;
-
-            if (modalTypesSummary) {
-                const typeArr = Object.entries(bookedTypes).map(([k, v]) => `${v} ${k}`);
-                modalTypesSummary.innerText = 'Booked: ' + typeArr.join(', ');
-            }
-
-            // Smart suggest room type based on count or booked type
-            const roomTypeSelect = document.getElementById('assignModalRoomType');
-            const distinctTypes = Object.keys(bookedTypes);
-
-            if (distinctTypes.length === 1) {
-                const onlyType = distinctTypes[0].toLowerCase();
-                if (onlyType.includes('double')) roomTypeSelect.value = 'Double';
-                else if (onlyType.includes('triple')) roomTypeSelect.value = 'Triple';
-                else if (onlyType.includes('quad')) roomTypeSelect.value = 'Quad';
-                else if (onlyType.includes('quint')) roomTypeSelect.value = 'Quint';
-                else if (onlyType.includes('six') || onlyType.includes('sharing')) roomTypeSelect.value = 'Six';
-                else if (onlyType.includes('single')) roomTypeSelect.value = 'Single';
-            } else {
-                if (checked.length === 1) roomTypeSelect.value = 'Single';
-                else if (checked.length === 2) roomTypeSelect.value = 'Double';
-                else if (checked.length === 3) roomTypeSelect.value = 'Triple';
-                else if (checked.length === 4) roomTypeSelect.value = 'Quad';
-                else if (checked.length === 5) roomTypeSelect.value = 'Quint';
-                else if (checked.length >= 6) roomTypeSelect.value = 'Six';
-            }
-
-            // Smart suggest gender
-            const genderSelect = document.getElementById('assignModalGender');
-            if (femaleCount > 0 && maleCount === 0) genderSelect.value = 'Female';
-            else if (maleCount > 0 && femaleCount === 0) genderSelect.value = 'Male';
-            else if (maleCount > 0 && femaleCount > 0) genderSelect.value = 'Family';
-
-            if (assignModal) assignModal.show();
-        });
-
-        // Open Assign by Haji ID Modal (from Bulk Action Bar or Header Button)
-        function openAssignByHajiIdModal() {
-            const hiddenInputs = document.getElementById('hiddenPersonInputs');
-            const pillsContainer = document.getElementById('selectedPilgrimsPills');
-            const modalCount = document.getElementById('modalSelectedCount');
-            const modalTypesSummary = document.getElementById('modalTypesSummary');
-
-            hiddenInputs.innerHTML = '';
-            pillsContainer.innerHTML = '<span class="text-muted small">Enter Haji ID(s) or name below to find and assign pilgrims</span>';
-            modalCount.innerText = '0';
+            if (hiddenInputs) hiddenInputs.innerHTML = '';
+            if (pillsContainer) pillsContainer.innerHTML = '<span class="text-muted small">Enter Haji ID(s) or name below to find and assign pilgrims</span>';
+            if (modalCount) modalCount.innerText = '0';
             if (modalTypesSummary) modalTypesSummary.innerText = 'Assign by Haji ID';
 
             const hInp = document.getElementById('assignModalHajiIds');
@@ -1667,105 +1850,21 @@
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const pid = this.getAttribute('data-id');
-                const haji = this.getAttribute('data-haji') || '';
-                const name = this.getAttribute('data-name') || '';
-                const hb = this.getAttribute('data-hb') || '';
-                let hotel = this.getAttribute('data-hotel') || '';
-                let location = this.getAttribute('data-location') || 'makkah';
-                const type = this.getAttribute('data-type') || 'Quad';
-                const gender = this.getAttribute('data-gender') || 'Any';
+                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
 
-                const hiddenInputs = document.getElementById('hiddenPersonInputs');
-                const pillsContainer = document.getElementById('selectedPilgrimsPills');
-                const modalCount = document.getElementById('modalSelectedCount');
-                const modalTypesSummary = document.getElementById('modalTypesSummary');
-
-                if (hiddenInputs) {
-                    hiddenInputs.innerHTML = '';
-                    const inp = document.createElement('input');
-                    inp.type = 'hidden';
-                    inp.name = 'person_ids[]';
-                    inp.value = pid;
-                    hiddenInputs.appendChild(inp);
+                // If some checkboxes are already checked:
+                // Check if current row's checkbox is among them; if not, include it!
+                const currentCb = document.querySelector(`.pilgrim-check[value="${pid}"]`);
+                if (currentCb && !currentCb.checked) {
+                    currentCb.checked = true;
+                    checked.push(currentCb);
+                    updateSelectionState();
                 }
 
-                if (pillsContainer) {
-                    pillsContainer.innerHTML = '';
-                    const pill = document.createElement('span');
-                    pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
-                    pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji})</strong> <small class="opacity-75">[${hb}]</small>`;
-                    pillsContainer.appendChild(pill);
-                }
-
-                if (modalCount) modalCount.innerText = '1';
-                if (modalTypesSummary) modalTypesSummary.innerText = `${haji} (${type})`;
-
-                const hInp = document.getElementById('assignModalHajiIds');
-                if (hInp) hInp.value = haji;
-
-                const locSelect = document.getElementById('assignModalLocation');
-                if (locSelect) {
-                    locSelect.value = (location && location !== 'unassigned') ? location.toLowerCase() : 'makkah';
-                }
-
-                const hSelect = document.getElementById('assignModalHotelSelect');
-                const hInput = document.getElementById('assignModalHotelInput');
-                if (!hotel || hotel === 'Pending Room Allocation' || hotel === 'Unspecified Hotel') {
-                    if (hSelect && hSelect.options.length > 1) {
-                        hSelect.selectedIndex = 1;
-                        hotel = hSelect.value;
-                    }
-                }
-                if (hInput) hInput.value = hotel;
-                if (hSelect && hotel) {
-                    for (let opt of hSelect.options) {
-                        if (opt.value && opt.value.toLowerCase() === hotel.toLowerCase()) {
-                            hSelect.value = opt.value;
-                            break;
-                        }
-                    }
-                }
-
-                const typeSelect = document.getElementById('assignModalRoomType');
-                if (typeSelect) {
-                    for (let opt of typeSelect.options) {
-                        if (opt.value.toLowerCase() === type.toLowerCase()) {
-                            typeSelect.value = opt.value;
-                            break;
-                        }
-                    }
-                }
-
-                const gSelect = document.getElementById('assignModalGender');
-                if (gSelect) {
-                    gSelect.value = (gender.toLowerCase() === 'female') ? 'Female' : ((gender.toLowerCase() === 'male') ? 'Male' : 'Any');
-                }
-
-                const rInput = document.getElementById('assignModalRoomNumber');
-                const chkPending = document.getElementById('chkRoomPendingToggle');
-                const rHelp = document.getElementById('roomNumberHelpText');
-                if (chkPending) chkPending.checked = false;
-                if (rInput) {
-                    rInput.value = '';
-                    rInput.disabled = false;
-                    rInput.required = true;
-                    rInput.placeholder = 'e.g. 101, 204, 402';
-                }
-                if (rHelp) rHelp.innerText = `Enter room number to assign ${name} (${haji}).`;
-
-                const lookupStatus = document.getElementById('hajiLookupStatus');
-                const lookupResults = document.getElementById('liveLookupResults');
-                if (lookupStatus) lookupStatus.innerHTML = '';
-                if (lookupResults) {
-                    lookupResults.classList.add('d-none');
-                    lookupResults.innerHTML = '';
-                }
-
-                if (assignModal) {
-                    assignModal.show();
-                    setTimeout(() => {
-                        if (rInput) rInput.focus();
-                    }, 350);
+                if (checked.length > 0) {
+                    populateAndOpenAssignModal(checked, this);
+                } else {
+                    populateAndOpenAssignModal([], this);
                 }
             });
         });

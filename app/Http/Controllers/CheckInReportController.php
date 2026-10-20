@@ -228,9 +228,36 @@ class CheckInReportController extends Controller
 
     private function getFilteredCheckInData(Request $request): array
     {
-        $hotelFilter    = $request->get('hotel_name');
+        $rawHotel = $request->get('hotel_name');
+        $hotelFilter = [];
+        if (is_array($rawHotel)) {
+            $hotelFilter = array_values(array_filter(array_map('trim', $rawHotel)));
+        } elseif (!empty($rawHotel) && $rawHotel !== 'all') {
+            $hotelFilter = [trim($rawHotel)];
+        }
+
         $locationFilter = $request->get('location');
-        $packageFilter  = $request->get('package_id');
+        $aziziaPhase    = $request->get('azizia_phase', 'both'); // 'both', 'first', 'second'
+
+        // Map location shortcuts
+        if ($locationFilter === 'azizia_first') {
+            $locationFilter = 'azizia';
+            $aziziaPhase = 'first';
+        } elseif ($locationFilter === 'azizia_second') {
+            $locationFilter = 'azizia';
+            $aziziaPhase = 'second';
+        }
+
+        $viewMode = $request->get('view_mode', ($locationFilter === 'all' || empty($locationFilter)) ? 'consolidated' : 'stays');
+
+        $rawPkg = $request->get('package_id');
+        $packageFilter = [];
+        if (is_array($rawPkg)) {
+            $packageFilter = array_values(array_filter(array_map('trim', $rawPkg)));
+        } elseif (!empty($rawPkg) && $rawPkg !== 'all') {
+            $packageFilter = [trim($rawPkg)];
+        }
+
         $maktabFilter   = $request->get('maktab');
         $search         = $request->get('search');
         $quickFilter    = $request->get('quick_filter', 'all');
@@ -261,9 +288,13 @@ class CheckInReportController extends Controller
                 $q->whereNull('deleted_at')->whereNotIn('status', ['cancelled', 'rejected']);
             });
 
-        // Hotel name filter
+        // Hotel name filter (Multi-Select or Single)
         if (!empty($hotelFilter)) {
-            $query->where('hotel_name', 'LIKE', '%' . $hotelFilter . '%');
+            $query->where(function ($q) use ($hotelFilter) {
+                foreach ($hotelFilter as $hf) {
+                    $q->orWhere('hotel_name', 'LIKE', '%' . $hf . '%');
+                }
+            });
         }
 
         // Location filter
@@ -279,10 +310,10 @@ class CheckInReportController extends Controller
             $query->whereDate('check_in', '<=', $toDate);
         }
 
-        // Package filter
+        // Package filter (Multi-Select or Single)
         if (!empty($packageFilter)) {
             $query->whereHas('booking', function ($q) use ($packageFilter) {
-                $q->where('package_id', $packageFilter);
+                $q->whereIn('package_id', $packageFilter);
             });
         }
 
@@ -368,6 +399,114 @@ class CheckInReportController extends Controller
         // Order by check_in date ascending
         $hotelStays = $query->orderBy('check_in', 'asc')->get();
 
+        // ══════════════════════════════════════════════════════════════════
+        // Azizia Check-In Phase Filtering (1st vs 2nd vs Both Check-Ins)
+        // ══════════════════════════════════════════════════════════════════
+        if ($locationFilter === 'azizia' && in_array($aziziaPhase, ['first', 'second'])) {
+            $filteredStays = collect();
+            $groupedByBooking = $hotelStays->groupBy('booking_id');
+            foreach ($groupedByBooking as $bId => $bStays) {
+                $sortedStays = $bStays->values();
+                if ($aziziaPhase === 'first' && isset($sortedStays[0])) {
+                    $filteredStays->push($sortedStays[0]);
+                } elseif ($aziziaPhase === 'second' && isset($sortedStays[1])) {
+                    $filteredStays->push($sortedStays[1]);
+                }
+            }
+            $hotelStays = $filteredStays->sortBy('check_in')->values();
+        }
+
+        // Tag every Azizia stay with its phase label (1st Check-In vs 2nd Check-In)
+        $allAziziaBookingGroups = BookingHotel::where('location', 'azizia')
+            ->whereIn('booking_id', $hotelStays->pluck('booking_id')->unique())
+            ->orderBy('check_in', 'asc')
+            ->get()
+            ->groupBy('booking_id');
+
+        foreach ($hotelStays as $stay) {
+            if (strtolower($stay->location) === 'azizia') {
+                $bAzStays = $allAziziaBookingGroups->get($stay->booking_id, collect());
+                $idx = $bAzStays->search(fn($s) => $s->id == $stay->id);
+                if ($idx === 0) {
+                    $stay->azizia_phase_label = '1st Check-In (Pre-Hajj)';
+                    $stay->azizia_phase_badge = 'bg-warning text-dark';
+                } elseif ($idx === 1) {
+                    $stay->azizia_phase_label = '2nd Check-In (Post-Hajj)';
+                    $stay->azizia_phase_badge = 'bg-info text-dark';
+                } else {
+                    $stay->azizia_phase_label = 'Azizia Check-In';
+                    $stay->azizia_phase_badge = 'bg-secondary text-white';
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Consolidated Pilgrim View (1 Row Per Haji - All Locations in One)
+        // ══════════════════════════════════════════════════════════════════
+        $matchingBookingIds = $hotelStays->pluck('booking_id')->unique();
+        $consolidatedPilgrims = collect();
+
+        if ($matchingBookingIds->isNotEmpty()) {
+            $bookingsForConsolidated = Booking::with([
+                'client',
+                'company',
+                'package',
+                'persons',
+                'hotels' => function ($hq) {
+                    $hq->orderBy('check_in', 'asc');
+                }
+            ])
+            ->whereIn('id', $matchingBookingIds)
+            ->get();
+
+            foreach ($bookingsForConsolidated as $b) {
+                $allHotels = $b->hotels;
+                $makkahStay = $allHotels->first(fn($h) => strtolower($h->location) === 'makkah');
+                $madinahStay = $allHotels->first(fn($h) => strtolower($h->location) === 'madinah');
+                $minaStay = $allHotels->first(fn($h) => strtolower($h->location) === 'mina');
+                $azStays = $allHotels->filter(fn($h) => strtolower($h->location) === 'azizia')->sortBy('check_in')->values();
+                $azizia1Stay = $azStays->get(0);
+                $azizia2Stay = $azStays->get(1);
+
+                $persons = $b->persons;
+                if ($persons->isEmpty()) {
+                    $consolidatedPilgrims->push((object)[
+                        'is_dummy'      => true,
+                        'person'        => null,
+                        'booking'       => $b,
+                        'client_name'   => $b->client?->name ?? ($b->company?->company_name ?? 'Direct Pilgrim'),
+                        'hajj_id'       => '—',
+                        'hb_number'     => '—',
+                        'gender'        => '—',
+                        'passport'      => $b->passport_number ?: '—',
+                        'makkah'        => $makkahStay,
+                        'azizia1'       => $azizia1Stay,
+                        'mina'          => $minaStay,
+                        'azizia2'       => $azizia2Stay,
+                        'madinah'       => $madinahStay,
+                    ]);
+                } else {
+                    foreach ($persons as $person) {
+                        $consolidatedPilgrims->push((object)[
+                            'is_dummy'      => false,
+                            'person'        => $person,
+                            'booking'       => $b,
+                            'client_name'   => $person->full_name,
+                            'hajj_id'       => $person->hajj_id ?: '—',
+                            'hb_number'     => $person->hb_number ?: '—',
+                            'gender'        => $person->gender ?: '—',
+                            'passport'      => $person->passport_number ?: '—',
+                            'makkah'        => $makkahStay,
+                            'azizia1'       => $azizia1Stay,
+                            'mina'          => $minaStay,
+                            'azizia2'       => $azizia2Stay,
+                            'madinah'       => $madinahStay,
+                        ]);
+                    }
+                }
+            }
+        }
+
         // Calculate KPI Statistics
         $totalStays = $hotelStays->count();
         $totalRooms = $hotelStays->sum('no_of_rooms');
@@ -389,10 +528,12 @@ class CheckInReportController extends Controller
         // Dropdown Data
         $registeredHotels = Hotel::orderBy('name')->get();
         $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
+        $allHotelOptions = $registeredHotels->pluck('name')->merge($distinctHotelNames)->unique()->filter()->sort()->values();
         $packages = Package::latest()->get();
 
         return compact(
             'hotelStays',
+            'consolidatedPilgrims',
             'totalStays',
             'totalRooms',
             'totalPilgrims',
@@ -401,9 +542,12 @@ class CheckInReportController extends Controller
             'activeInHouse',
             'registeredHotels',
             'distinctHotelNames',
+            'allHotelOptions',
             'packages',
             'hotelFilter',
             'locationFilter',
+            'aziziaPhase',
+            'viewMode',
             'packageFilter',
             'maktabFilter',
             'search',

@@ -216,10 +216,33 @@ class HotelPersonReportController extends Controller
 
     public function getFilteredData(Request $request)
     {
-        $hotelFilter    = trim($request->get('hotel_name', ''));
+        $rawHotel = $request->get('hotel_name');
+        $hotelFilter = [];
+        if (is_array($rawHotel)) {
+            $hotelFilter = array_values(array_filter(array_map('trim', $rawHotel)));
+        } elseif (!empty($rawHotel) && $rawHotel !== 'all') {
+            $hotelFilter = [trim($rawHotel)];
+        }
+
         $locationFilter = strtolower(trim($request->get('location', 'all')));
+        $aziziaPhase    = $request->get('azizia_phase', 'both');
+        if ($locationFilter === 'azizia_first') {
+            $locationFilter = 'azizia';
+            $aziziaPhase = 'first';
+        } elseif ($locationFilter === 'azizia_second') {
+            $locationFilter = 'azizia';
+            $aziziaPhase = 'second';
+        }
         $search         = trim($request->get('search', ''));
-        $packageFilter  = $request->get('package_id');
+
+        $rawPkg = $request->get('package_id');
+        $packageFilter = [];
+        if (is_array($rawPkg)) {
+            $packageFilter = array_values(array_filter(array_map('trim', $rawPkg)));
+        } elseif (!empty($rawPkg) && $rawPkg !== 'all') {
+            $packageFilter = [trim($rawPkg)];
+        }
+
         $fromDate       = $request->get('from_date');
         $toDate         = $request->get('to_date');
 
@@ -229,9 +252,13 @@ class HotelPersonReportController extends Controller
                 $q->whereNull('deleted_at')->whereNotIn('status', ['cancelled', 'rejected']);
             });
 
-        // Hotel Name Filter
-        if (!empty($hotelFilter) && $hotelFilter !== 'all') {
-            $query->where('hotel_name', 'LIKE', '%' . $hotelFilter . '%');
+        // Hotel Name Filter (Multi-Select or Single)
+        if (!empty($hotelFilter)) {
+            $query->where(function ($q) use ($hotelFilter) {
+                foreach ($hotelFilter as $hf) {
+                    $q->orWhere('hotel_name', 'LIKE', '%' . $hf . '%');
+                }
+            });
         }
 
         // Location Filter
@@ -239,10 +266,10 @@ class HotelPersonReportController extends Controller
             $query->whereRaw('LOWER(location) = ?', [$locationFilter]);
         }
 
-        // Package Filter
-        if (!empty($packageFilter) && $packageFilter !== 'all') {
+        // Package Filter (Multi-Select or Single)
+        if (!empty($packageFilter)) {
             $query->whereHas('booking', function ($bq) use ($packageFilter) {
-                $bq->where('package_id', $packageFilter);
+                $bq->whereIn('package_id', $packageFilter);
             });
         }
 
@@ -283,6 +310,21 @@ class HotelPersonReportController extends Controller
                             ->orderBy('hotel_name', 'asc')
                             ->orderByRaw('COALESCE(check_in, "9999-12-31") ASC')
                             ->get();
+
+        // Azizia Check-In Phase Filtering (1st vs 2nd vs Both Check-Ins)
+        if ($locationFilter === 'azizia' && in_array($aziziaPhase, ['first', 'second'])) {
+            $filteredStays = collect();
+            $groupedByBooking = $hotelStays->groupBy('booking_id');
+            foreach ($groupedByBooking as $bId => $bStays) {
+                $sortedStays = $bStays->values();
+                if ($aziziaPhase === 'first' && isset($sortedStays[0])) {
+                    $filteredStays->push($sortedStays[0]);
+                } elseif ($aziziaPhase === 'second' && isset($sortedStays[1])) {
+                    $filteredStays->push($sortedStays[1]);
+                }
+            }
+            $hotelStays = $filteredStays->values();
+        }
 
         // Calculate Totals for Current Filter
         $totalStays = $hotelStays->count();
@@ -350,6 +392,7 @@ class HotelPersonReportController extends Controller
             'packages',
             'hotelFilter',
             'locationFilter',
+            'aziziaPhase',
             'search',
             'packageFilter',
             'fromDate',

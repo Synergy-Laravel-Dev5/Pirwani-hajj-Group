@@ -76,6 +76,14 @@
                             </div>
 
                             <div class="col-md-3">
+                                <label class="form-label fs-13 fw-semibold">Allotment Basis</label>
+                                <select name="allotment_basis" class="form-select form-select-sm">
+                                    <option value="room" {{ old('allotment_basis', $inventory->allotment_basis) === 'room' ? 'selected' : '' }}>Room Basis</option>
+                                    <option value="bed" {{ old('allotment_basis', $inventory->allotment_basis) === 'bed' ? 'selected' : '' }}>Bed Basis</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
                                 <label class="form-label fs-13 fw-semibold">Room Type <span class="text-danger">*</span></label>
                                 <select name="room_type" class="form-select form-select-sm" required>
                                     @foreach($roomTypes as $rt)
@@ -89,7 +97,41 @@
                             <div class="col-md-3">
                                 <label class="form-label fs-13 fw-semibold text-primary">Total Rooms / Beds Stock <span class="text-danger">*</span></label>
                                 <input type="number" name="total_rooms" class="form-control form-control-sm fw-bold border-primary"
-                                    min="0" required value="{{ old('total_rooms', $inventory->total_rooms) }}">
+                                    min="0" required value="{{ old('total_rooms', $inventory->allotment_basis === 'bed' ? ($inventory->total_beds ?: $inventory->total_rooms) : $inventory->total_rooms) }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fs-13 fw-semibold">Nights</label>
+                                <input type="number" min="1" name="no_of_nights" class="form-control form-control-sm text-center"
+                                    value="{{ old('no_of_nights', $inventory->no_of_nights ?: 1) }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fs-13 fw-semibold">Check-In (Gregorian & Hijri)</label>
+                                <input type="text" name="hijri_check_in" class="form-control form-control-sm mb-1 text-primary fw-semibold"
+                                    placeholder="Hijri (e.g. 22-ZILQAIDA)" value="{{ old('hijri_check_in', $inventory->hijri_check_in) }}">
+                                <input type="text" name="check_in" class="form-control form-control-sm flatpickr-date"
+                                    value="{{ old('check_in', $inventory->check_in ? $inventory->check_in->format('Y-m-d') : '') }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fs-13 fw-semibold">Check-Out (Gregorian & Hijri)</label>
+                                <input type="text" name="hijri_check_out" class="form-control form-control-sm mb-1 text-primary fw-semibold"
+                                    placeholder="Hijri (e.g. 01-ZILHAJJ)" value="{{ old('hijri_check_out', $inventory->hijri_check_out) }}">
+                                <input type="text" name="check_out" class="form-control form-control-sm flatpickr-date"
+                                    value="{{ old('check_out', $inventory->check_out ? $inventory->check_out->format('Y-m-d') : '') }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fs-13 fw-semibold">Cost Rate / Unit (SAR)</label>
+                                <input type="number" step="0.01" min="0" name="cost_rate" class="form-control form-control-sm text-end"
+                                    value="{{ old('cost_rate', $inventory->cost_rate) }}">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label fs-13 fw-semibold">Selling Rate / Unit (SAR)</label>
+                                <input type="number" step="0.01" min="0" name="selling_rate" class="form-control form-control-sm text-end"
+                                    value="{{ old('selling_rate', $inventory->selling_rate) }}">
                             </div>
 
                             <div class="col-md-3">

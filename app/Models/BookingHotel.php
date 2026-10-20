@@ -10,13 +10,20 @@ class BookingHotel extends Model
         'booking_id',
         'location',
         'hotel_name',
+        'allotment_basis',
         'no_of_nights',
         'check_in',
         'check_out',
+        'hijri_check_in',
+        'hijri_check_out',
         'room_type',
         'room_number',
         'gender',
+        'meal_plan',
         'no_of_rooms',
+        'no_of_beds',
+        'rate_per_unit',
+        'amount',
         'hotel_voucher'
     ];
 

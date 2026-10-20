@@ -62,11 +62,15 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('report.rooming-list') }}" class="btn btn-outline-info btn-sm">
-                        <i class="mdi mdi-bed-king me-1"></i> Room Allocation & Bed Report
+                    <a href="{{ route('hotel-sales.index') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="mdi mdi-receipt me-1"></i> Hotel Sale Invoices
                     </a>
+                    {{-- <a href="{{ route('report.rooming-list') }}" class="btn btn-outline-info btn-sm">
+                        <i class="mdi mdi-bed-king me-1"></i> Room Allocation & Bed Report
+                    </a> --}}
+                    
                     <a href="{{ route('room-inventory.create') }}" class="btn btn-primary btn-sm">
-                        <i class="mdi mdi-plus-circle me-1"></i> + Add Room Stock Allotment
+                        <i class="mdi mdi-plus-circle me-1"></i> + Add Room & Bed Stock Allotment
                     </a>
                 </div>
             </div>
@@ -152,8 +156,11 @@
                     <div class="card metric-card bg-white p-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <span class="fs-12 text-muted fw-semibold text-uppercase">Total Stock Rooms</span>
+                                <span class="fs-12 text-muted fw-semibold text-uppercase">Total Stock (Rooms + Beds)</span>
                                 <h3 class="fs-22 fw-bold text-dark mb-0 mt-1">{{ number_format($totalStock) }}</h3>
+                                <small class="text-primary fw-semibold fs-11">
+                                    {{ number_format($totalRoomStock ?? 0) }} Rooms • {{ number_format($totalBedStock ?? 0) }} Beds
+                                </small>
                             </div>
                             <div class="avatar-sm bg-soft-primary rounded-circle d-flex align-items-center justify-content-center">
                                 <i class="mdi mdi-warehouse fs-22 text-primary"></i>
@@ -165,8 +172,11 @@
                     <div class="card metric-card bg-white p-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <span class="fs-12 text-muted fw-semibold text-uppercase">Booked Rooms</span>
+                                <span class="fs-12 text-muted fw-semibold text-uppercase">Booked (Rooms + Beds)</span>
                                 <h3 class="fs-22 fw-bold text-danger mb-0 mt-1">{{ number_format($totalBooked) }}</h3>
+                                <small class="text-danger fw-semibold fs-11">
+                                    {{ number_format($totalRoomBooked ?? 0) }} Rooms • {{ number_format($totalBedBooked ?? 0) }} Beds
+                                </small>
                             </div>
                             <div class="avatar-sm bg-soft-danger rounded-circle d-flex align-items-center justify-content-center">
                                 <i class="mdi mdi-calendar-check fs-22 text-danger"></i>
@@ -178,8 +188,11 @@
                     <div class="card metric-card bg-white p-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <span class="fs-12 text-muted fw-semibold text-uppercase">Available / Remaining</span>
+                                <span class="fs-12 text-muted fw-semibold text-uppercase">Available Remaining</span>
                                 <h3 class="fs-22 fw-bold text-success mb-0 mt-1">{{ number_format($totalAvailable) }}</h3>
+                                <small class="text-success fw-semibold fs-11">
+                                    {{ number_format($totalRoomAvailable ?? 0) }} Rooms • {{ number_format($totalBedAvailable ?? 0) }} Beds
+                                </small>
                             </div>
                             <div class="avatar-sm bg-soft-success rounded-circle d-flex align-items-center justify-content-center">
                                 <i class="mdi mdi-bed-empty fs-22 text-success"></i>
@@ -191,8 +204,9 @@
                     <div class="card metric-card bg-white p-3">
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <span class="fs-12 text-muted fw-semibold text-uppercase">Occupancy Rate</span>
+                                <span class="fs-12 text-muted fw-semibold text-uppercase">Overall Occupancy</span>
                                 <h3 class="fs-22 fw-bold text-info mb-0 mt-1">{{ $overallOccupancy }}%</h3>
+                                <small class="text-muted fs-11">Rooms & Beds utilization</small>
                             </div>
                             <div class="avatar-sm bg-soft-info rounded-circle d-flex align-items-center justify-content-center">
                                 <i class="mdi mdi-chart-donut fs-22 text-info"></i>
@@ -236,10 +250,14 @@
                                 }
                             @endphp
                             <div class="col-md-3 col-sm-6">
-                                <div class="room-type-card">
+                                <div class="room-type-card {{ !empty($data['is_bed']) ? 'border-warning' : '' }}">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h6 class="fs-14 fw-bold mb-0 text-dark">
-                                            <i class="mdi mdi-bed me-1 text-primary"></i> {{ $rType }}
+                                            @if(!empty($data['is_bed']))
+                                                <i class="mdi mdi-bed-empty me-1 text-warning"></i> BED (Beds)
+                                            @else
+                                                <i class="mdi mdi-bed me-1 text-primary"></i> {{ $rType }}
+                                            @endif
                                         </h6>
                                         <span class="badge {{ $badgeClass }} fs-11">
                                             @if($data['total_stock'] == 0)
@@ -253,17 +271,17 @@
                                     </div>
                                     <div class="d-flex justify-content-between fs-12 mb-1">
                                         <span class="text-muted">Total Stock: <strong class="text-dark">{{ $data['total_stock'] }}</strong></span>
-                                        <span class="text-muted">Booked: <strong class="text-danger">{{ $data['booked'] }}</strong></span>
+                                        <span class="text-muted">Sold (Inv): <strong class="text-danger">{{ $data['booked'] }}</strong></span>
                                     </div>
                                     <div class="status-progress mb-2">
-                                        <div class="progress-bar {{ ($data['available'] == 0 && $data['total_stock'] > 0) ? 'bg-danger' : 'bg-primary' }}"
+                                        <div class="progress-bar {{ ($data['available'] == 0 && $data['total_stock'] > 0) ? 'bg-danger' : (!empty($data['is_bed']) ? 'bg-warning' : 'bg-primary') }}"
                                             style="width: {{ $data['percentage'] }}%;"></div>
                                     </div>
                                     <div class="d-flex justify-content-between fs-11 text-muted">
-                                        <span>Available: <strong class="text-success">{{ $data['available'] }}</strong></span>
-                                        <span>Booked: <strong>{{ $data['percentage'] }}%</strong></span>
+                                        <span>Remaining: <strong class="text-success">{{ $data['available'] }}</strong></span>
+                                        <span>Sold: <strong>{{ $data['percentage'] }}%</strong></span>
                                     </div>
-                                    @if(strtolower($rType) === 'sharing' && (!empty($data['male_stock']) || !empty($data['female_stock'])))
+                                    @if((strtolower($rType) === 'sharing' || !empty($data['is_bed'])) && (!empty($data['male_stock']) || !empty($data['female_stock'])))
                                         <div class="fs-11 text-muted mt-1 pt-1 border-top d-flex justify-content-between">
                                             <span><i class="mdi mdi-gender-male text-primary"></i> M: <strong>{{ $data['male_available'] }}/{{ $data['male_stock'] }}</strong></span>
                                             <span><i class="mdi mdi-gender-female text-danger"></i> F: <strong>{{ $data['female_available'] }}/{{ $data['female_stock'] }}</strong></span>
@@ -276,21 +294,21 @@
                 </div>
             </div>
 
-            <!-- MAIN TABS: ROOMING LIST & INVENTORIES -->
+            <!-- MAIN TABS: HOTEL SALE CLIENTS & INVENTORIES -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white p-0 border-bottom">
                     <ul class="nav nav-inventory-tabs" id="roomInventoryTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="rooming-list-tab" data-bs-toggle="tab"
                                 data-bs-target="#rooming-list-pane" type="button" role="tab">
-                                <i class="mdi mdi-clipboard-list-outline me-1"></i> 1. Rooming List (Booked Rooms & Persons)
-                                <span class="badge bg-primary rounded-pill ms-1">{{ count($roomingList) }}</span>
+                                <i class="mdi mdi-receipt me-1"></i> 1. Hotel Sale Clients & Agents (Sold Invoices)
+                                <span class="badge bg-danger rounded-pill ms-1">{{ count($soldItems) }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="allotments-tab" data-bs-toggle="tab"
                                 data-bs-target="#allotments-pane" type="button" role="tab">
-                                <i class="mdi mdi-warehouse me-1"></i> 2. Stock Allotments & Inventory
+                                <i class="mdi mdi-warehouse me-1"></i> 2. Purchased Stock Allotments & Inventory
                                 <span class="badge bg-secondary rounded-pill ms-1">{{ count($inventories) }}</span>
                             </button>
                         </li>
@@ -300,91 +318,116 @@
                 <div class="card-body p-3">
                     <div class="tab-content" id="roomInventoryContent">
 
-                        <!-- TAB 1: ROOMING LIST -->
+                        <!-- TAB 1: HOTEL SALE CLIENTS & AGENTS (SOLD STOCK) -->
                         <div class="tab-pane fade show active" id="rooming-list-pane" role="tabpanel">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fs-14 fw-semibold text-dark mb-0">
-                                    <i class="mdi mdi-format-list-bulleted text-primary me-1"></i> Booked Rooming List
-                                </h6>
-                                <span class="fs-12 text-muted">Active bookings consuming room inventory</span>
+                                <div>
+                                    <h6 class="fs-14 fw-semibold text-dark mb-0">
+                                        <i class="mdi mdi-file-document-check-outline text-primary me-1"></i> Hotel Reservations & Sale Invoices
+                                    </h6>
+                                    <span class="fs-12 text-muted">Stock sold to Agents (B2B) and Clients (B2C) through Hotel Sale Invoices</span>
+                                </div>
+                                <a href="{{ route('hotel-sales.create') }}" class="btn btn-primary btn-sm">
+                                    <i class="mdi mdi-plus-circle me-1"></i> + New Hotel Sale Invoice
+                                </a>
                             </div>
 
                             <div class="table-responsive">
                                 <table class="table table-hover table-bordered table-sm align-middle fs-13 mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Booking #</th>
-                                            <th>Company / Client</th>
-                                            <th>Hotel Name</th>
-                                            <th>City</th>
-                                            <th>Room Type</th>
-                                            <th class="text-center">Rooms Booked</th>
-                                            <th>Stay Dates</th>
+                                            <th>Invoice #</th>
+                                            <th>Date</th>
+                                            <th>Agent / Client</th>
+                                            <th>Hotel Reserved</th>
+                                            <th>Type / Basis</th>
+                                            <th class="text-center">Sold Qty</th>
+                                            <th>Stay Dates (Hijri & Cal)</th>
                                             <th class="text-center">Nights</th>
-                                            <th>Booking Status</th>
+                                            <th class="text-end">Rate</th>
+                                            <th class="text-end">Amount</th>
                                             <th class="text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($roomingList as $item)
+                                        @forelse($soldItems as $item)
+                                            @php $sale = $item->hotelSale; @endphp
                                             <tr>
                                                 <td>
-                                                    <a href="{{ route('booking.show', $item->booking_id) }}" class="fw-semibold text-primary">
-                                                        {{ $item->booking->booking_number ?? ('#BK-' . $item->booking_id) }}
+                                                    <a href="{{ route('hotel-sales.show', $item->hotel_sale_id) }}" class="fw-bold text-primary">
+                                                        {{ $sale->invoice_number ?? ('#HR-' . $item->hotel_sale_id) }}
                                                     </a>
                                                 </td>
+                                                <td>{{ $sale->invoice_date ? $sale->invoice_date->format('d-M-Y') : '-' }}</td>
                                                 <td>
-                                                    <strong>{{ $item->booking->client->name ?? ($item->booking->company->company_name ?? 'N/A') }}</strong>
-                                                    @if(!empty($item->booking->phone))
-                                                        <br><small class="text-muted"><i class="mdi mdi-phone"></i> {{ $item->booking->phone }}</small>
+                                                    <strong>{{ $sale->customer_name ?? 'N/A' }}</strong>
+                                                    <div class="fs-11 text-muted">
+                                                        @if(($sale->sale_for ?? '') === 'company')
+                                                            <span class="badge bg-soft-primary text-primary">Agent / B2B</span>
+                                                        @else
+                                                            <span class="badge bg-soft-info text-info">Client / B2C</span>
+                                                        @endif
+                                                        @if(!empty($sale->contact)) • {{ $sale->contact }} @endif
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-semibold text-dark">{{ $item->hotel_name }}</span>
+                                                </td>
+                                                <td>
+                                                    @if($item->allotment_basis === 'bed' || strtoupper($item->room_type) === 'BED')
+                                                        <span class="badge bg-warning text-dark border fs-11">BED BASIS</span>
+                                                    @else
+                                                        <span class="badge bg-soft-primary text-primary fs-11">{{ $item->room_type }}</span>
+                                                    @endif
+                                                    <div class="fs-10 text-muted">{{ $item->meal_plan ?: 'ROOM ONLY' }}</div>
+                                                </td>
+                                                <td class="text-center">
+                                                    @if($item->allotment_basis === 'bed' || strtoupper($item->room_type) === 'BED')
+                                                        <span class="badge bg-warning text-dark fs-12 px-2 py-1">
+                                                            {{ $item->quantity }} Beds
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-danger fs-12 px-2 py-1">
+                                                            {{ $item->quantity }} Room(s)
+                                                        </span>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <span class="fw-semibold">{{ $item->hotel_name ?: ($item->hotel->name ?? 'Hotel') }}</span>
-                                                </td>
-                                                <td>{{ $item->city ?? ($item->hotel->city ?? '-') }}</td>
-                                                <td>
-                                                    <span class="badge bg-soft-primary text-primary fs-11">
-                                                        {{ $item->room_type }}
-                                                    </span>
-                                                    @if(!empty($item->room_number))
-                                                        <br><small class="text-muted"><i class="mdi mdi-door"></i> Rm {{ $item->room_number }}</small>
+                                                    @if($item->hijri_check_in || $item->hijri_check_out)
+                                                        <div class="fw-bold text-primary fs-11">{{ $item->hijri_check_in }} → {{ $item->hijri_check_out }}</div>
+                                                    @endif
+                                                    @if($item->check_in || $item->check_out)
+                                                        <small class="text-muted fs-11">
+                                                            {{ $item->check_in ? $item->check_in->format('d-M') : 'Open' }} to {{ $item->check_out ? $item->check_out->format('d-M-Y') : 'Open' }}
+                                                        </small>
                                                     @endif
                                                 </td>
+                                                <td class="text-center fw-semibold">{{ $item->no_of_nights ?: 1 }}</td>
+                                                <td class="text-end">{{ $item->rate_per_unit > 0 ? number_format($item->rate_per_unit, 2) : '-' }}</td>
+                                                <td class="text-end fw-bold text-primary">{{ number_format($item->amount, 2) }}</td>
                                                 <td class="text-center">
-                                                    <span class="badge bg-danger fs-12 px-2 py-1">
-                                                        {{ $item->no_of_rooms }} Room(s)
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span class="fs-12">
-                                                        {{ $item->check_in ? date('d M Y', strtotime($item->check_in)) : 'Open' }}
-                                                        <i class="mdi mdi-arrow-right text-muted"></i>
-                                                        {{ $item->check_out ? date('d M Y', strtotime($item->check_out)) : 'Open' }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center fw-semibold">{{ $item->number_of_nights ?: '-' }}</td>
-                                                <td>
-                                                    @php
-                                                        $st = strtolower($item->booking->status ?? 'confirmed');
-                                                        $stClass = ($st === 'confirmed' || $st === 'completed') ? 'bg-success' : 'bg-warning text-dark';
-                                                    @endphp
-                                                    <span class="badge {{ $stClass }} fs-11 text-uppercase">{{ $st }}</span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <a href="{{ route('booking.show', $item->booking_id) }}" class="btn btn-xs btn-outline-info" title="View Booking">
-                                                        <i class="mdi mdi-eye"></i> View
+                                                    <a href="{{ route('hotel-sales.show', $item->hotel_sale_id) }}" class="btn btn-xs btn-outline-primary" title="View / Print Invoice Voucher">
+                                                        <i class="mdi mdi-printer"></i> Voucher
                                                     </a>
                                                 </td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="10" class="text-center py-4 text-muted">
+                                                <td colspan="11" class="text-center py-4 text-muted">
                                                     <i class="mdi mdi-information-outline fs-22 d-block mb-1"></i>
-                                                    No booked rooms found matching the selected filter.
+                                                    No hotel sale invoices found.
+                                                    <div class="mt-2">
+                                                        <a href="{{ route('hotel-sales.create') }}" class="btn btn-primary btn-sm">
+                                                            <i class="mdi mdi-plus-circle me-1"></i> Create Hotel Sale Invoice
+                                                        </a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                                     </tbody>
                                 </table>
                             </div>
@@ -434,26 +477,41 @@
                                                 </td>
                                                 <td>{{ $inv->batch_name ?: 'General Stock' }}</td>
                                                 <td>
-                                                    <span class="badge bg-soft-primary text-primary fs-11">{{ $inv->room_type }}</span>
+                                                    @if($inv->allotment_basis === 'bed' || strtoupper($inv->room_type) === 'BED')
+                                                        <span class="badge bg-soft-warning text-dark border fs-11">
+                                                            <i class="mdi mdi-bed-empty me-1"></i> BED BASIS
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-soft-primary text-primary fs-11">{{ $inv->room_type }}</span>
+                                                    @endif
                                                 </td>
                                                 <td>
                                                     <span class="fs-11">{{ $inv->room_view ?: 'City View' }}</span>
                                                     @if($inv->meal_plan)
-                                                        <br><small class="text-muted">{{ $inv->meal_plan }}</small>
+                                                        <br><small class="text-primary fw-semibold">{{ $inv->meal_plan }}</small>
                                                     @endif
                                                 </td>
                                                 <td>
+                                                    @if($inv->hijri_check_in || $inv->hijri_check_out)
+                                                        <div class="fw-bold text-primary fs-11">{{ $inv->hijri_check_in }} → {{ $inv->hijri_check_out }}</div>
+                                                    @endif
                                                     @if($inv->check_in && $inv->check_out)
-                                                        <span class="fs-12">{{ date('d M Y', strtotime($inv->check_in)) }} - {{ date('d M Y', strtotime($inv->check_out)) }}</span>
-                                                    @else
+                                                        <span class="fs-11 text-muted">{{ date('d M Y', strtotime($inv->check_in)) }} - {{ date('d M Y', strtotime($inv->check_out)) }}</span>
+                                                    @elseif(!$inv->hijri_check_in)
                                                         <span class="badge bg-light text-dark fs-11">Open / Perpetual</span>
                                                     @endif
                                                 </td>
-                                                <td class="text-center fw-bold">{{ $inv->total_rooms }}</td>
+                                                <td class="text-center fw-bold">
+                                                    @if($inv->allotment_basis === 'bed' || strtoupper($inv->room_type) === 'BED')
+                                                        <span class="text-warning">{{ $inv->total_beds ?: $inv->total_rooms }} Beds</span>
+                                                    @else
+                                                        <span>{{ $inv->total_rooms }} Rooms</span>
+                                                    @endif
+                                                </td>
                                                 <td class="text-center text-danger fw-semibold">{{ $bookedCount }}</td>
                                                 <td class="text-center">
                                                     <span class="badge {{ $availCount > 0 ? 'bg-success' : 'bg-danger' }} fs-11">
-                                                        {{ $availCount }} Available
+                                                        {{ $availCount }} Avail
                                                     </span>
                                                 </td>
                                                 <td>{{ $inv->supplier->company_name ?? '-' }}</td>

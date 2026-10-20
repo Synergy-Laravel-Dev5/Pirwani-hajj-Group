@@ -81,15 +81,12 @@
                                                         @php
                                                             $hbList = $booking->persons->pluck('hb_number')->filter()->map(function($val) {
                                                                 return \App\Models\BookingPerson::formatHbNumber($val);
-                                                            })->filter()->values();
+                                                            })->filter()->unique()->values();
                                                         @endphp
                                                         @if($hbList->count() > 0)
-                                                            @if($hbList->count() == 1)
-                                                                <span class="badge bg-dark text-white fw-bold px-2 py-1" style="font-size:11px; letter-spacing:0.5px;">{{ $hbList->first() }}</span>
-                                                            @else
-                                                                <span class="badge bg-dark text-white fw-bold px-2 py-1" style="font-size:11px; letter-spacing:0.5px;">{{ $hbList->first() }}</span>
-                                                                <small class="d-block text-muted mt-1 fw-semibold" style="font-size:10px;">+{{ $hbList->count() - 1 }} pax</small>
-                                                            @endif
+                                                            @foreach($hbList as $hb)
+                                                                <span class="badge bg-dark text-white fw-bold px-2 py-1 me-1 mb-1" style="font-size:11px; letter-spacing:0.5px;">{{ $hb }}</span>
+                                                            @endforeach
                                                         @else
                                                             <span class="text-muted">—</span>
                                                         @endif

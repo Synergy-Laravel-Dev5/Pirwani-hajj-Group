@@ -688,15 +688,14 @@ class RoomingListController extends Controller
             'gender'       => 'nullable|string|max:50',
         ]);
 
-        // Prioritize haji_ids if user explicitly entered them in the Haji ID input
+        // Resolve pilgrims from both haji_ids and person_ids
         $personIds = [];
         if (!empty($request->haji_ids)) {
             $personIds = $this->resolvePilgrimsFromInput($request->haji_ids);
         }
-
-        // If no haji_ids or couldn't resolve, fallback to person_ids from checkboxes
-        if (empty($personIds) && !empty($request->person_ids)) {
-            $personIds = array_values(array_unique(array_filter((array)$request->person_ids)));
+        if (!empty($request->person_ids)) {
+            $cbIds = array_values(array_unique(array_filter((array)$request->person_ids)));
+            $personIds = array_values(array_unique(array_merge($personIds, $cbIds)));
         }
 
         if (empty($personIds)) {
@@ -989,6 +988,7 @@ class RoomingListController extends Controller
             $hotelFilter = [];
         }
         $locationFilter = $request->get('location');
+        $targetLoc      = (!empty($locationFilter) && $locationFilter !== 'all') ? strtolower(trim($locationFilter)) : null;
         $roomTypeFilter = $request->get('room_type');
         $statusFilter   = $request->get('status'); // all, available, full, overbooked, unassigned
         $search         = $request->get('search');
@@ -1145,8 +1145,28 @@ class RoomingListController extends Controller
                     ]]);
                 }
 
-                if ($allocations->isEmpty()) {
-                    // Totally unassigned pilgrim
+                // If location filter is set, determine if this pilgrim has an allocation for that location
+                $allocForTargetLoc = null;
+                if (!empty($targetLoc)) {
+                    $allocForTargetLoc = $allocations->first(function($al) use ($targetLoc) {
+                        return strtolower(trim($al->location ?? '')) === $targetLoc;
+                    });
+                }
+
+                if ($allocations->isEmpty() || (!empty($targetLoc) && !$allocForTargetLoc)) {
+                    // Pilgrim awaiting room allocation for this location
+                    $targetStageHotel = null;
+                    if (!empty($targetLoc) && $b->hotels && $b->hotels->count() > 0) {
+                        $targetStageHotel = $b->hotels->first(fn($bh) => strtolower(trim($bh->location ?? '')) === $targetLoc);
+                    }
+                    if (!$targetStageHotel) {
+                        $targetStageHotel = $bHotelFirst;
+                    }
+
+                    $uLoc = !empty($targetLoc) ? $targetLoc : ($targetStageHotel?->location ?: 'makkah');
+                    $uHotelName = $targetStageHotel?->hotel_name ?: ($uLoc === 'madinah' ? 'Madinah Hotel' : ($uLoc === 'azizia' ? 'Azizia Building' : 'Makkah Hotel'));
+                    $uRoomType = $targetStageHotel?->room_type ? ucfirst($targetStageHotel->room_type) : $bookedRoomType;
+
                     $occData = [
                         'allocation_id'     => null,
                         'person_id'         => $p->id,
@@ -1168,19 +1188,20 @@ class RoomingListController extends Controller
                         'booking_id'        => $b->id,
                         'booking_number'    => $b->booking_number ?? ('#BK-' . $b->id),
                         'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
-                        'check_in'          => $bHotelFirst?->check_in ? date('d M Y', strtotime($bHotelFirst->check_in)) : '—',
-                        'check_out'         => $bHotelFirst?->check_out ? date('d M Y', strtotime($bHotelFirst->check_out)) : '—',
-                        'room_type'         => $bHotelFirst?->room_type ? ucfirst($bHotelFirst->room_type) : $bookedRoomType,
+                        'check_in'          => $targetStageHotel?->check_in ? date('d M Y', strtotime($targetStageHotel->check_in)) : '—',
+                        'check_out'         => $targetStageHotel?->check_out ? date('d M Y', strtotime($targetStageHotel->check_out)) : '—',
+                        'room_type'         => $uRoomType,
                         'booked_room_type'  => $bookedRoomType,
-                        'booked_hotel_name' => $bHotelFirst ? $bHotelFirst->hotel_name : 'Pending Allocation',
+                        'booked_hotel_name' => $uHotelName,
                         'booking_pax'       => $b->no_of_pax ?: 1,
                         'room_number'       => null,
-                        'hotel_name'        => $bHotelFirst?->hotel_name,
-                        'location'          => $bHotelFirst?->location ?: 'makkah',
+                        'hotel_name'        => $uHotelName,
+                        'location'          => $uLoc,
                     ];
                     $unassignedOccupants[] = $occData;
                 } else {
-                    foreach ($allocations as $alloc) {
+                    $allocsToProcess = !empty($targetLoc) ? collect([$allocForTargetLoc]) : $allocations;
+                    foreach ($allocsToProcess as $alloc) {
                         $rNum = !empty($alloc->room_number) ? trim($alloc->room_number) : null;
                         if (in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
                             $rNum = null;
@@ -1252,7 +1273,9 @@ class RoomingListController extends Controller
                             $occData['hotel_name'] = $hName;
                             $occData['location'] = $loc;
 
-                            $groupKey = strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
+                            $groupKey = ($displayRoomNo === 'PENDING')
+                                ? strtolower($loc . '___' . $hName . '___pending___' . $b->id . '___' . $rType)
+                                : strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
 
                             if (!isset($groupedRooms[$groupKey])) {
                                 $baseCap = HotelRoomCapacity::resolveCapacity($hName, $displayRoomNo, $rType, $loc);
@@ -1442,29 +1465,47 @@ class RoomingListController extends Controller
 
         $unassignedPilgrimsCount = count($unassignedOccupants);
 
-        // If there are unassigned pilgrims, append them after assigned rooms so assigned rooms stay on TOP
+        // If there are unassigned pilgrims, append them after assigned rooms grouped by booking + room type
         if ($unassignedPilgrimsCount > 0 && (empty($statusFilter) || $statusFilter === 'all' || $statusFilter === 'unassigned')) {
-            $groupedRooms['__pending_allocation__'] = [
-                'hotel_name'      => 'Pending Room Allocation',
-                'room_number'     => 'PENDING',
-                'room_type'       => 'Pending Allocation',
-                'room_gender'     => 'Any',
-                'location'        => 'unassigned',
-                'capacity_id'     => null,
-                'base_capacity'   => $unassignedPilgrimsCount,
-                'extra_beds'      => 0,
-                'total_capacity'  => $unassignedPilgrimsCount,
-                'occupied_beds'   => $unassignedPilgrimsCount,
-                'available_beds'  => 0,
-                'is_full'         => false,
-                'is_overbooked'   => false,
-                'notes'           => 'Pilgrims awaiting room assignment',
-                'occupants'       => $unassignedOccupants,
-                'check_in_min'    => null,
-                'check_out_max'   => null,
-                'booking_ids'     => array_unique(array_column($unassignedOccupants, 'booking_id')),
-                'latest_activity' => 0,
-            ];
+            $pendingByBooking = [];
+            foreach ($unassignedOccupants as $uOcc) {
+                $bId = $uOcc['booking_id'] ?? 0;
+                $uType = $uOcc['booked_room_type'] ?? ($uOcc['room_type'] ?? 'Quad');
+                $uLoc = $uOcc['location'] ?? 'makkah';
+                $uHotel = $uOcc['booked_hotel_name'] ?? ($uOcc['hotel_name'] ?? 'Pending Room Allocation');
+                $subKey = '__pending_b_' . $bId . '_' . strtolower($uType);
+                if (!isset($pendingByBooking[$subKey])) {
+                    $pendingByBooking[$subKey] = [
+                        'hotel_name'      => $uHotel,
+                        'room_number'     => 'PENDING',
+                        'room_type'       => $uType,
+                        'room_gender'     => 'Any',
+                        'location'        => $uLoc,
+                        'capacity_id'     => null,
+                        'base_capacity'   => 0,
+                        'extra_beds'      => 0,
+                        'total_capacity'  => 0,
+                        'occupied_beds'   => 0,
+                        'available_beds'  => 0,
+                        'is_full'         => false,
+                        'is_overbooked'   => false,
+                        'notes'           => 'Awaiting room number assignment',
+                        'occupants'       => [],
+                        'check_in_min'    => $uOcc['check_in'] ?? null,
+                        'check_out_max'   => $uOcc['check_out'] ?? null,
+                        'booking_ids'     => [$bId],
+                        'latest_activity' => 0,
+                    ];
+                }
+                $pendingByBooking[$subKey]['occupants'][] = $uOcc;
+                $pendingByBooking[$subKey]['occupied_beds']++;
+                $pendingByBooking[$subKey]['total_capacity']++;
+                $pendingByBooking[$subKey]['base_capacity']++;
+            }
+
+            foreach ($pendingByBooking as $pKey => $pGroup) {
+                $groupedRooms[$pKey] = $pGroup;
+            }
             $totalBedsOccupied += $unassignedPilgrimsCount;
         }
 
