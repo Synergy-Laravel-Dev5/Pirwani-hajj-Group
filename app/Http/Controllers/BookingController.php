@@ -248,6 +248,15 @@ class BookingController extends Controller
                         $hotelData['room_number'] = !empty($hotel['room_number']) ? trim($hotel['room_number']) : null;
                         $hotelData['gender'] = !empty($hotel['gender']) ? trim($hotel['gender']) : 'Any';
                         $hotelData['location'] = !empty($hotel['location']) ? $hotel['location'] : 'makkah';
+                        $hotelData['allotment_basis'] = !empty($hotel['allotment_basis']) ? $hotel['allotment_basis'] : 'room';
+                        $hotelData['meal_plan'] = !empty($hotel['meal_plan']) ? $hotel['meal_plan'] : 'Half Board';
+                        $hotelData['hijri_check_in'] = !empty($hotel['hijri_check_in']) ? trim($hotel['hijri_check_in']) : null;
+                        $hotelData['hijri_check_out'] = !empty($hotel['hijri_check_out']) ? trim($hotel['hijri_check_out']) : null;
+                        if ($hotelData['allotment_basis'] === 'bed') {
+                            $hotelData['no_of_beds'] = (!empty($hotel['no_of_beds']) && is_numeric($hotel['no_of_beds'])) ? (int)$hotel['no_of_beds'] : (int)$hotelData['no_of_rooms'];
+                        } else {
+                            $hotelData['no_of_beds'] = (!empty($hotel['no_of_beds']) && is_numeric($hotel['no_of_beds'])) ? (int)$hotel['no_of_beds'] : 0;
+                        }
                         unset($hotelData['hotel_voucher']);
                         $booking->hotels()->create($hotelData);
                     }
@@ -537,6 +546,15 @@ class BookingController extends Controller
                         $hData['room_number'] = !empty($h['room_number']) ? trim($h['room_number']) : null;
                         $hData['gender'] = !empty($h['gender']) ? trim($h['gender']) : 'Any';
                         $hData['location'] = !empty($h['location']) ? $h['location'] : 'makkah';
+                        $hData['allotment_basis'] = !empty($h['allotment_basis']) ? $h['allotment_basis'] : 'room';
+                        $hData['meal_plan'] = !empty($h['meal_plan']) ? $h['meal_plan'] : 'Half Board';
+                        $hData['hijri_check_in'] = !empty($h['hijri_check_in']) ? trim($h['hijri_check_in']) : null;
+                        $hData['hijri_check_out'] = !empty($h['hijri_check_out']) ? trim($h['hijri_check_out']) : null;
+                        if ($hData['allotment_basis'] === 'bed') {
+                            $hData['no_of_beds'] = (!empty($h['no_of_beds']) && is_numeric($h['no_of_beds'])) ? (int)$h['no_of_beds'] : (int)$hData['no_of_rooms'];
+                        } else {
+                            $hData['no_of_beds'] = (!empty($h['no_of_beds']) && is_numeric($h['no_of_beds'])) ? (int)$h['no_of_beds'] : 0;
+                        }
                         unset($hData['hotel_voucher']);
                         $booking->hotels()->create($hData);
                     }

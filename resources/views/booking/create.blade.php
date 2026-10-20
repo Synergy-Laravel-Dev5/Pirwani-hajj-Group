@@ -11,7 +11,7 @@
                     <a href="{{ route('booking.index') }}" class="btn btn-secondary btn-sm">Back</a>
                 </div>
 
-                @if ($errors->any())
+                @if (isset($errors) && $errors->any())
                     <div class="alert alert-danger alert-dismissible fade show">
                         <ul class="mb-0">
                             @foreach ($errors->all() as $e)
@@ -743,7 +743,7 @@
                                             @endif
                                         </div>
                                         <div class="row g-3">
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Location / Place</label>
                                                 <select name="hotels[{{ $loop->index }}][location]" class="form-select form-select-sm hotel-loc-select">
                                                     <option value="makkah" {{ $val === 'makkah' ? 'selected' : '' }}>Makkah</option>
@@ -827,14 +827,14 @@
                                                 <input type="number" name="hotels[{{ $loop->index }}][no_of_rooms]"
                                                     class="form-control form-control-sm" value="1" min="1">
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Check In (Gregorian & Hijri)</label>
                                                 <input type="text" name="hotels[{{ $loop->index }}][hijri_check_in]"
                                                     class="form-control form-control-sm mb-1 text-primary fw-semibold" placeholder="Hijri e.g. 22-ZILQAIDA">
                                                 <input type="date" name="hotels[{{ $loop->index }}][check_in]"
                                                     class="form-control form-control-sm">
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <label class="form-label fw-semibold" style="font-size:12px;">Check Out (Gregorian & Hijri)</label>
                                                 <input type="text" name="hotels[{{ $loop->index }}][hijri_check_out]"
                                                     class="form-control form-control-sm mb-1 text-primary fw-semibold" placeholder="Hijri e.g. 01-ZILHAJJ">
@@ -1853,7 +1853,7 @@
                             <button type="button" class="btn btn-outline-danger btn-sm remove-hotel py-0 px-2" style="font-size:12px;">× Remove</button>
                         </div>
                         <div class="row g-3">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label fw-semibold" style="font-size:12px;">Location / Place</label>
                                 <select name="hotels[${idx}][location]" class="form-select form-select-sm hotel-loc-select">
                                     <option value="makkah" ${loc === 'makkah' ? 'selected' : ''}>Makkah</option>
@@ -1877,9 +1877,25 @@
                                        value="${nights}" min="1">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold" style="font-size:12px;">Room Type</label>
+                                <label class="form-label fw-semibold" style="font-size:12px;">Allotment Basis</label>
+                                <select name="hotels[${idx}][allotment_basis]" class="form-select form-select-sm">
+                                    <option value="room" selected>Room Basis</option>
+                                    <option value="bed">Bed Basis</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold" style="font-size:12px;">Room / Bed Type</label>
                                 <select name="hotels[${idx}][room_type]" class="form-select form-select-sm">
                                     ${buildRoomTypeOptions('quad')}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold" style="font-size:12px;">Meal Plan</label>
+                                <select name="hotels[${idx}][meal_plan]" class="form-select form-select-sm">
+                                    <option value="Room Only">Room Only (RO)</option>
+                                    <option value="Bed & Breakfast">Bed & Breakfast (BB)</option>
+                                    <option value="Half Board" selected>Half Board (HB)</option>
+                                    <option value="Full Board">Full Board (FB)</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -1898,17 +1914,19 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold" style="font-size:12px;">No. of Rooms</label>
+                                <label class="form-label fw-semibold" style="font-size:12px;">No. of Rooms / Beds</label>
                                 <input type="number" name="hotels[${idx}][no_of_rooms]" class="form-control form-control-sm"
                                        value="1" min="1">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold" style="font-size:12px;">Check In</label>
+                                <label class="form-label fw-semibold" style="font-size:12px;">Check In (Gregorian & Hijri)</label>
+                                <input type="text" name="hotels[${idx}][hijri_check_in]" class="form-control form-control-sm mb-1 text-primary fw-semibold" placeholder="Hijri e.g. 22-ZILQAIDA">
                                 <input type="date" name="hotels[${idx}][check_in]" class="form-control form-control-sm"
                                        value="${checkIn}">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label fw-semibold" style="font-size:12px;">Check Out</label>
+                                <label class="form-label fw-semibold" style="font-size:12px;">Check Out (Gregorian & Hijri)</label>
+                                <input type="text" name="hotels[${idx}][hijri_check_out]" class="form-control form-control-sm mb-1 text-primary fw-semibold" placeholder="Hijri e.g. 01-ZILHAJJ">
                                 <input type="date" name="hotels[${idx}][check_out]" class="form-control form-control-sm"
                                        value="${checkOut}">
                             </div>
@@ -2564,7 +2582,7 @@
                     <button type="button" class="btn btn-outline-danger btn-sm remove-hotel py-0 px-2" style="font-size:12px;">× Remove</button>
                 </div>
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">Location / Place</label>
                         <select name="hotels[${hotelIdx}][location]" class="form-select form-select-sm hotel-loc-select">
                             <option value="makkah">Makkah</option>
@@ -2625,12 +2643,12 @@
                         <label class="form-label fw-semibold" style="font-size:12px;">No. of Rooms / Beds</label>
                         <input type="number" name="hotels[${hotelIdx}][no_of_rooms]" class="form-control form-control-sm" value="1" min="1">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">Check In (Gregorian & Hijri)</label>
                         <input type="text" name="hotels[${hotelIdx}][hijri_check_in]" class="form-control form-control-sm mb-1 text-primary fw-semibold" placeholder="Hijri e.g. 22-ZILQAIDA">
                         <input type="date" name="hotels[${hotelIdx}][check_in]" class="form-control form-control-sm">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-semibold" style="font-size:12px;">Check Out (Gregorian & Hijri)</label>
                         <input type="text" name="hotels[${hotelIdx}][hijri_check_out]" class="form-control form-control-sm mb-1 text-primary fw-semibold" placeholder="Hijri e.g. 01-ZILHAJJ">
                         <input type="date" name="hotels[${hotelIdx}][check_out]" class="form-control form-control-sm">
