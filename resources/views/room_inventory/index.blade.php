@@ -514,7 +514,15 @@
                                                         {{ $availCount }} Avail
                                                     </span>
                                                 </td>
-                                                <td>{{ $inv->supplier->company_name ?? '-' }}</td>
+                                                <td>
+                                                    @if($inv->supplier)
+                                                        <a href="{{ route('supplier.show', $inv->supplier->id) }}" class="fw-semibold text-dark">
+                                                            {{ $inv->supplier->name }}
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
                                                 <td class="text-center">
                                                     <span class="badge {{ $inv->status === 'active' ? 'bg-success' : 'bg-secondary' }} fs-10 text-uppercase">
                                                         {{ $inv->status }}

@@ -26,6 +26,11 @@ class HotelSale extends Model
         return $this->hasMany(HotelSaleItem::class, 'hotel_sale_id');
     }
 
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
     public function company()
     {
         return $this->belongsTo(Company::class, 'company_id');

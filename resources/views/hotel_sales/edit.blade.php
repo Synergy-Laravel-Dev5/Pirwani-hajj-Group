@@ -43,7 +43,7 @@
                 </div>
             </div>
 
-            @if($errors->any())
+            @if(isset($errors) && $errors->any())
                 <div class="alert alert-danger fs-13">
                     <ul class="mb-0">
                         @foreach($errors->all() as $err)
@@ -72,8 +72,8 @@
                                 </label>
                                 <div class="d-flex gap-3 mt-1">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="sale_for" id="type_company" value="company" {{ $sale->sale_for === 'company' ? 'checked' : '' }}>
-                                        <label class="form-check-label fw-bold text-dark" for="type_company">Agent / Company</label>
+                                        <input class="form-check-input" type="radio" name="sale_for" id="type_company" value="company" {{ in_array($sale->sale_for, ['company', 'supplier']) ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-bold text-dark" for="type_company">Supplier / Agent</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="sale_for" id="type_client" value="client" {{ $sale->sale_for === 'client' ? 'checked' : '' }}>
@@ -82,15 +82,31 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-4 {{ $sale->sale_for === 'company' ? '' : 'd-none' }}" id="companySelectWrap">
-                                <label class="form-label fs-13 fw-semibold">Select Agent / Company <span class="text-danger">*</span></label>
-                                <select name="company_id" id="companySelect" class="form-select form-select-sm">
-                                    <option value="">-- Choose Agent / Company --</option>
-                                    @foreach($companies as $comp)
-                                        <option value="{{ $comp->id }}" data-name="{{ $comp->company_name }}" data-contact="{{ $comp->phone ?? ($comp->contactNumbers->first()->contact_number ?? '') }}" {{ $sale->company_id == $comp->id ? 'selected' : '' }}>
-                                            {{ $comp->company_name }}
-                                        </option>
-                                    @endforeach
+                            <div class="col-md-4 {{ in_array($sale->sale_for, ['company', 'supplier']) ? '' : 'd-none' }}" id="companySelectWrap">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label fs-13 fw-semibold mb-0">Select Supplier / Agent <span class="text-danger">*</span></label>
+                                    <a href="{{ route('supplier.create') }}" target="_blank" class="text-primary fs-11 text-decoration-none">
+                                        <i class="mdi mdi-plus-circle me-1"></i>+ Add Supplier
+                                    </a>
+                                </div>
+                                <select name="supplier_id" id="companySelect" class="form-select form-select-sm">
+                                    <option value="">-- Choose Supplier / Agent --</option>
+                                    <optgroup label="Suppliers / Vendors">
+                                        @foreach($suppliers as $sup)
+                                            <option value="{{ $sup->id }}" data-name="{{ $sup->name }}" data-contact="{{ $sup->phone ?: ($sup->mobile ?: '') }}" {{ ($sale->supplier_id == $sup->id || (empty($sale->supplier_id) && $sale->company_id == $sup->id)) ? 'selected' : '' }}>
+                                                {{ $sup->name }} @if($sup->city) ({{ $sup->city }}) @endif
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                    @if(count($companies) > 0)
+                                        <optgroup label="Internal Companies / Branches">
+                                            @foreach($companies as $comp)
+                                                <option value="comp_{{ $comp->id }}" data-name="{{ $comp->company_name }}" data-contact="{{ $comp->phone ?? ($comp->contactNumbers->first()->contact_number ?? '') }}" {{ $sale->company_id == $comp->id ? 'selected' : '' }}>
+                                                    {{ $comp->company_name }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 </select>
                             </div>
 

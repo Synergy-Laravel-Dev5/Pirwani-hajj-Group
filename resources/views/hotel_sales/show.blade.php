@@ -295,7 +295,7 @@
             </tr>
             <tr>
                 <td class="meta-label">CLIENT NAME</td>
-                <td>: <strong>{{ $sale->customer_name }}</strong> @if($sale->sale_for === 'company') (Agent) @endif</td>
+                <td>: <strong>{{ $sale->customer_name }}</strong> @if($sale->supplier) (Supplier / Agent) @elseif($sale->sale_for === 'company') (Agent) @endif</td>
                 <td></td>
                 <td></td>
             </tr>

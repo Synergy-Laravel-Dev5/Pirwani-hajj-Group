@@ -12,6 +12,7 @@ use App\Http\Controllers\ExpenseTransactionController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserActivityController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\PackageController;
@@ -262,6 +263,19 @@ Route::middleware('auth')->group(function () {
             Route::put('update/{id}', 'update')->name('company.update');
             Route::get('trash', 'trash')->name('company.trash');
             Route::get('restore/{id}', 'restore')->name('company.restore');
+        });
+
+        Route::controller(SupplierController::class)->prefix('supplier')->group(function () {
+            Route::get('/', 'index')->name('supplier.index');
+            Route::get('create', 'create')->name('supplier.create');
+            Route::post('store', 'store')->name('supplier.store');
+            Route::get('show/{id}', 'show')->name('supplier.show');
+            Route::get('edit/{id}', 'edit')->name('supplier.edit');
+            Route::delete('delete/{id}', 'destroy')->name('supplier.delete');
+            Route::put('update/{id}', 'update')->name('supplier.update');
+            Route::get('trash', 'trash')->name('supplier.trash');
+            Route::get('restore/{id}', 'restore')->name('supplier.restore');
+            Route::delete('force-delete/{id}', 'forceDelete')->name('supplier.force-delete');
         });
 
         Route::controller(PackageController::class)

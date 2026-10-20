@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RoomInventory;
 use App\Models\Hotel;
 use App\Models\Company;
+use App\Models\Supplier;
 use App\Models\BookingHotel;
 use App\Models\HotelSaleItem;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class RoomInventoryController extends Controller
 
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
+        $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
 
         // 1. Calculate Room Type Summary Breakdown
         $summary = RoomInventory::getHotelSummary($hotelId, $checkIn, $checkOut);
@@ -114,6 +116,7 @@ class RoomInventoryController extends Controller
         return view('room_inventory.index', compact(
             'hotels',
             'companies',
+            'suppliers',
             'summary',
             'totalStock',
             'totalBooked',
@@ -139,6 +142,7 @@ class RoomInventoryController extends Controller
     {
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
+        $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
         $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->pluck('name')->toArray();
         if (empty($roomTypes)) {
             $roomTypes = ['Double', 'Triple', 'Quad', 'Quint', 'Single', 'Bed', 'Sharing', 'Suite'];
@@ -146,7 +150,7 @@ class RoomInventoryController extends Controller
             $roomTypes[] = 'Bed';
         }
 
-        return view('room_inventory.create', compact('hotels', 'companies', 'roomTypes'));
+        return view('room_inventory.create', compact('hotels', 'companies', 'suppliers', 'roomTypes'));
     }
 
     public function store(Request $request)
@@ -351,6 +355,7 @@ class RoomInventoryController extends Controller
         $inventory = RoomInventory::findOrFail($id);
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
+        $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
         $roomTypes = \App\Models\RoomType::where('status', 'active')->orderBy('capacity')->pluck('name')->toArray();
         if (empty($roomTypes)) {
             $roomTypes = ['Double', 'Triple', 'Quad', 'Quint', 'Single', 'Bed', 'Sharing', 'Suite'];
@@ -358,7 +363,7 @@ class RoomInventoryController extends Controller
             $roomTypes[] = 'Bed';
         }
 
-        return view('room_inventory.edit', compact('inventory', 'hotels', 'companies', 'roomTypes'));
+        return view('room_inventory.edit', compact('inventory', 'hotels', 'companies', 'suppliers', 'roomTypes'));
     }
 
     public function update(Request $request, $id)

@@ -45,7 +45,7 @@
                 </div>
             </div>
 
-            @if($errors->any())
+            @if(isset($errors) && $errors->any())
                 <div class="alert alert-danger fs-13">
                     <ul class="mb-0">
                         @foreach($errors->all() as $err)
@@ -98,12 +98,17 @@
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label fs-13 fw-semibold">Supplier / Vendor</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="form-label fs-13 fw-semibold mb-0">Supplier / Vendor</label>
+                                            <a href="{{ route('supplier.create') }}" target="_blank" class="text-primary fs-11 text-decoration-none">
+                                                <i class="mdi mdi-plus-circle me-1"></i>+ Add Supplier
+                                            </a>
+                                        </div>
                                         <select name="supplier_id" class="form-select form-select-sm">
                                             <option value="">-- Direct Hotel / Vendor --</option>
-                                            @foreach($companies as $company)
-                                                <option value="{{ $company->id }}" {{ old('supplier_id') == $company->id ? 'selected' : '' }}>
-                                                    {{ $company->company_name }}
+                                            @foreach($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}" {{ old('supplier_id', request('supplier_id')) == $supplier->id ? 'selected' : '' }}>
+                                                    {{ $supplier->name }} @if($supplier->city) ({{ $supplier->city }}) @endif
                                                 </option>
                                             @endforeach
                                         </select>
@@ -195,12 +200,17 @@
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label fs-13 fw-semibold">Supplier / Vendor</label>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="form-label fs-13 fw-semibold mb-0">Supplier / Vendor</label>
+                                            <a href="{{ route('supplier.create') }}" target="_blank" class="text-primary fs-11 text-decoration-none">
+                                                <i class="mdi mdi-plus-circle me-1"></i>+ Add Supplier
+                                            </a>
+                                        </div>
                                         <select name="supplier_id" class="form-select form-select-sm">
                                             <option value="">-- Direct Hotel / No Supplier --</option>
-                                            @foreach($companies as $company)
-                                                <option value="{{ $company->id }}" {{ old('supplier_id') == $company->id ? 'selected' : '' }}>
-                                                    {{ $company->company_name }}
+                                            @foreach($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}" {{ old('supplier_id', request('supplier_id')) == $supplier->id ? 'selected' : '' }}>
+                                                    {{ $supplier->name }} @if($supplier->city) ({{ $supplier->city }}) @endif
                                                 </option>
                                             @endforeach
                                         </select>

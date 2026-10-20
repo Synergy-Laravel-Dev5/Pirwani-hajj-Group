@@ -33,7 +33,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
-            @if($errors->any())
+            @if(isset($errors) && $errors->any())
                 <div class="alert alert-danger fs-13">
                     <ul class="mb-0">
                         @foreach($errors->all() as $err)
@@ -118,21 +118,33 @@
                             <div class="col-md-3">
                                 <label class="form-label fs-12 fw-semibold mb-1 text-muted">Customer Type</label>
                                 <select name="sale_for" class="form-select form-select-sm">
-                                    <option value="">-- All (Agents & Clients) --</option>
+                                    <option value="">-- All (Suppliers, Agents & Clients) --</option>
+                                    <option value="supplier" {{ request('sale_for') == 'supplier' ? 'selected' : '' }}>Supplier / Vendor</option>
                                     <option value="company" {{ request('sale_for') == 'company' ? 'selected' : '' }}>Agent / Company (B2B)</option>
                                     <option value="client" {{ request('sale_for') == 'client' ? 'selected' : '' }}>Direct Client (B2C)</option>
                                 </select>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label fs-12 fw-semibold mb-1 text-muted">Agent / Company</label>
-                                <select name="company_id" class="form-select form-select-sm">
-                                    <option value="">-- All Agents --</option>
-                                    @foreach($companies as $comp)
-                                        <option value="{{ $comp->id }}" {{ request('company_id') == $comp->id ? 'selected' : '' }}>
-                                            {{ $comp->company_name }}
-                                        </option>
-                                    @endforeach
+                                <label class="form-label fs-12 fw-semibold mb-1 text-muted">Supplier / Agent</label>
+                                <select name="supplier_id" class="form-select form-select-sm">
+                                    <option value="">-- All Suppliers / Agents --</option>
+                                    <optgroup label="Suppliers / Vendors">
+                                        @foreach($suppliers as $sup)
+                                            <option value="{{ $sup->id }}" {{ request('supplier_id') == $sup->id ? 'selected' : '' }}>
+                                                {{ $sup->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                    @if(count($companies) > 0)
+                                        <optgroup label="Companies">
+                                            @foreach($companies as $comp)
+                                                <option value="{{ $comp->id }}" {{ request('company_id') == $comp->id ? 'selected' : '' }}>
+                                                    {{ $comp->company_name }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endif
                                 </select>
                             </div>
 
@@ -193,10 +205,14 @@
                                         <td>
                                             <div class="fw-bold text-dark">{{ $sale->customer_name }}</div>
                                             <div class="fs-11 text-muted">
-                                                @if($sale->sale_for === 'company')
+                                                @if($sale->supplier)
+                                                    <span class="badge bg-soft-info text-info">Supplier / Vendor</span>
+                                                @elseif($sale->sale_for === 'supplier')
+                                                    <span class="badge bg-soft-info text-info">Supplier</span>
+                                                @elseif($sale->sale_for === 'company')
                                                     <span class="badge bg-soft-primary text-primary">Agent / B2B</span>
                                                 @else
-                                                    <span class="badge bg-soft-info text-info">Client / B2C</span>
+                                                    <span class="badge bg-soft-success text-success">Client / B2C</span>
                                                 @endif
                                                 @if($sale->contact) • {{ $sale->contact }} @endif
                                             </div>

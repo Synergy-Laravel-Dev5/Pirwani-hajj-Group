@@ -171,6 +171,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('supplier.index') }}">
+                            <i data-feather="truck"></i>
+                            <span>Suppliers / Vendors</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#sidebarPackageManagement" data-bs-toggle="collapse">
                             <i data-feather="package"></i>
                             <span>Package Management</span>
