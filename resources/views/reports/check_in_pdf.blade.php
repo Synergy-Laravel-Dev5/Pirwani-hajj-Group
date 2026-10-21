@@ -140,7 +140,7 @@
     {{-- Manifest Table --}}
     @php
         $showCol = function($key) use ($visibleColumns) {
-            if (!isset($visibleColumns) || empty($visibleColumns)) {
+            if ($visibleColumns === null) {
                 return in_array($key, ['sr', 'hajj-id', 'hb', 'pilgrim', 'gender', 'passport', 'hotel', 'room', 'room-no', 'checkin', 'checkout', 'nights', 'maktab', 'package', 'voucher', 'status']);
             }
             return in_array($key, $visibleColumns);

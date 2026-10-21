@@ -201,12 +201,12 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ route('report.check-in.export-excel', request()->query()) }}" 
-                       class="btn btn-success btn-sm"
+                       class="btn btn-success btn-sm btn-export-excel" id="btnExportExcel"
                        title="Download official hotel check-in report as Excel spreadsheet">
                         <i class="mdi mdi-file-excel me-1"></i> Download Excel
                     </a>
                     <a href="{{ route('report.check-in.export-pdf', request()->query()) }}" 
-                       class="btn btn-danger btn-sm"
+                       class="btn btn-danger btn-sm btn-export-pdf" id="btnExportPdf"
                        title="Download official hotel check-in report as PDF document">
                         <i class="mdi mdi-file-pdf-box me-1"></i> Download PDF
                     </a>
@@ -1362,31 +1362,46 @@
             return null;
         }
 
-        function updateExportLinksWithColumns() {
+        function getActiveColumnsString() {
             const activeCols = [];
             checkboxes.forEach(cb => {
                 if (cb.checked) {
                     activeCols.push(cb.getAttribute('data-col'));
                 }
             });
-            const colStr = activeCols.join(',');
+            return activeCols.length > 0 ? activeCols.join(',') : 'none';
+        }
 
-            document.querySelectorAll('a[href*="report/check-in/export-pdf"]').forEach(btn => {
+        function updateExportLinksWithColumns() {
+            const colStr = getActiveColumnsString();
+
+            document.querySelectorAll('a[href*="export-pdf"], .btn-export-pdf, #btnExportPdf').forEach(btn => {
                 try {
-                    const url = new URL(btn.href, window.location.origin);
+                    const url = new URL(btn.href, window.location.href);
                     url.searchParams.set('columns', colStr);
-                    btn.href = url.pathname + url.search;
+                    btn.href = url.href;
                 } catch(e) {}
             });
 
-            document.querySelectorAll('a[href*="report/check-in/export-excel"]').forEach(btn => {
+            document.querySelectorAll('a[href*="export-excel"], .btn-export-excel, #btnExportExcel').forEach(btn => {
                 try {
-                    const url = new URL(btn.href, window.location.origin);
+                    const url = new URL(btn.href, window.location.href);
                     url.searchParams.set('columns', colStr);
-                    btn.href = url.pathname + url.search;
+                    btn.href = url.href;
                 } catch(e) {}
             });
         }
+
+        document.querySelectorAll('a[href*="export-pdf"], .btn-export-pdf, #btnExportPdf, a[href*="export-excel"], .btn-export-excel, #btnExportExcel').forEach(btn => {
+            btn.addEventListener('click', function() {
+                try {
+                    const colStr = getActiveColumnsString();
+                    const url = new URL(this.href, window.location.href);
+                    url.searchParams.set('columns', colStr);
+                    this.href = url.href;
+                } catch(e) {}
+            });
+        });
 
         function saveColumnState(state) {
             try {

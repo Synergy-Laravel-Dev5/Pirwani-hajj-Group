@@ -190,7 +190,7 @@
     {{-- Official Manifest Table matching User PDF --}}
     @php
         $showCol = function($key) use ($visibleColumns) {
-            if (!isset($visibleColumns) || empty($visibleColumns)) {
+            if ($visibleColumns === null) {
                 return in_array($key, ['sr', 'hajj-id', 'hb', 'passport', 'name', 'room-typ', 'room-no', 'gender', 'picture']);
             }
             return in_array($key, $visibleColumns);

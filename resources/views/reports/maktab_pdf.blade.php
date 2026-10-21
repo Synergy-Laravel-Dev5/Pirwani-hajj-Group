@@ -168,7 +168,7 @@
     <!-- Manifest Table (Without Check-In & Check-Out) -->
     @php
         $showCol = function($key) use ($visibleColumns) {
-            if (!isset($visibleColumns) || empty($visibleColumns)) {
+            if ($visibleColumns === null) {
                 return in_array($key, ['sr', 'picture', 'hajj-id', 'pilgrim', 'gender', 'passport', 'hotel', 'room', 'maktab', 'package', 'voucher', 'status']);
             }
             return in_array($key, $visibleColumns);

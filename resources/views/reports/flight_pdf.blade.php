@@ -141,7 +141,7 @@
     {{-- Flight Manifest Table --}}
     @php
         $showCol = function($key) use ($visibleColumns) {
-            if (!isset($visibleColumns) || empty($visibleColumns)) {
+            if ($visibleColumns === null) {
                 return in_array($key, ['sr', 'hajj-id', 'hb', 'pilgrim', 'gender', 'passport', 'voucher', 'dep-airline', 'dep-flight', 'dep-sector', 'dep-date', 'dep-pnr', 'ret-airline', 'ret-flight', 'ret-sector', 'ret-date', 'ret-pnr', 'duration', 'package', 'charges', 'status']);
             }
             return in_array($key, $visibleColumns);

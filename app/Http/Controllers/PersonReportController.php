@@ -171,9 +171,13 @@ class PersonReportController extends Controller
         $data = $this->getFilteredPersons($request);
 
         $visibleCols = null;
-        if ($request->has('columns') && !empty($request->columns)) {
-            $visibleCols = is_array($request->columns) ? $request->columns : explode(',', $request->columns);
-            $visibleCols = array_map('trim', $visibleCols);
+        if ($request->has('columns')) {
+            $raw = trim($request->get('columns'));
+            if ($raw === 'none' || $raw === '') {
+                $visibleCols = [];
+            } else {
+                $visibleCols = array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
+            }
         }
         $data['visibleColumns'] = $visibleCols;
 

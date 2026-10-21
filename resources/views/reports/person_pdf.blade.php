@@ -139,7 +139,7 @@
 
     @php
         $showCol = function($key) use ($visibleColumns) {
-            if (!isset($visibleColumns) || empty($visibleColumns)) {
+            if ($visibleColumns === null) {
                 return in_array($key, ['sr', 'picture', 'hajj-id', 'hb', 'name', 'gender', 'passport', 'cnic', 'phone', 'voucher', 'package', 'maktab']);
             }
             return in_array($key, $visibleColumns);
