@@ -188,18 +188,42 @@
     </table>
 
     {{-- Official Manifest Table matching User PDF --}}
+    @php
+        $showCol = function($key) use ($visibleColumns) {
+            if (!isset($visibleColumns) || empty($visibleColumns)) {
+                return in_array($key, ['sr', 'hajj-id', 'hb', 'passport', 'name', 'room-typ', 'room-no', 'gender', 'picture']);
+            }
+            return in_array($key, $visibleColumns);
+        };
+        $allKeys = ['sr', 'hajj-id', 'hb', 'passport', 'passport-doi', 'passport-exp', 'cnic', 'name', 'given-name', 'surname', 'father-name', 'dob', 'phone', 'booking-no', 'client', 'room-typ', 'room-no', 'gender', 'picture'];
+        $colCount = 0;
+        foreach ($allKeys as $k) {
+            if ($showCol($k)) $colCount++;
+        }
+        if ($colCount === 0) $colCount = 9;
+    @endphp
     <table class="manifest-table">
         <thead>
             <tr>
-                <th style="width: 25px;">SR</th>
-                <th style="width: 65px;">HAJJ ID</th>
-                <th style="width: 55px;">HB</th>
-                <th style="width: 75px;">PASSPORT</th>
-                <th style="text-align: left; padding-left: 5px;">FULL NAME</th>
-                <th style="width: 65px;">ROOM TYP</th>
-                <th style="width: 65px;">ROOM NO</th>
-                <th style="width: 50px;">Gender</th>
-                <th style="width: 45px;">Haji Picture</th>
+                @if($showCol('sr')) <th style="width: 25px;">SR</th> @endif
+                @if($showCol('hajj-id')) <th style="width: 65px;">HAJJ ID</th> @endif
+                @if($showCol('hb')) <th style="width: 55px;">HB</th> @endif
+                @if($showCol('passport')) <th style="width: 75px;">PASSPORT</th> @endif
+                @if($showCol('passport-doi')) <th style="width: 55px;">DOI</th> @endif
+                @if($showCol('passport-exp')) <th style="width: 55px;">EXPIRY</th> @endif
+                @if($showCol('cnic')) <th style="width: 70px;">CNIC</th> @endif
+                @if($showCol('name')) <th style="text-align: left; padding-left: 5px;">FULL NAME</th> @endif
+                @if($showCol('given-name')) <th style="text-align: left; padding-left: 5px; width: 65px;">GIVEN NAME</th> @endif
+                @if($showCol('surname')) <th style="text-align: left; padding-left: 5px; width: 65px;">SURNAME</th> @endif
+                @if($showCol('father-name')) <th style="text-align: left; padding-left: 5px; width: 75px;">FATHER NAME</th> @endif
+                @if($showCol('dob')) <th style="width: 55px;">DOB</th> @endif
+                @if($showCol('phone')) <th style="width: 65px;">PHONE</th> @endif
+                @if($showCol('booking-no')) <th style="width: 55px;">BOOKING #</th> @endif
+                @if($showCol('client')) <th style="width: 70px;">CLIENT</th> @endif
+                @if($showCol('room-typ')) <th style="width: 65px;">ROOM TYP</th> @endif
+                @if($showCol('room-no')) <th style="width: 65px;">ROOM NO</th> @endif
+                @if($showCol('gender')) <th style="width: 50px;">Gender</th> @endif
+                @if($showCol('picture')) <th style="width: 45px;">Haji Picture</th> @endif
             </tr>
         </thead>
         <tbody>
@@ -234,18 +258,30 @@
 
                 @if($totalOccupants === 0)
                     <tr class="room-divider-top">
-                        <td style="text-align: center; color: #777;">{{ $globalSr++ }}</td>
-                        <td style="text-align: center; color: #777;">—</td>
-                        <td style="text-align: center; color: #777;">—</td>
-                        <td style="text-align: center; color: #777;">—</td>
-                        <td style="color: #777; font-style: italic;">(Empty Room - {{ $room['total_capacity'] }} Beds Available)</td>
-                        <td class="room-typ-cell">
-                            <div style="font-size: 7.5px; color: #555;">{{ $locLabel }}</div>
-                            <div>{{ $roomTypeDisplay }}</div>
-                        </td>
-                        <td class="room-no-cell">{{ $roomDisplayNo }}</td>
-                        <td style="text-align: center; color: #777;">—</td>
-                        <td style="text-align: center; color: #777;">—</td>
+                        @if($showCol('sr')) <td style="text-align: center; color: #777;">{{ $globalSr++ }}</td> @endif
+                        @if($showCol('hajj-id')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('hb')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('passport')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('passport-doi')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('passport-exp')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('cnic')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('name')) <td style="color: #777; font-style: italic;">(Empty Room - {{ $room['total_capacity'] }} Beds Available)</td> @endif
+                        @if($showCol('given-name')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('surname')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('father-name')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('dob')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('phone')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('booking-no')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('client')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('room-typ'))
+                            <td class="room-typ-cell">
+                                <div style="font-size: 7.5px; color: #555;">{{ $locLabel }}</div>
+                                <div>{{ $roomTypeDisplay }}</div>
+                            </td>
+                        @endif
+                        @if($showCol('room-no')) <td class="room-no-cell">{{ $roomDisplayNo }}</td> @endif
+                        @if($showCol('gender')) <td style="text-align: center; color: #777;">—</td> @endif
+                        @if($showCol('picture')) <td style="text-align: center; color: #777;">—</td> @endif
                     </tr>
                 @else
                     @foreach($occupants as $oIdx => $occ)
@@ -261,56 +297,72 @@
                             $isFemale = strtoupper($occ['gender'] ?? 'MALE') === 'FEMALE';
                         @endphp
                         <tr class="{{ $oIdx === 0 ? 'room-divider-top' : 'room-sub-row' }}">
-                            <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td>
-                            <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td>
-                            <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td>
-                            <td style="text-align: center; font-weight: bold; text-transform: uppercase;">
-                                {{ $occ['passport'] }}
-                                @if(!empty($occ['date_of_issue']))
-                                    <div style="font-size: 6.5px; color: #555; font-weight: normal; margin-top: 1px;">DOI: {{ date('d/m/Y', strtotime($occ['date_of_issue'])) }}</div>
-                                @endif
-                                @if(!empty($occ['passport_expiry_date']))
-                                    <div style="font-size: 6.5px; color: #b91c1c; font-weight: normal; margin-top: 1px;">EXP: {{ date('d/m/Y', strtotime($occ['passport_expiry_date'])) }}</div>
-                                @endif
-                            </td>
-                            <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase; color: #000;">
-                                <div>{{ $occ['name'] }}</div>
-                            </td>
-
-                            {{-- ROOM TYP (Always rendered on every row to prevent page break column shifting) --}}
-                            <td class="room-typ-cell">
-                                <div style="font-size: 7.5px; color: #444; font-weight: bold;">{{ $locLabel }}</div>
-                                <div style="font-size: 9.5px; font-weight: bold;">{{ $roomTypeDisplay }}</div>
-                                @if($oIdx === 0 && $room['total_capacity'] > 0)
-                                    <div style="font-size: 7.5px; color: #666;">({{ $room['total_capacity'] }} Beds)</div>
-                                @endif
-                            </td>
-
-                            {{-- ROOM NO (Always rendered on every row to prevent page break column shifting) --}}
-                            <td class="room-no-cell">
-                                <div>{{ $roomDisplayNo }}</div>
-                                @if($oIdx === 0 && $room['total_capacity'] > 0)
-                                    <div style="font-size: 7.5px; color: #666; font-weight: normal;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }}</div>
-                                @endif
-                            </td>
-
-                            <td class="{{ $isFemale ? 'gender-female' : 'gender-male' }}" style="font-size: 8.5px; text-transform: uppercase;">
-                                {{ strtoupper($occ['gender']) }}
-                            </td>
-
-                            <td style="text-align: center; padding: 2px;">
-                                @if($photoBase64)
-                                    <img src="{{ $photoBase64 }}" class="haji-photo" alt="Photo">
-                                @else
-                                    <div class="photo-placeholder">—</div>
-                                @endif
-                            </td>
+                            @if($showCol('sr')) <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td> @endif
+                            @if($showCol('hajj-id')) <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—' }}</td> @endif
+                            @if($showCol('hb')) <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td> @endif
+                            @if($showCol('passport'))
+                                <td style="text-align: center; font-weight: bold; text-transform: uppercase;">
+                                    {{ $occ['passport'] }}
+                                    @if(!empty($occ['date_of_issue']))
+                                        <div style="font-size: 6.5px; color: #555; font-weight: normal; margin-top: 1px;">DOI: {{ date('d/m/Y', strtotime($occ['date_of_issue'])) }}</div>
+                                    @endif
+                                    @if(!empty($occ['passport_expiry_date']))
+                                        <div style="font-size: 6.5px; color: #b91c1c; font-weight: normal; margin-top: 1px;">EXP: {{ date('d/m/Y', strtotime($occ['passport_expiry_date'])) }}</div>
+                                    @endif
+                                </td>
+                            @endif
+                            @if($showCol('passport-doi')) <td style="text-align: center;">{{ !empty($occ['date_of_issue']) ? date('d/m/Y', strtotime($occ['date_of_issue'])) : '—' }}</td> @endif
+                            @if($showCol('passport-exp')) <td style="text-align: center;">{{ !empty($occ['passport_expiry_date']) ? date('d/m/Y', strtotime($occ['passport_expiry_date'])) : '—' }}</td> @endif
+                            @if($showCol('cnic')) <td style="text-align: center;">{{ $occ['cnic'] ?? '—' }}</td> @endif
+                            @if($showCol('name'))
+                                <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase; color: #000;">
+                                    <div>{{ $occ['name'] }}</div>
+                                </td>
+                            @endif
+                            @if($showCol('given-name')) <td style="text-align: left; padding-left: 5px;">{{ $occ['given_name'] ?? '—' }}</td> @endif
+                            @if($showCol('surname')) <td style="text-align: left; padding-left: 5px;">{{ $occ['surname'] ?? '—' }}</td> @endif
+                            @if($showCol('father-name')) <td style="text-align: left; padding-left: 5px;">{{ $occ['father_name'] ?? '—' }}</td> @endif
+                            @if($showCol('dob')) <td style="text-align: center;">{{ !empty($occ['dob']) ? date('d/m/Y', strtotime($occ['dob'])) : '—' }}</td> @endif
+                            @if($showCol('phone')) <td style="text-align: center;">{{ $occ['phone'] ?? '—' }}</td> @endif
+                            @if($showCol('booking-no')) <td style="text-align: center;">{{ $occ['booking_id'] ?? '—' }}</td> @endif
+                            @if($showCol('client')) <td style="text-align: left; padding-left: 5px;">{{ $occ['client_name'] ?? '—' }}</td> @endif
+                            @if($showCol('room-typ'))
+                                <td class="room-typ-cell">
+                                    <div style="font-size: 7.5px; color: #444; font-weight: bold;">{{ $locLabel }}</div>
+                                    <div style="font-size: 9.5px; font-weight: bold;">{{ $roomTypeDisplay }}</div>
+                                    @if($oIdx === 0 && $room['total_capacity'] > 0)
+                                        <div style="font-size: 7.5px; color: #666;">({{ $room['total_capacity'] }} Beds)</div>
+                                    @endif
+                                </td>
+                            @endif
+                            @if($showCol('room-no'))
+                                <td class="room-no-cell">
+                                    <div>{{ $roomDisplayNo }}</div>
+                                    @if($oIdx === 0 && $room['total_capacity'] > 0)
+                                        <div style="font-size: 7.5px; color: #666; font-weight: normal;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }}</div>
+                                    @endif
+                                </td>
+                            @endif
+                            @if($showCol('gender'))
+                                <td class="{{ $isFemale ? 'gender-female' : 'gender-male' }}" style="font-size: 8.5px; text-transform: uppercase;">
+                                    {{ strtoupper($occ['gender']) }}
+                                </td>
+                            @endif
+                            @if($showCol('picture'))
+                                <td style="text-align: center; padding: 2px;">
+                                    @if($photoBase64)
+                                        <img src="{{ $photoBase64 }}" class="haji-photo" alt="Photo">
+                                    @else
+                                        <div class="photo-placeholder">—</div>
+                                    @endif
+                                </td>
+                            @endif
                         </tr>
                     @endforeach
                 @endif
             @empty
                 <tr>
-                    <td colspan="9" style="text-align: center; padding: 25px; color: #777;">
+                    <td colspan="{{ $colCount }}" style="text-align: center; padding: 25px; color: #777;">
                         No room allocation records found matching the criteria.
                     </td>
                 </tr>

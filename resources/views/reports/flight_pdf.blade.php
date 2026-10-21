@@ -139,30 +139,44 @@
     </table>
 
     {{-- Flight Manifest Table --}}
+    @php
+        $showCol = function($key) use ($visibleColumns) {
+            if (!isset($visibleColumns) || empty($visibleColumns)) {
+                return in_array($key, ['sr', 'hajj-id', 'hb', 'pilgrim', 'gender', 'passport', 'voucher', 'dep-airline', 'dep-flight', 'dep-sector', 'dep-date', 'dep-pnr', 'ret-airline', 'ret-flight', 'ret-sector', 'ret-date', 'ret-pnr', 'duration', 'package', 'charges', 'status']);
+            }
+            return in_array($key, $visibleColumns);
+        };
+        $allKeys = ['sr', 'picture', 'hajj-id', 'hb', 'pilgrim', 'given-name', 'surname', 'father-name', 'gender', 'passport', 'passport-doi', 'passport-exp', 'voucher', 'dep-airline', 'dep-flight', 'dep-sector', 'dep-date', 'dep-pnr', 'ret-airline', 'ret-flight', 'ret-sector', 'ret-date', 'ret-pnr', 'duration', 'maktab', 'client', 'package', 'charges', 'status'];
+        $colCount = 0;
+        foreach ($allKeys as $k) {
+            if ($showCol($k)) $colCount++;
+        }
+        if ($colCount === 0) $colCount = 21;
+    @endphp
     <table class="manifest-table">
         <thead>
             <tr>
-                <th style="width: 20px;">SR</th>
-                <th style="width: 48px;">HAJJ ID</th>
-                <th style="width: 44px;">HB #</th>
-                <th style="width: 120px; text-align: left; padding-left: 4px;">PASSENGER FULL NAME</th>
-                <th style="width: 38px;">GENDER</th>
-                <th style="width: 58px;">PASSPORT</th>
-                <th style="width: 55px;">VOUCHER #</th>
-                <th style="width: 65px;">DEP AIRLINE</th>
-                <th style="width: 50px;">DEP FLIGHT</th>
-                <th style="width: 60px;">DEP SECTOR</th>
-                <th style="width: 52px;">DEP DATE</th>
-                <th style="width: 50px;">DEP PNR</th>
-                <th style="width: 65px;">RET AIRLINE</th>
-                <th style="width: 50px;">RET FLIGHT</th>
-                <th style="width: 60px;">RET SECTOR</th>
-                <th style="width: 52px;">RET DATE</th>
-                <th style="width: 50px;">RET PNR</th>
-                <th style="width: 35px;">DAYS</th>
-                <th style="width: 75px; text-align: left; padding-left: 4px;">PACKAGE</th>
-                <th style="width: 55px;">CHARGES</th>
-                <th style="width: 50px;">STATUS</th>
+                @if($showCol('sr')) <th style="width: 20px;">SR</th> @endif
+                @if($showCol('hajj-id')) <th style="width: 48px;">HAJJ ID</th> @endif
+                @if($showCol('hb')) <th style="width: 44px;">HB #</th> @endif
+                @if($showCol('pilgrim')) <th style="width: 120px; text-align: left; padding-left: 4px;">PASSENGER FULL NAME</th> @endif
+                @if($showCol('gender')) <th style="width: 38px;">GENDER</th> @endif
+                @if($showCol('passport')) <th style="width: 58px;">PASSPORT</th> @endif
+                @if($showCol('voucher')) <th style="width: 55px;">VOUCHER #</th> @endif
+                @if($showCol('dep-airline')) <th style="width: 65px;">DEP AIRLINE</th> @endif
+                @if($showCol('dep-flight')) <th style="width: 50px;">DEP FLIGHT</th> @endif
+                @if($showCol('dep-sector')) <th style="width: 60px;">DEP SECTOR</th> @endif
+                @if($showCol('dep-date')) <th style="width: 52px;">DEP DATE</th> @endif
+                @if($showCol('dep-pnr')) <th style="width: 50px;">DEP PNR</th> @endif
+                @if($showCol('ret-airline')) <th style="width: 65px;">RET AIRLINE</th> @endif
+                @if($showCol('ret-flight')) <th style="width: 50px;">RET FLIGHT</th> @endif
+                @if($showCol('ret-sector')) <th style="width: 60px;">RET SECTOR</th> @endif
+                @if($showCol('ret-date')) <th style="width: 52px;">RET DATE</th> @endif
+                @if($showCol('ret-pnr')) <th style="width: 50px;">RET PNR</th> @endif
+                @if($showCol('duration')) <th style="width: 35px;">DAYS</th> @endif
+                @if($showCol('package')) <th style="width: 75px; text-align: left; padding-left: 4px;">PACKAGE</th> @endif
+                @if($showCol('charges')) <th style="width: 55px;">CHARGES</th> @endif
+                @if($showCol('status')) <th style="width: 50px;">STATUS</th> @endif
             </tr>
         </thead>
         <tbody>
@@ -194,84 +208,92 @@
                 @if($totalPax === 0)
                     {{-- Row when no booking persons are registered yet --}}
                     <tr class="booking-divider-top">
-                        <td style="text-align: center;">{{ $globalSr++ }}</td>
-                        <td style="text-align: center;">—</td>
-                        <td style="text-align: center;">—</td>
-                        <td style="text-align: left; padding-left: 4px; font-weight: bold;">
-                            {{ $b->client?->name ?? ($b->company?->company_name ?? 'Direct Passenger') }}
-                        </td>
-                        <td style="text-align: center;">—</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $b->passport_number ?: '—' }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $b->voucher_number ?? ('UB' . str_pad($b->id, 6, '0', STR_PAD_LEFT)) }}</td>
+                        @if($showCol('sr')) <td style="text-align: center;">{{ $globalSr++ }}</td> @endif
+                        @if($showCol('hajj-id')) <td style="text-align: center;">—</td> @endif
+                        @if($showCol('hb')) <td style="text-align: center;">—</td> @endif
+                        @if($showCol('pilgrim'))
+                            <td style="text-align: left; padding-left: 4px; font-weight: bold;">
+                                {{ $b->client?->name ?? ($b->company?->company_name ?? 'Direct Passenger') }}
+                            </td>
+                        @endif
+                        @if($showCol('gender')) <td style="text-align: center;">—</td> @endif
+                        @if($showCol('passport')) <td style="text-align: center; font-weight: bold;">{{ $b->passport_number ?: '—' }}</td> @endif
+                        @if($showCol('voucher')) <td style="text-align: center; font-weight: bold;">{{ $b->voucher_number ?? ('UB' . str_pad($b->id, 6, '0', STR_PAD_LEFT)) }}</td> @endif
                         
                         {{-- Departure --}}
-                        <td style="text-align: center;">{{ $b->departure_airline ?: '—' }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $b->departure_flight ?: '—' }}</td>
-                        <td style="text-align: center;">{{ $depSector ?: '—' }}</td>
-                        <td style="text-align: center;">{{ $depDate ? $depDate->format('d/m/Y') : '—' }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $b->departure_pnr ?: '—' }}</td>
+                        @if($showCol('dep-airline')) <td style="text-align: center;">{{ $b->departure_airline ?: '—' }}</td> @endif
+                        @if($showCol('dep-flight')) <td style="text-align: center; font-weight: bold;">{{ $b->departure_flight ?: '—' }}</td> @endif
+                        @if($showCol('dep-sector')) <td style="text-align: center;">{{ $depSector ?: '—' }}</td> @endif
+                        @if($showCol('dep-date')) <td style="text-align: center;">{{ $depDate ? $depDate->format('d/m/Y') : '—' }}</td> @endif
+                        @if($showCol('dep-pnr')) <td style="text-align: center; font-weight: bold;">{{ $b->departure_pnr ?: '—' }}</td> @endif
 
                         {{-- Return --}}
-                        <td style="text-align: center;">{{ $b->arrival_airline ?: '—' }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $b->arrival_flight ?: '—' }}</td>
-                        <td style="text-align: center;">{{ $retSector ?: '—' }}</td>
-                        <td style="text-align: center;">{{ $arrDate ? $arrDate->format('d/m/Y') : '—' }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $b->arrival_pnr ?: '—' }}</td>
+                        @if($showCol('ret-airline')) <td style="text-align: center;">{{ $b->arrival_airline ?: '—' }}</td> @endif
+                        @if($showCol('ret-flight')) <td style="text-align: center; font-weight: bold;">{{ $b->arrival_flight ?: '—' }}</td> @endif
+                        @if($showCol('ret-sector')) <td style="text-align: center;">{{ $retSector ?: '—' }}</td> @endif
+                        @if($showCol('ret-date')) <td style="text-align: center;">{{ $arrDate ? $arrDate->format('d/m/Y') : '—' }}</td> @endif
+                        @if($showCol('ret-pnr')) <td style="text-align: center; font-weight: bold;">{{ $b->arrival_pnr ?: '—' }}</td> @endif
 
                         {{-- Duration, Package, Charges, Status --}}
-                        <td style="text-align: center;">{{ $durationDays !== null ? $durationDays . ' D' : '—' }}</td>
-                        <td style="text-align: left; padding-left: 4px;">{{ $pkgTitle }}</td>
-                        <td style="text-align: center;">{{ $b->flight_charges > 0 ? number_format($b->flight_charges) : 'Included' }}</td>
-                        <td style="text-align: center;">{{ $statusText }}</td>
+                        @if($showCol('duration')) <td style="text-align: center;">{{ $durationDays !== null ? $durationDays . ' D' : '—' }}</td> @endif
+                        @if($showCol('package')) <td style="text-align: left; padding-left: 4px;">{{ $pkgTitle }}</td> @endif
+                        @if($showCol('charges')) <td style="text-align: center;">{{ $b->flight_charges > 0 ? number_format($b->flight_charges) : 'Included' }}</td> @endif
+                        @if($showCol('status')) <td style="text-align: center;">{{ $statusText }}</td> @endif
                     </tr>
                 @else
                     @foreach($persons as $oIdx => $person)
                         <tr class="{{ $oIdx === 0 ? 'booking-divider-top' : 'booking-sub-row' }}">
-                            <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td>
-                            <td style="text-align: center; font-weight: bold;">{{ !empty($person->hajj_id) ? $person->hajj_id : '—' }}</td>
-                            <td style="text-align: center; font-weight: bold;">{{ !empty($person->hb_number) ? $person->hb_number : '—' }}</td>
-                            <td style="text-align: left; padding-left: 4px; font-weight: bold; text-transform: uppercase;">
-                                {{ $person->full_name }}
-                                @if(!empty($person->is_family_head))
-                                    <span style="font-size: 7px; color: #166534; font-weight: bold;">[Head]</span>
-                                @endif
-                            </td>
-                            <td class="{{ strtoupper($person->gender ?? '') === 'FEMALE' ? 'gender-female' : 'gender-male' }}">
-                                {{ strtoupper($person->gender ?? '—') }}
-                            </td>
-                            <td style="text-align: center; font-weight: bold;">{{ $person->passport_number ?: '—' }}</td>
+                            @if($showCol('sr')) <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td> @endif
+                            @if($showCol('hajj-id')) <td style="text-align: center; font-weight: bold;">{{ !empty($person->hajj_id) ? $person->hajj_id : '—' }}</td> @endif
+                            @if($showCol('hb')) <td style="text-align: center; font-weight: bold;">{{ !empty($person->hb_number) ? $person->hb_number : '—' }}</td> @endif
+                            @if($showCol('pilgrim'))
+                                <td style="text-align: left; padding-left: 4px; font-weight: bold; text-transform: uppercase;">
+                                    {{ $person->full_name }}
+                                    @if(!empty($person->is_family_head))
+                                        <span style="font-size: 7px; color: #166534; font-weight: bold;">[Head]</span>
+                                    @endif
+                                </td>
+                            @endif
+                            @if($showCol('gender'))
+                                <td class="{{ strtoupper($person->gender ?? '') === 'FEMALE' ? 'gender-female' : 'gender-male' }}">
+                                    {{ strtoupper($person->gender ?? '—') }}
+                                </td>
+                            @endif
+                            @if($showCol('passport')) <td style="text-align: center; font-weight: bold;">{{ $person->passport_number ?: '—' }}</td> @endif
 
                             @if($oIdx === 0)
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">
-                                    {{ $b->voucher_number ?? ('UB' . str_pad($b->id, 6, '0', STR_PAD_LEFT)) }}
-                                </td>
+                                @if($showCol('voucher'))
+                                    <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">
+                                        {{ $b->voucher_number ?? ('UB' . str_pad($b->id, 6, '0', STR_PAD_LEFT)) }}
+                                    </td>
+                                @endif
 
                                 {{-- Departure --}}
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $b->departure_airline ?: '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->departure_flight ?: '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $depSector ?: '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $depDate ? $depDate->format('d/m/Y') : '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->departure_pnr ?: '—' }}</td>
+                                @if($showCol('dep-airline')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $b->departure_airline ?: '—' }}</td> @endif
+                                @if($showCol('dep-flight')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->departure_flight ?: '—' }}</td> @endif
+                                @if($showCol('dep-sector')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $depSector ?: '—' }}</td> @endif
+                                @if($showCol('dep-date')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $depDate ? $depDate->format('d/m/Y') : '—' }}</td> @endif
+                                @if($showCol('dep-pnr')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->departure_pnr ?: '—' }}</td> @endif
 
                                 {{-- Return --}}
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $b->arrival_airline ?: '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->arrival_flight ?: '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $retSector ?: '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $arrDate ? $arrDate->format('d/m/Y') : '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->arrival_pnr ?: '—' }}</td>
+                                @if($showCol('ret-airline')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $b->arrival_airline ?: '—' }}</td> @endif
+                                @if($showCol('ret-flight')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->arrival_flight ?: '—' }}</td> @endif
+                                @if($showCol('ret-sector')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $retSector ?: '—' }}</td> @endif
+                                @if($showCol('ret-date')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $arrDate ? $arrDate->format('d/m/Y') : '—' }}</td> @endif
+                                @if($showCol('ret-pnr')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $b->arrival_pnr ?: '—' }}</td> @endif
 
                                 {{-- Duration, Package, Charges, Status --}}
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $durationDays !== null ? $durationDays . ' D' : '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 4px;">{{ $pkgTitle }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $b->flight_charges > 0 ? number_format($b->flight_charges) : 'Included' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $statusText }}</td>
+                                @if($showCol('duration')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $durationDays !== null ? $durationDays . ' D' : '—' }}</td> @endif
+                                @if($showCol('package')) <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 4px;">{{ $pkgTitle }}</td> @endif
+                                @if($showCol('charges')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $b->flight_charges > 0 ? number_format($b->flight_charges) : 'Included' }}</td> @endif
+                                @if($showCol('status')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $statusText }}</td> @endif
                             @endif
                         </tr>
                     @endforeach
                 @endif
             @empty
                 <tr>
-                    <td colspan="21" style="text-align: center; padding: 20px; color: #777;">No Booking Flight Records Found</td>
+                    <td colspan="{{ $colCount }}" style="text-align: center; padding: 20px; color: #777;">No Booking Flight Records Found</td>
                 </tr>
             @endforelse
         </tbody>

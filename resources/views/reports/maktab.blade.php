@@ -936,6 +936,32 @@
             });
         }
 
+        function updateExportLinksWithColumns() {
+            const activeCols = [];
+            colCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    activeCols.push(cb.getAttribute('data-col'));
+                }
+            });
+            const colStr = activeCols.join(',');
+
+            document.querySelectorAll('a[href*="report/maktab/export-pdf"]').forEach(btn => {
+                try {
+                    const url = new URL(btn.href, window.location.origin);
+                    url.searchParams.set('columns', colStr);
+                    btn.href = url.pathname + url.search;
+                } catch(e) {}
+            });
+
+            document.querySelectorAll('a[href*="report/maktab/export-excel"]').forEach(btn => {
+                try {
+                    const url = new URL(btn.href, window.location.origin);
+                    url.searchParams.set('columns', colStr);
+                    btn.href = url.pathname + url.search;
+                } catch(e) {}
+            });
+        }
+
         function saveColumnPreferences() {
             const prefs = {};
             colCheckboxes.forEach(cb => {
@@ -945,6 +971,7 @@
             try {
                 localStorage.setItem(storageKey, JSON.stringify(prefs));
             } catch(e) {}
+            updateExportLinksWithColumns();
         }
 
         function loadColumnPreferences() {
@@ -959,6 +986,7 @@
                             applyColumnVisibility(col, !!prefs[col]);
                         }
                     });
+                    updateExportLinksWithColumns();
                     return;
                 }
             } catch(e) {}
@@ -970,6 +998,7 @@
                 cb.checked = isDefault;
                 applyColumnVisibility(col, isDefault);
             });
+            updateExportLinksWithColumns();
         }
 
         colCheckboxes.forEach(cb => {
@@ -992,6 +1021,7 @@
             try {
                 localStorage.removeItem(storageKey);
             } catch(e) {}
+            updateExportLinksWithColumns();
         });
 
         // Load saved column preferences on page load

@@ -139,26 +139,40 @@
     </table>
 
     {{-- Manifest Table --}}
+    @php
+        $showCol = function($key) use ($visibleColumns) {
+            if (!isset($visibleColumns) || empty($visibleColumns)) {
+                return in_array($key, ['sr', 'hajj-id', 'hb', 'pilgrim', 'gender', 'passport', 'hotel', 'location', 'room', 'room-no', 'checkin', 'checkout', 'nights', 'maktab', 'package', 'voucher', 'status']);
+            }
+            return in_array($key, $visibleColumns);
+        };
+        $allKeys = ['sr', 'picture', 'hajj-id', 'hb', 'pilgrim', 'given-name', 'surname', 'father-name', 'gender', 'passport', 'passport-doi', 'passport-exp', 'hotel', 'location', 'room', 'room-no', 'checkin', 'checkout', 'nights', 'maktab', 'package', 'voucher', 'client', 'status'];
+        $colCount = 0;
+        foreach ($allKeys as $k) {
+            if ($showCol($k)) $colCount++;
+        }
+        if ($colCount === 0) $colCount = 17;
+    @endphp
     <table class="manifest-table">
         <thead>
             <tr>
-                <th style="width: 25px;">SR</th>
-                <th style="width: 55px;">HAJJ ID</th>
-                <th style="width: 50px;">HB #</th>
-                <th style="width: 140px; text-align: left; padding-left: 5px;">PILGRIM FULL NAME</th>
-                <th style="width: 45px;">GENDER</th>
-                <th style="width: 65px;">PASSPORT</th>
-                <th style="width: 110px; text-align: left; padding-left: 5px;">HOTEL NAME</th>
-                <th style="width: 65px;">LOCATION</th>
-                <th style="width: 65px;">ROOM TYPE</th>
-                <th style="width: 45px;">ROOM NO</th>
-                <th style="width: 55px;">CHECK-IN</th>
-                <th style="width: 55px;">CHECK-OUT</th>
-                <th style="width: 35px;">NIGHTS</th>
-                <th style="width: 60px;">MAKTAB</th>
-                <th style="width: 90px; text-align: left; padding-left: 5px;">PACKAGE</th>
-                <th style="width: 60px;">VOUCHER #</th>
-                <th style="width: 50px;">STATUS</th>
+                @if($showCol('sr')) <th style="width: 25px;">SR</th> @endif
+                @if($showCol('hajj-id')) <th style="width: 55px;">HAJJ ID</th> @endif
+                @if($showCol('hb')) <th style="width: 50px;">HB #</th> @endif
+                @if($showCol('pilgrim')) <th style="width: 140px; text-align: left; padding-left: 5px;">PILGRIM FULL NAME</th> @endif
+                @if($showCol('gender')) <th style="width: 45px;">GENDER</th> @endif
+                @if($showCol('passport')) <th style="width: 65px;">PASSPORT</th> @endif
+                @if($showCol('hotel')) <th style="width: 110px; text-align: left; padding-left: 5px;">HOTEL NAME</th> @endif
+                @if($showCol('location')) <th style="width: 65px;">LOCATION</th> @endif
+                @if($showCol('room')) <th style="width: 65px;">ROOM TYPE</th> @endif
+                @if($showCol('room-no')) <th style="width: 45px;">ROOM NO</th> @endif
+                @if($showCol('checkin')) <th style="width: 55px;">CHECK-IN</th> @endif
+                @if($showCol('checkout')) <th style="width: 55px;">CHECK-OUT</th> @endif
+                @if($showCol('nights')) <th style="width: 35px;">NIGHTS</th> @endif
+                @if($showCol('maktab')) <th style="width: 60px;">MAKTAB</th> @endif
+                @if($showCol('package')) <th style="width: 90px; text-align: left; padding-left: 5px;">PACKAGE</th> @endif
+                @if($showCol('voucher')) <th style="width: 60px;">VOUCHER #</th> @endif
+                @if($showCol('status')) <th style="width: 50px;">STATUS</th> @endif
             </tr>
         </thead>
         <tbody>
@@ -188,61 +202,69 @@
 
                 @if($totalPax === 0)
                     <tr class="hotel-divider-top">
-                        <td style="text-align: center;">{{ $globalSr++ }}</td>
-                        <td style="text-align: center;">—</td>
-                        <td style="text-align: center;">—</td>
-                        <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ $booking?->client?->name ?? 'Direct Pilgrim' }}</td>
-                        <td style="text-align: center;">—</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $booking?->passport_number ?: '—' }}</td>
-                        <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ strtoupper($stay->hotel_name ?: 'Hotel') }}</td>
-                        <td style="text-align: center; text-transform: uppercase;">{{ $stay->location ?: '—' }}</td>
-                        <td style="text-align: center;">{{ ucfirst($stay->room_type ?: 'Standard') }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $stay->room_number ?? '—' }}</td>
-                        <td style="text-align: center;">{{ $checkIn ? $checkIn->format('d/m/Y') : '—' }}</td>
-                        <td style="text-align: center;">{{ $checkOut ? $checkOut->format('d/m/Y') : '—' }}</td>
-                        <td style="text-align: center;">{{ $nights }}</td>
-                        <td style="text-align: center;">{{ $campVal }}</td>
-                        <td style="text-align: left; padding-left: 5px;">{{ $booking?->package?->package_title ?? ($booking?->package?->name ?? '—') }}</td>
-                        <td style="text-align: center; font-weight: bold;">{{ $booking?->voucher_number ?? ('UB' . ($booking?->id ?? '')) }}</td>
-                        <td style="text-align: center;">{{ $statusText }}</td>
+                        @if($showCol('sr')) <td style="text-align: center;">{{ $globalSr++ }}</td> @endif
+                        @if($showCol('hajj-id')) <td style="text-align: center;">—</td> @endif
+                        @if($showCol('hb')) <td style="text-align: center;">—</td> @endif
+                        @if($showCol('pilgrim')) <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ $booking?->client?->name ?? 'Direct Pilgrim' }}</td> @endif
+                        @if($showCol('gender')) <td style="text-align: center;">—</td> @endif
+                        @if($showCol('passport')) <td style="text-align: center; font-weight: bold;">{{ $booking?->passport_number ?: '—' }}</td> @endif
+                        @if($showCol('hotel')) <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ strtoupper($stay->hotel_name ?: 'Hotel') }}</td> @endif
+                        @if($showCol('location')) <td style="text-align: center; text-transform: uppercase;">{{ $stay->location ?: '—' }}</td> @endif
+                        @if($showCol('room')) <td style="text-align: center;">{{ ucfirst($stay->room_type ?: 'Standard') }}</td> @endif
+                        @if($showCol('room-no')) <td style="text-align: center; font-weight: bold;">{{ $stay->room_number ?? '—' }}</td> @endif
+                        @if($showCol('checkin')) <td style="text-align: center;">{{ $checkIn ? $checkIn->format('d/m/Y') : '—' }}</td> @endif
+                        @if($showCol('checkout')) <td style="text-align: center;">{{ $checkOut ? $checkOut->format('d/m/Y') : '—' }}</td> @endif
+                        @if($showCol('nights')) <td style="text-align: center;">{{ $nights }}</td> @endif
+                        @if($showCol('maktab')) <td style="text-align: center;">{{ $campVal }}</td> @endif
+                        @if($showCol('package')) <td style="text-align: left; padding-left: 5px;">{{ $booking?->package?->package_title ?? ($booking?->package?->name ?? '—') }}</td> @endif
+                        @if($showCol('voucher')) <td style="text-align: center; font-weight: bold;">{{ $booking?->voucher_number ?? ('UB' . ($booking?->id ?? '')) }}</td> @endif
+                        @if($showCol('status')) <td style="text-align: center;">{{ $statusText }}</td> @endif
                     </tr>
                 @else
                     @foreach($persons as $oIdx => $person)
                         <tr class="{{ $oIdx === 0 ? 'hotel-divider-top' : 'hotel-sub-row' }}">
-                            <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td>
-                            <td style="text-align: center; font-weight: bold;">{{ !empty($person->hajj_id) ? $person->hajj_id : '—' }}</td>
-                            <td style="text-align: center; font-weight: bold;">{{ !empty($person->hb_number) ? $person->hb_number : '—' }}</td>
-                            <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase;">
-                                {{ $person->full_name }}
-                            </td>
-                            <td class="{{ strtoupper($person->gender ?? '') === 'FEMALE' ? 'gender-female' : 'gender-male' }}">
-                                {{ strtoupper($person->gender ?? '—') }}
-                            </td>
-                            <td style="text-align: center; font-weight: bold;">{{ $person->passport_number ?: '—' }}</td>
+                            @if($showCol('sr')) <td style="text-align: center; font-weight: bold;">{{ $globalSr++ }}</td> @endif
+                            @if($showCol('hajj-id')) <td style="text-align: center; font-weight: bold;">{{ !empty($person->hajj_id) ? $person->hajj_id : '—' }}</td> @endif
+                            @if($showCol('hb')) <td style="text-align: center; font-weight: bold;">{{ !empty($person->hb_number) ? $person->hb_number : '—' }}</td> @endif
+                            @if($showCol('pilgrim'))
+                                <td style="text-align: left; padding-left: 5px; font-weight: bold; text-transform: uppercase;">
+                                    {{ $person->full_name }}
+                                </td>
+                            @endif
+                            @if($showCol('gender'))
+                                <td class="{{ strtoupper($person->gender ?? '') === 'FEMALE' ? 'gender-female' : 'gender-male' }}">
+                                    {{ strtoupper($person->gender ?? '—') }}
+                                </td>
+                            @endif
+                            @if($showCol('passport')) <td style="text-align: center; font-weight: bold;">{{ $person->passport_number ?: '—' }}</td> @endif
 
                             @if($oIdx === 0)
-                                <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 5px; font-weight: bold;">
-                                    {{ strtoupper($stay->hotel_name ?: 'Hotel') }}
-                                </td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; text-transform: uppercase;">
-                                    {{ $stay->location ?: '—' }}
-                                </td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ ucfirst($stay->room_type ?: 'Standard') }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $stay->room_number ?? '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $checkIn ? $checkIn->format('d/m/Y') : '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $checkOut ? $checkOut->format('d/m/Y') : '—' }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $nights }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $campVal }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 5px;">{{ $booking?->package?->package_title ?? ($booking?->package?->name ?? '—') }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $booking?->voucher_number ?? ('UB' . ($booking?->id ?? '')) }}</td>
-                                <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $statusText }}</td>
+                                @if($showCol('hotel'))
+                                    <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 5px; font-weight: bold;">
+                                        {{ strtoupper($stay->hotel_name ?: 'Hotel') }}
+                                    </td>
+                                @endif
+                                @if($showCol('location'))
+                                    <td rowspan="{{ $rowspan }}" style="text-align: center; text-transform: uppercase;">
+                                        {{ $stay->location ?: '—' }}
+                                    </td>
+                                @endif
+                                @if($showCol('room')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ ucfirst($stay->room_type ?: 'Standard') }}</td> @endif
+                                @if($showCol('room-no')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $stay->room_number ?? '—' }}</td> @endif
+                                @if($showCol('checkin')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $checkIn ? $checkIn->format('d/m/Y') : '—' }}</td> @endif
+                                @if($showCol('checkout')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $checkOut ? $checkOut->format('d/m/Y') : '—' }}</td> @endif
+                                @if($showCol('nights')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $nights }}</td> @endif
+                                @if($showCol('maktab')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $campVal }}</td> @endif
+                                @if($showCol('package')) <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 5px;">{{ $booking?->package?->package_title ?? ($booking?->package?->name ?? '—') }}</td> @endif
+                                @if($showCol('voucher')) <td rowspan="{{ $rowspan }}" style="text-align: center; font-weight: bold;">{{ $booking?->voucher_number ?? ('UB' . ($booking?->id ?? '')) }}</td> @endif
+                                @if($showCol('status')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ $statusText }}</td> @endif
                             @endif
                         </tr>
                     @endforeach
                 @endif
             @empty
                 <tr>
-                    <td colspan="17" style="text-align: center; padding: 20px; color: #777;">No Hotel Person Records Found</td>
+                    <td colspan="{{ $colCount }}" style="text-align: center; padding: 20px; color: #777;">No Hotel Person Records Found</td>
                 </tr>
             @endforelse
         </tbody>

@@ -54,8 +54,16 @@ class RoomingListController extends Controller
     {
         $data = $this->getFilteredRoomingData($request);
 
+        $visibleCols = null;
+        if ($request->has('columns') && !empty($request->columns)) {
+            $visibleCols = is_array($request->columns) ? $request->columns : explode(',', $request->columns);
+            $visibleCols = array_map('trim', $visibleCols);
+        }
+        $data['visibleColumns'] = $visibleCols;
+
         $pdf = Pdf::loadView('reports.rooming_list_pdf', $data);
-        $pdf->setPaper('A4', 'portrait');
+        $paperOrientation = ($visibleCols && count($visibleCols) > 9) ? 'landscape' : 'portrait';
+        $pdf->setPaper('A4', $paperOrientation);
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 

@@ -24,6 +24,13 @@ class HotelPersonReportController extends Controller
     {
         $data = $this->getFilteredData($request);
 
+        $visibleCols = null;
+        if ($request->has('columns') && !empty($request->columns)) {
+            $visibleCols = is_array($request->columns) ? $request->columns : explode(',', $request->columns);
+            $visibleCols = array_map('trim', $visibleCols);
+        }
+        $data['visibleColumns'] = $visibleCols;
+
         $pdf = Pdf::loadView('reports.hotel_person_pdf', $data);
         $pdf->setPaper('A4', 'landscape');
         $pdf->setOption('isHtml5ParserEnabled', true);

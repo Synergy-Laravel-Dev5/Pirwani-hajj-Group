@@ -177,7 +177,7 @@ class HajjApplicationController extends Controller
                     'phone'           => $application->mobile_no,
                     'cnic'            => $application->cnic_no,
                     'passport_number' => $application->passport_no,
-                    'type'            => 'customer',
+                    'type'            => 'client',
                     'status'          => 'active',
                 ]);
                 $clientId = $client->id;

@@ -166,16 +166,36 @@
     </table>
 
     <!-- Manifest Table (Without Check-In & Check-Out) -->
+    @php
+        $showCol = function($key) use ($visibleColumns) {
+            if (!isset($visibleColumns) || empty($visibleColumns)) {
+                return in_array($key, ['sr', 'picture', 'hajj-id', 'pilgrim', 'gender', 'passport', 'hotel', 'room', 'maktab', 'package', 'voucher', 'status']);
+            }
+            return in_array($key, $visibleColumns);
+        };
+        $showPilgrimGroup = $showCol('pilgrim') || $showCol('picture') || $showCol('passport') || $showCol('gender') || $showCol('given-name') || $showCol('surname') || $showCol('hajj-id') || $showCol('hb');
+        $showPkgGroup = $showCol('package') || $showCol('voucher') || $showCol('client');
+
+        $colCount = 0;
+        if ($showCol('sr')) $colCount++;
+        if ($showPilgrimGroup) $colCount++;
+        if ($showCol('hotel')) $colCount++;
+        if ($showCol('room')) $colCount++;
+        if ($showPkgGroup) $colCount++;
+        if ($showCol('maktab')) $colCount++;
+        if ($showCol('status')) $colCount++;
+        if ($colCount === 0) $colCount = 7;
+    @endphp
     <table class="manifest-table">
         <thead>
             <tr>
-                <th style="width: 25px;">#</th>
-                <th style="width: 250px; text-align: left; padding-left: 6px;">PILGRIM / HAJJI DETAILS</th>
-                <th style="width: 170px; text-align: left; padding-left: 6px;">HOTEL & LOCATION</th>
-                <th style="width: 110px; text-align: center;">ROOM DETAILS</th>
-                <th style="width: 170px; text-align: left; padding-left: 6px;">PACKAGE & VOUCHER</th>
-                <th style="width: 110px; text-align: center;">MAKTAB / CAMP</th>
-                <th style="width: 80px; text-align: center;">STATUS</th>
+                @if($showCol('sr')) <th style="width: 25px;">#</th> @endif
+                @if($showPilgrimGroup) <th style="width: 250px; text-align: left; padding-left: 6px;">PILGRIM / HAJJI DETAILS</th> @endif
+                @if($showCol('hotel')) <th style="width: 170px; text-align: left; padding-left: 6px;">HOTEL & LOCATION</th> @endif
+                @if($showCol('room')) <th style="width: 110px; text-align: center;">ROOM DETAILS</th> @endif
+                @if($showPkgGroup) <th style="width: 170px; text-align: left; padding-left: 6px;">PACKAGE & VOUCHER</th> @endif
+                @if($showCol('maktab')) <th style="width: 110px; text-align: center;">MAKTAB / CAMP</th> @endif
+                @if($showCol('status')) <th style="width: 80px; text-align: center;">STATUS</th> @endif
             </tr>
         </thead>
         <tbody>
@@ -216,9 +236,10 @@
                     }
                 @endphp
                 <tr>
-                    <td class="center fw-bold">{{ $sr++ }}</td>
+                    @if($showCol('sr')) <td class="center fw-bold">{{ $sr++ }}</td> @endif
                     
                     {{-- Pilgrim Details --}}
+                    @if($showPilgrimGroup)
                     <td style="padding-left: 6px;">
                         <div>
                             @php
@@ -232,27 +253,31 @@
                                     }
                                 }
                             @endphp
-                            @if($photoSrc)
+                            @if($showCol('picture') && $photoSrc)
                                 <img src="{{ $photoSrc }}" class="haji-photo" alt="">
                             @endif
-                            <strong style="font-size: 9.5px; text-transform: uppercase;">
-                                {{ $mainPerson->full_name ?? ($mainPerson->given_name . ' ' . $mainPerson->surname) }}
-                            </strong>
-                            @if(!empty($mainPerson->given_name) || !empty($mainPerson->surname))
+                            @if($showCol('pilgrim'))
+                                <strong style="font-size: 9.5px; text-transform: uppercase;">
+                                    {{ $mainPerson->full_name ?? ($mainPerson->given_name . ' ' . $mainPerson->surname) }}
+                                </strong>
+                            @endif
+                            @if(($showCol('given-name') || $showCol('surname')) && (!empty($mainPerson->given_name) || !empty($mainPerson->surname)))
                                 <div style="font-size: 7.5px; color: #444;">{{ trim(($mainPerson->given_name ?? '') . ' ' . ($mainPerson->surname ?? '')) }}</div>
                             @endif
-                            <span class="{{ strtolower($mainPerson->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}" style="font-size: 8px;">
-                                ({{ ucfirst($mainPerson->gender ?? 'Male') }})
-                            </span>
-                            @if($mainPerson->passport_number)
+                            @if($showCol('gender'))
+                                <span class="{{ strtolower($mainPerson->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}" style="font-size: 8px;">
+                                    ({{ ucfirst($mainPerson->gender ?? 'Male') }})
+                                </span>
+                            @endif
+                            @if($showCol('passport') && $mainPerson->passport_number)
                                 <span style="font-size: 8px; color: #444;"> | Pass: {{ $mainPerson->passport_number }}</span>
                                 @php
                                     $mDoi = $mainPerson->date_of_issue ?: $mainPerson->passport_issue_date;
                                 @endphp
-                                @if(!empty($mDoi))
+                                @if($showCol('passport-doi') && !empty($mDoi))
                                     <span style="font-size: 7.5px; color: #555;"> (DOI: {{ date('d/m/Y', strtotime($mDoi)) }})</span>
                                 @endif
-                                @if(!empty($mainPerson->passport_expiry_date))
+                                @if($showCol('passport-exp') && !empty($mainPerson->passport_expiry_date))
                                     <span style="font-size: 7.5px; color: #b91c1c;"> (EXP: {{ date('d/m/Y', strtotime($mainPerson->passport_expiry_date)) }})</span>
                                 @endif
                             @endif
@@ -262,22 +287,26 @@
                                 <strong>Accompanying ({{ $otherPersons->count() }}):</strong>
                                 @foreach($otherPersons as $oP)
                                     <div>
-                                        • {{ $oP->full_name }} 
-                                        @if(!empty($oP->given_name) || !empty($oP->surname))
+                                        @if($showCol('pilgrim'))
+                                            • {{ $oP->full_name }} 
+                                        @endif
+                                        @if(($showCol('given-name') || $showCol('surname')) && (!empty($oP->given_name) || !empty($oP->surname)))
                                             <span style="font-size: 7.5px; color: #555;">({{ trim(($oP->given_name ?? '') . ' ' . ($oP->surname ?? '')) }})</span>
                                         @endif
-                                        <span class="{{ strtolower($oP->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}">
-                                             ({{ ucfirst($oP->gender ?? 'Male') }})
-                                        </span>
-                                        @if($oP->passport_number)
+                                        @if($showCol('gender'))
+                                            <span class="{{ strtolower($oP->gender ?? '') === 'female' ? 'gender-female' : 'gender-male' }}">
+                                                 ({{ ucfirst($oP->gender ?? 'Male') }})
+                                            </span>
+                                        @endif
+                                        @if($showCol('passport') && $oP->passport_number)
                                             - {{ $oP->passport_number }}
                                             @php
                                                 $oDoi = $oP->date_of_issue ?: $oP->passport_issue_date;
                                             @endphp
-                                            @if(!empty($oDoi))
+                                            @if($showCol('passport-doi') && !empty($oDoi))
                                                 <span style="font-size: 7px; color: #555;">(DOI: {{ date('d/m/Y', strtotime($oDoi)) }})</span>
                                             @endif
-                                            @if(!empty($oP->passport_expiry_date))
+                                            @if($showCol('passport-exp') && !empty($oP->passport_expiry_date))
                                                 <span style="font-size: 7px; color: #b91c1c;">(EXP: {{ date('d/m/Y', strtotime($oP->passport_expiry_date)) }})</span>
                                             @endif
                                         @endif
@@ -286,8 +315,10 @@
                             </div>
                         @endif
                     </td>
+                    @endif
 
                     {{-- Hotel & Location --}}
+                    @if($showCol('hotel'))
                     <td style="padding-left: 6px;">
                         @if($isAllLoc)
                             @foreach($allStays as $st)
@@ -301,8 +332,10 @@
                             <div style="font-size: 8px; color: #555;">Location: {{ strtoupper($stay->location ?: 'Location') }}</div>
                         @endif
                     </td>
+                    @endif
 
                     {{-- Room Details --}}
+                    @if($showCol('room'))
                     <td class="center">
                         @if($isAllLoc)
                             @foreach($allStays as $st)
@@ -313,31 +346,42 @@
                             <div style="font-size: 7.5px; color: #555;">{{ $stay->no_of_rooms ?: 1 }} Room(s)</div>
                         @endif
                     </td>
+                    @endif
 
                     {{-- Package & Voucher --}}
+                    @if($showPkgGroup)
                     <td style="padding-left: 6px;">
-                        <div class="fw-bold">{{ $pkgTitle }}</div>
-                        <div style="font-size: 7.5px; color: #64748b;">Voucher: {{ $voucherNo }}</div>
-                        @if(!empty($booking->client->name))
+                        @if($showCol('package'))
+                            <div class="fw-bold">{{ $pkgTitle }}</div>
+                        @endif
+                        @if($showCol('voucher'))
+                            <div style="font-size: 7.5px; color: #64748b;">Voucher: {{ $voucherNo }}</div>
+                        @endif
+                        @if($showCol('client') && !empty($booking->client->name))
                             <div style="font-size: 7.5px; color: #555;">Client: {{ $booking->client->name }}</div>
                         @endif
                     </td>
+                    @endif
 
                     {{-- Maktab / Camp --}}
+                    @if($showCol('maktab'))
                     <td class="center">
                         <span class="{{ $isMaktabA ? 'maktab-badge-a' : 'maktab-badge-c' }}">
                             {{ $campName }}
                         </span>
                     </td>
+                    @endif
 
                     {{-- Status --}}
+                    @if($showCol('status'))
                     <td class="center">
                         <span style="font-size: 8px; font-weight: bold; color: #2563eb;">{{ $statusText }}</span>
                     </td>
+                    @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="center" style="padding: 20px; font-style: italic; color: #888;">
+                    <td colspan="{{ $colCount }}" class="center" style="padding: 20px; font-style: italic; color: #888;">
                         No records match the selected Maktab or Location criteria.
                     </td>
                 </tr>

@@ -1362,12 +1362,39 @@
             return null;
         }
 
+        function updateExportLinksWithColumns() {
+            const activeCols = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    activeCols.push(cb.getAttribute('data-col'));
+                }
+            });
+            const colStr = activeCols.join(',');
+
+            document.querySelectorAll('a[href*="report/check-in/export-pdf"]').forEach(btn => {
+                try {
+                    const url = new URL(btn.href, window.location.origin);
+                    url.searchParams.set('columns', colStr);
+                    btn.href = url.pathname + url.search;
+                } catch(e) {}
+            });
+
+            document.querySelectorAll('a[href*="report/check-in/export-excel"]').forEach(btn => {
+                try {
+                    const url = new URL(btn.href, window.location.origin);
+                    url.searchParams.set('columns', colStr);
+                    btn.href = url.pathname + url.search;
+                } catch(e) {}
+            });
+        }
+
         function saveColumnState(state) {
             try {
                 localStorage.setItem(storageKey, JSON.stringify(state));
             } catch (e) {
                 console.error('Failed to save column settings to localStorage', e);
             }
+            updateExportLinksWithColumns();
         }
 
         const checkboxes = document.querySelectorAll('.col-toggle-checkbox');
@@ -1397,6 +1424,7 @@
                 saveColumnState(state);
             });
         });
+        updateExportLinksWithColumns();
 
         // Reset Columns button
         document.getElementById('btnResetColumns')?.addEventListener('click', function () {

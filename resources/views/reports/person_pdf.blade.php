@@ -137,21 +137,35 @@
         </tr>
     </table>
 
+    @php
+        $showCol = function($key) use ($visibleColumns) {
+            if (!isset($visibleColumns) || empty($visibleColumns)) {
+                return in_array($key, ['sr', 'picture', 'hajj-id', 'hb', 'name', 'gender', 'passport', 'cnic', 'phone', 'voucher', 'package', 'maktab']);
+            }
+            return in_array($key, $visibleColumns);
+        };
+        $allKeys = ['sr', 'picture', 'hajj-id', 'hb', 'name', 'gender', 'passport', 'cnic', 'phone', 'voucher', 'package', 'maktab', 'client'];
+        $colCount = 0;
+        foreach ($allKeys as $k) {
+            if ($showCol($k)) $colCount++;
+        }
+        if ($colCount === 0) $colCount = 12;
+    @endphp
     <table class="manifest-table">
         <thead>
             <tr>
-                <th style="width: 25px;">#</th>
-                <th style="width: 35px;">PHOTO</th>
-                <th style="width: 70px;">HAJJ ID</th>
-                <th style="width: 60px;">HB #</th>
-                <th style="width: 170px; text-align: left; padding-left: 6px;">FULL NAME</th>
-                <th style="width: 60px;">GENDER</th>
-                <th style="width: 80px;">PASSPORT</th>
-                <th style="width: 95px;">CNIC</th>
-                <th style="width: 85px;">PHONE</th>
-                <th style="width: 85px;">VOUCHER</th>
-                <th style="width: 140px; text-align: left; padding-left: 6px;">PACKAGE</th>
-                <th style="width: 95px;">MAKTAB / CAMP</th>
+                @if($showCol('sr')) <th style="width: 25px;">#</th> @endif
+                @if($showCol('picture')) <th style="width: 35px;">PHOTO</th> @endif
+                @if($showCol('hajj-id')) <th style="width: 70px;">HAJJ ID</th> @endif
+                @if($showCol('hb')) <th style="width: 60px;">HB #</th> @endif
+                @if($showCol('name')) <th style="width: 170px; text-align: left; padding-left: 6px;">FULL NAME</th> @endif
+                @if($showCol('gender')) <th style="width: 60px;">GENDER</th> @endif
+                @if($showCol('passport')) <th style="width: 80px;">PASSPORT</th> @endif
+                @if($showCol('cnic')) <th style="width: 95px;">CNIC</th> @endif
+                @if($showCol('phone')) <th style="width: 85px;">PHONE</th> @endif
+                @if($showCol('voucher')) <th style="width: 85px;">VOUCHER</th> @endif
+                @if($showCol('package')) <th style="width: 140px; text-align: left; padding-left: 6px;">PACKAGE</th> @endif
+                @if($showCol('maktab')) <th style="width: 95px;">MAKTAB / CAMP</th> @endif
             </tr>
         </thead>
         <tbody>
@@ -174,46 +188,57 @@
                     }
                 @endphp
                 <tr>
-                    <td class="center fw-bold">{{ $idx + 1 }}</td>
-                    <td class="center">
-                        @if($photoSrc)
-                            <img src="{{ $photoSrc }}" class="haji-photo" alt="">
-                        @else
-                            —
-                        @endif
-                    </td>
-                    <td class="center fw-bold">{{ $p->hajj_id ?: '—' }}</td>
-                    <td class="center">{{ $p->hb_number ?: '—' }}</td>
-                    <td style="padding-left: 6px;">
-                        <strong>{{ $p->full_name }}</strong>
-                        @if(!empty($p->given_name) || !empty($p->surname))
-                            <br><span style="font-size: 7.5px; color: #444;">{{ trim(($p->given_name ?? '') . ' ' . ($p->surname ?? '')) }}</span>
-                        @endif
-                        @if(!empty($p->father_name))
-                            <br><span style="font-size: 7.5px; color: #555;">S/O, D/O, W/O: {{ $p->father_name }}</span>
-                        @endif
-                    </td>
-                    <td class="center fw-bold">
-                        {{ $p->passport_number ?: '—' }}
-                        @php
-                            $rawDoi = $p->date_of_issue ?: $p->passport_issue_date;
-                        @endphp
-                        @if(!empty($rawDoi))
-                            <br><span style="font-size: 7px; color: #555; font-weight: normal;">DOI: {{ date('d/m/Y', strtotime($rawDoi)) }}</span>
-                        @endif
-                        @if(!empty($p->passport_expiry_date))
-                            <br><span style="font-size: 7px; color: #b91c1c; font-weight: normal;">EXP: {{ date('d/m/Y', strtotime($p->passport_expiry_date)) }}</span>
-                        @endif
-                    </td>
-                    <td class="center">{{ $p->cnic ?: '—' }}</td>
-                    <td class="center">{{ $p->phone ?: '—' }}</td>
-                    <td class="center">{{ $voucherNo }}</td>
-                    <td style="padding-left: 6px;">{{ $pkgTitle }}</td>
-                    <td class="center fw-bold">{{ $campName }}</td>
+                    @if($showCol('sr')) <td class="center fw-bold">{{ $idx + 1 }}</td> @endif
+                    @if($showCol('picture'))
+                        <td class="center">
+                            @if($photoSrc)
+                                <img src="{{ $photoSrc }}" class="haji-photo" alt="">
+                            @else
+                                —
+                            @endif
+                        </td>
+                    @endif
+                    @if($showCol('hajj-id')) <td class="center fw-bold">{{ $p->hajj_id ?: '—' }}</td> @endif
+                    @if($showCol('hb')) <td class="center">{{ $p->hb_number ?: '—' }}</td> @endif
+                    @if($showCol('name'))
+                        <td style="padding-left: 6px;">
+                            <strong>{{ $p->full_name }}</strong>
+                            @if(!empty($p->given_name) || !empty($p->surname))
+                                <br><span style="font-size: 7.5px; color: #444;">{{ trim(($p->given_name ?? '') . ' ' . ($p->surname ?? '')) }}</span>
+                            @endif
+                            @if(!empty($p->father_name))
+                                <br><span style="font-size: 7.5px; color: #555;">S/O, D/O, W/O: {{ $p->father_name }}</span>
+                            @endif
+                        </td>
+                    @endif
+                    @if($showCol('gender'))
+                        <td class="center {{ $isFemale ? 'gender-female' : 'gender-male' }}">
+                            {{ $pGender }}
+                        </td>
+                    @endif
+                    @if($showCol('passport'))
+                        <td class="center fw-bold">
+                            {{ $p->passport_number ?: '—' }}
+                            @php
+                                $rawDoi = $p->date_of_issue ?: $p->passport_issue_date;
+                            @endphp
+                            @if(!empty($rawDoi))
+                                <br><span style="font-size: 7px; color: #555; font-weight: normal;">DOI: {{ date('d/m/Y', strtotime($rawDoi)) }}</span>
+                            @endif
+                            @if(!empty($p->passport_expiry_date))
+                                <br><span style="font-size: 7px; color: #b91c1c; font-weight: normal;">EXP: {{ date('d/m/Y', strtotime($p->passport_expiry_date)) }}</span>
+                            @endif
+                        </td>
+                    @endif
+                    @if($showCol('cnic')) <td class="center">{{ $p->cnic ?: '—' }}</td> @endif
+                    @if($showCol('phone')) <td class="center">{{ $p->phone ?: '—' }}</td> @endif
+                    @if($showCol('voucher')) <td class="center">{{ $voucherNo }}</td> @endif
+                    @if($showCol('package')) <td style="padding-left: 6px;">{{ $pkgTitle }}</td> @endif
+                    @if($showCol('maktab')) <td class="center fw-bold">{{ $campName }}</td> @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="12" class="center" style="padding: 20px;">No Pilgrims Found matching the criteria</td>
+                    <td colspan="{{ $colCount }}" class="center" style="padding: 20px;">No Pilgrims Found matching the criteria</td>
                 </tr>
             @endforelse
         </tbody>
