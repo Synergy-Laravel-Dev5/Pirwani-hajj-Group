@@ -10,7 +10,8 @@
                     </li>
                     <li class="d-none d-lg-block ms-2">
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge" style="background: rgba(201, 168, 76, 0.18); color: #F3DC9B; border: 1px solid rgba(201, 168, 76, 0.45); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.5px;">
+                            <span class="badge"
+                                style="background: rgba(201, 168, 76, 0.18); color: #F3DC9B; border: 1px solid rgba(201, 168, 76, 0.45); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.5px;">
                                 🕋 PIRWANI HAJJ GROUP
                             </span>
                             <h5 class="mb-0 text-white fw-bold" style="font-size: 15px; letter-spacing: 0.3px;">
@@ -21,12 +22,21 @@
                 </ul>
 
                 <ul class="list-unstyled topnav-menu mb-0 d-flex align-items-center gap-2">
-
+                    <li class="d-none d-lg-block">
+                        <div class="position-relative">
+                            <a href="{{ route('mobile-ops.dashboard') }}"
+                                class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 me-3"
+                                style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
+                                <span>📱</span>
+                                <span>Mobile Ops</span>
+                            </a>
+                        </div>
+                    </li>
                     <li class="d-none d-lg-block">
                         <div class="position-relative topbar-search">
-                            <input type="text" class="form-control"
-                                placeholder="Search here...">
-                            <i class="mdi mdi-magnify fs-16 position-absolute text-muted top-50 translate-middle-y ms-2"></i>
+                            <input type="text" class="form-control" placeholder="Search here...">
+                            <i
+                                class="mdi mdi-magnify fs-16 position-absolute text-muted top-50 translate-middle-y ms-2"></i>
                         </div>
                     </li>
 
@@ -42,13 +52,16 @@
                         </a>
                         <div class="dropdown-menu dropdown-menu-end profile-dropdown shadow-lg">
                             <div class="dropdown-header noti-title py-2 px-3">
-                                <small class="text-uppercase fw-bold text-muted" style="letter-spacing: 0.5px; font-size: 10.5px;">Signed in as</small>
-                                <h6 class="text-overflow m-0 fw-bold text-dark" style="font-size: 13.5px;">{{ Auth::user()->name ?? 'Admin' }}</h6>
+                                <small class="text-uppercase fw-bold text-muted"
+                                    style="letter-spacing: 0.5px; font-size: 10.5px;">Signed in as</small>
+                                <h6 class="text-overflow m-0 fw-bold text-dark" style="font-size: 13.5px;">
+                                    {{ Auth::user()->name ?? 'Admin' }}</h6>
                             </div>
 
                             <div class="dropdown-divider my-1"></div>
 
-                            <a href="{{ route('change.password') }}" class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
+                            <a href="{{ route('change.password') }}"
+                                class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
                                 <i class="mdi mdi-lock-reset fs-16 text-primary"></i>
                                 <span>Change Password</span>
                             </a>
@@ -57,7 +70,8 @@
 
                             <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
                                 @csrf
-                                <button type="submit" class="dropdown-item notify-item logout-menu-btn d-flex align-items-center gap-2 py-2">
+                                <button type="submit"
+                                    class="dropdown-item notify-item logout-menu-btn d-flex align-items-center gap-2 py-2">
                                     <i class="mdi mdi-logout fs-16 text-danger"></i>
                                     <span>Logout</span>
                                 </button>
@@ -74,13 +88,13 @@
                 <div class="logo-box text-center">
                     <a class="logo logo-dark" href="{{ route('dashboard') }}">
                         <span class="logo-lg">
-                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}" alt="Pirwani Hajj Group"
-                                class="sidebar-logo-full"
+                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}"
+                                alt="Pirwani Hajj Group" class="sidebar-logo-full"
                                 style="height: 84px; width: auto; max-width: 220px; object-fit: contain;">
                         </span>
                         <span class="logo-sm">
-                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}" alt="Pirwani Hajj Group"
-                                class="sidebar-logo-small"
+                            <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}"
+                                alt="Pirwani Hajj Group" class="sidebar-logo-small"
                                 style="height: 40px; width: auto; object-fit: contain;">
                         </span>
                     </a>

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
+
 class BookingController extends Controller
 {
     public function index()
@@ -26,7 +27,7 @@ class BookingController extends Controller
 
         $trashCount = Booking::onlyTrashed()->count();
 
-        $totalPax = $bookings->sum(function($b) {
+        $totalPax = $bookings->sum(function ($b) {
             return max($b->persons->count(), (int)($b->no_of_pax ?: 0));
         });
 
@@ -165,6 +166,10 @@ class BookingController extends Controller
             ]
         );
 
+        $plainAppPassword = '123456@';
+        $bookingData['app_password'] = \Illuminate\Support\Facades\Hash::make($plainAppPassword);
+        $bookingData['app_password_plain'] = $plainAppPassword;
+
         DB::beginTransaction();
         try {
             $booking = Booking::create($bookingData);
@@ -230,7 +235,7 @@ class BookingController extends Controller
                             }
                         }
 
-                        unset($personData['existing_photo'], $personData['existing_passport_image']);
+                        unset($personData['existing_photo'], $personData['existing_passport_image'], $personData['father_name']);
                         $booking->persons()->create($personData);
                     }
                 }

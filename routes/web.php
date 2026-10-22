@@ -469,5 +469,8 @@ Route::middleware('auth')->group(function () {
             });
             Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');
         });
+        Route::prefix('mobile-ops')->name('mobile-ops.')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\MobileOps\DashboardController::class, 'index'])->name('dashboard');
+        });
     });
 });

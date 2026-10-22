@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 
 class Booking extends Model
 {
+    use HasApiTokens;
     use SoftDeletes;
 
     protected $fillable = [
@@ -57,6 +59,9 @@ class Booking extends Model
         'balance',
         'status',
         'agreement_signature',
+        'app_password',
+        'app_password_plain',
+        'app_last_login_at',
     ];
 
     protected $casts = [
@@ -112,5 +117,10 @@ class Booking extends Model
     public function roomAllocations()
     {
         return $this->hasMany(BookingPersonRoomAllocation::class, 'booking_id');
+    }
+
+    public function documents()
+    {
+        return $this->hasOne(PersonDocument::class, 'person_id');
     }
 }
