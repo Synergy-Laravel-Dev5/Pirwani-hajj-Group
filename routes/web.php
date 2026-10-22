@@ -471,6 +471,8 @@ Route::middleware('auth')->group(function () {
         });
         Route::prefix('mobile-ops')->name('mobile-ops.')->group(function () {
             Route::get('/dashboard', [App\Http\Controllers\MobileOps\DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/inquiries', [App\Http\Controllers\MobileOps\DashboardController::class, 'inquiries'])->name('inquiries.index');
+            Route::post('/inquiries/{id}/status', [App\Http\Controllers\MobileOps\DashboardController::class, 'updateInquiryStatus'])->name('inquiries.status');
         });
     });
 });

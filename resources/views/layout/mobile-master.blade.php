@@ -197,13 +197,34 @@
                         </a>
                     </div>
 
-                    <!-- Clean Navigation Tree Ready for Mobile Tabs -->
                     <ul id="side-menu" class="mt-2">
                         <li class="menu-title text-muted text-uppercase fs-11 px-3 py-2">Mobile Ops Modules</li>
 
-                        <!-- Empty placeholder until we add the chosen tabs -->
-                        <li class="px-3 py-2 text-muted fs-12">
-                            <em>No links added yet</em>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.dashboard') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.dashboard') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-view-dashboard-outline fs-18"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.inquiries.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.inquiries.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="mdi mdi-email-fast-outline fs-18"></i>
+                                    <span>Guest Inquiries</span>
+                                </div>
+                                @php
+                                    $pendingCount = \App\Models\PackageInquiry::where('status', 'pending')->count();
+                                @endphp
+                                @if ($pendingCount > 0)
+                                    <span
+                                        class="badge bg-danger rounded-pill px-2 py-1 fs-10">{{ $pendingCount }}</span>
+                                @endif
+                            </a>
                         </li>
                     </ul>
                 </div>

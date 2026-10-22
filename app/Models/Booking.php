@@ -121,6 +121,6 @@ class Booking extends Model
 
     public function documents()
     {
-        return $this->hasOne(PersonDocument::class, 'person_id');
+        return $this->hasMany(PersonDocument::class, 'booking_id');
     }
 }

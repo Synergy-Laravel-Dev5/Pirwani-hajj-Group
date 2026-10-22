@@ -28,7 +28,7 @@
                                 class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 me-3"
                                 style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
                                 <span>📱</span>
-                                <span>Mobile Ops</span>
+                                <span>Mobile App Portal</span>
                             </a>
                         </div>
                     </li>
