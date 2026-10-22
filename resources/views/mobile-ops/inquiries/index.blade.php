@@ -14,12 +14,14 @@
                 <button class="btn btn-sm btn-white border shadow-sm dropdown-toggle px-3 d-flex align-items-center gap-2"
                     type="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 170px;">
                     <span class="d-flex align-items-center gap-1 flex-grow-1 text-start">
-                        @if(empty($status))
+                        @if (empty($status))
                             <span class="badge bg-dark rounded-circle p-1 me-1"></span> All Statuses ({{ $counts['all'] }})
                         @elseif($status === 'pending')
-                            <span class="badge bg-warning rounded-circle p-1 me-1"></span> Pending ({{ $counts['pending'] }})
+                            <span class="badge bg-warning rounded-circle p-1 me-1"></span> Pending
+                            ({{ $counts['pending'] }})
                         @elseif($status === 'contacted')
-                            <span class="badge bg-info rounded-circle p-1 me-1"></span> Contacted ({{ $counts['contacted'] }})
+                            <span class="badge bg-info rounded-circle p-1 me-1"></span> Contacted
+                            ({{ $counts['contacted'] }})
                         @elseif($status === 'closed')
                             <span class="badge bg-success rounded-circle p-1 me-1"></span> Closed ({{ $counts['closed'] }})
                         @endif
@@ -33,7 +35,9 @@
                             <span class="badge bg-dark rounded-pill">{{ $counts['all'] }}</span>
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
                     <li>
                         <a class="dropdown-item d-flex align-items-center justify-content-between fs-13 {{ $status === 'pending' ? 'active' : '' }}"
                             href="{{ route('mobile-ops.inquiries.index', ['status' => 'pending']) }}">
@@ -89,23 +93,26 @@
                                     <div class="fw-bold text-dark">{{ $item->full_name }}</div>
                                     <div class="fs-12 text-muted mt-1">
                                         <i class="mdi mdi-phone me-1 text-primary"></i>
-                                        <a href="tel:{{ $item->contact }}" class="text-secondary text-decoration-none">{{ $item->contact }}</a>
+                                        <a href="tel:{{ $item->contact }}"
+                                            class="text-secondary text-decoration-none">{{ $item->contact }}</a>
                                     </div>
                                     <div class="fs-12 text-muted">
                                         <i class="mdi mdi-email me-1 text-danger"></i>
-                                        <a href="mailto:{{ $item->email }}" class="text-secondary text-decoration-none">{{ $item->email }}</a>
+                                        <a href="mailto:{{ $item->email }}"
+                                            class="text-secondary text-decoration-none">{{ $item->email }}</a>
                                     </div>
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border px-2 py-1 text-wrap text-start">
-                                        {{ $item->package?->package_name ?? 'Custom / Removed Package' }}
+                                        {{ $item->package?->package_title ?? 'Custom / Removed Package' }}
                                     </span>
                                 </td>
                                 <td>
                                     <div class="fs-13 fw-semibold">
                                         <i class="mdi mdi-account-group me-1 text-primary"></i>{{ $item->pax }} Pax
                                     </div>
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-uppercase fs-11 mt-1">
+                                    <span
+                                        class="badge bg-primary-subtle text-primary border border-primary-subtle text-uppercase fs-11 mt-1">
                                         {{ $item->room_type }}
                                     </span>
                                 </td>
@@ -119,8 +126,12 @@
                                     @endif
                                 </td>
                                 <td class="fs-12 text-muted">
-                                    <div><i class="mdi mdi-calendar-blank-outline me-1"></i>{{ $item->created_at->format('d M Y') }}</div>
-                                    <div class="text-muted"><i class="mdi mdi-clock-outline me-1"></i>{{ $item->created_at->format('h:i A') }}</div>
+                                    <div><i
+                                            class="mdi mdi-calendar-blank-outline me-1"></i>{{ $item->created_at->format('d M Y') }}
+                                    </div>
+                                    <div class="text-muted"><i
+                                            class="mdi mdi-clock-outline me-1"></i>{{ $item->created_at->format('h:i A') }}
+                                    </div>
                                 </td>
                                 <td class="text-end pe-3">
                                     <div class="d-inline-flex align-items-center gap-1">
@@ -137,34 +148,41 @@
                                                 Status
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                                                <li class="dropdown-header text-uppercase fs-11 fw-bold text-muted">Change Status</li>
+                                                <li class="dropdown-header text-uppercase fs-11 fw-bold text-muted">Change
+                                                    Status</li>
                                                 <li>
-                                                    <form action="{{ route('mobile-ops.inquiries.status', $item->id) }}" method="POST">
+                                                    <form action="{{ route('mobile-ops.inquiries.status', $item->id) }}"
+                                                        method="POST">
                                                         @csrf
                                                         <input type="hidden" name="status" value="contacted">
                                                         <button type="submit"
                                                             class="dropdown-item fs-13 d-flex align-items-center {{ $item->status === 'contacted' ? 'active' : '' }}">
-                                                            <i class="mdi mdi-phone-in-talk-outline me-2 text-info"></i> Mark as Contacted
+                                                            <i class="mdi mdi-phone-in-talk-outline me-2 text-info"></i>
+                                                            Mark as Contacted
                                                         </button>
                                                     </form>
                                                 </li>
                                                 <li>
-                                                    <form action="{{ route('mobile-ops.inquiries.status', $item->id) }}" method="POST">
+                                                    <form action="{{ route('mobile-ops.inquiries.status', $item->id) }}"
+                                                        method="POST">
                                                         @csrf
                                                         <input type="hidden" name="status" value="closed">
                                                         <button type="submit"
                                                             class="dropdown-item fs-13 d-flex align-items-center {{ $item->status === 'closed' ? 'active' : '' }}">
-                                                            <i class="mdi mdi-check-circle-outline me-2 text-success"></i> Mark as Closed
+                                                            <i class="mdi mdi-check-circle-outline me-2 text-success"></i>
+                                                            Mark as Closed
                                                         </button>
                                                     </form>
                                                 </li>
                                                 <li>
-                                                    <form action="{{ route('mobile-ops.inquiries.status', $item->id) }}" method="POST">
+                                                    <form action="{{ route('mobile-ops.inquiries.status', $item->id) }}"
+                                                        method="POST">
                                                         @csrf
                                                         <input type="hidden" name="status" value="pending">
                                                         <button type="submit"
                                                             class="dropdown-item fs-13 d-flex align-items-center {{ $item->status === 'pending' ? 'active' : '' }}">
-                                                            <i class="mdi mdi-clock-outline me-2 text-warning"></i> Revert to Pending
+                                                            <i class="mdi mdi-clock-outline me-2 text-warning"></i> Revert
+                                                            to Pending
                                                         </button>
                                                     </form>
                                                 </li>
@@ -175,36 +193,45 @@
                             </tr>
 
                             <!-- Details Modal with Documents View -->
-                            <div class="modal fade" id="inquiryModal{{ $item->id }}" tabindex="-1" aria-labelledby="modalLabel{{ $item->id }}" aria-hidden="true">
+                            <div class="modal fade" id="inquiryModal{{ $item->id }}" tabindex="-1"
+                                aria-labelledby="modalLabel{{ $item->id }}" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                     <div class="modal-content border-0 shadow">
                                         <div class="modal-header bg-light py-3">
                                             <div>
-                                                <h5 class="modal-title fs-16 fw-bold mb-0" id="modalLabel{{ $item->id }}">
+                                                <h5 class="modal-title fs-16 fw-bold mb-0"
+                                                    id="modalLabel{{ $item->id }}">
                                                     Inquiry Details #{{ $item->id }}
                                                 </h5>
-                                                <span class="fs-12 text-muted">Submitted on {{ $item->created_at->format('d M Y, h:i A') }}</span>
+                                                <span class="fs-12 text-muted">Submitted on
+                                                    {{ $item->created_at->format('d M Y, h:i A') }}</span>
                                             </div>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body p-4">
                                             <!-- Basic Information Grid -->
                                             <div class="row g-3 mb-4">
                                                 <div class="col-sm-6">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Applicant Name</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">
+                                                            Applicant Name</div>
                                                         <div class="fw-bold text-dark fs-14">{{ $item->full_name }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Target Package</div>
-                                                        <div class="fw-bold text-dark fs-14">{{ $item->package?->package_name ?? 'Custom / Removed Package' }}</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">
+                                                            Target Package</div>
+                                                        <div class="fw-bold text-dark fs-14">
+                                                            {{ $item->package?->package_title ?? 'Custom / Removed Package' }}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Phone / WhatsApp</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Phone
+                                                            / WhatsApp</div>
                                                         <div class="fw-semibold text-dark fs-14">
                                                             <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $item->contact) }}"
                                                                 target="_blank" class="text-success text-decoration-none">
@@ -215,37 +242,48 @@
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Email Address</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Email
+                                                            Address</div>
                                                         <div class="fw-semibold text-dark fs-14">
-                                                            <a href="mailto:{{ $item->email }}" class="text-primary text-decoration-none">
-                                                                <i class="mdi mdi-email-outline me-1"></i> {{ $item->email }}
+                                                            <a href="mailto:{{ $item->email }}"
+                                                                class="text-primary text-decoration-none">
+                                                                <i class="mdi mdi-email-outline me-1"></i>
+                                                                {{ $item->email }}
                                                             </a>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">CNIC / ID</div>
-                                                        <div class="fw-semibold text-dark fs-14">{{ $item->cnic_number ?? 'Not Provided' }}</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">CNIC
+                                                            / ID</div>
+                                                        <div class="fw-semibold text-dark fs-14">
+                                                            {{ $item->cnic_number ?? 'Not Provided' }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Passport Number</div>
-                                                        <div class="fw-semibold text-dark fs-14">{{ $item->passport_number ?? 'Not Provided' }}</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">
+                                                            Passport Number</div>
+                                                        <div class="fw-semibold text-dark fs-14">
+                                                            {{ $item->passport_number ?? 'Not Provided' }}</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
                                                     <div class="p-3 rounded bg-light">
-                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Pax & Room</div>
-                                                        <div class="fw-semibold text-dark fs-14">{{ $item->pax }} Pax ({{ ucfirst($item->room_type) }})</div>
+                                                        <div class="text-muted fs-11 text-uppercase fw-semibold mb-1">Pax &
+                                                            Room</div>
+                                                        <div class="fw-semibold text-dark fs-14">{{ $item->pax }} Pax
+                                                            ({{ ucfirst($item->room_type) }})
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- Special Request / Remarks -->
                                             <div class="mb-4">
-                                                <h6 class="fs-13 fw-bold text-uppercase text-muted mb-2">Special Requests & Remarks</h6>
+                                                <h6 class="fs-13 fw-bold text-uppercase text-muted mb-2">Special Requests &
+                                                    Remarks</h6>
                                                 <div class="p-3 border rounded bg-light-subtle text-dark fs-13">
                                                     {{ $item->special_request ?: 'No special requests submitted.' }}
                                                 </div>
@@ -253,16 +291,21 @@
 
                                             <!-- Documents View Section -->
                                             <div class="mb-2">
-                                                <h6 class="fs-13 fw-bold text-uppercase text-muted mb-3 d-flex align-items-center">
-                                                    <i class="mdi mdi-file-document-multiple-outline me-1 text-primary fs-16"></i> Attached Documents
+                                                <h6
+                                                    class="fs-13 fw-bold text-uppercase text-muted mb-3 d-flex align-items-center">
+                                                    <i
+                                                        class="mdi mdi-file-document-multiple-outline me-1 text-primary fs-16"></i>
+                                                    Attached Documents
                                                 </h6>
 
                                                 <div class="row g-3">
                                                     <!-- Passport Document Card -->
                                                     <div class="col-md-6">
-                                                        <div class="border rounded p-3 h-100 d-flex flex-column justify-content-between bg-white shadow-none">
+                                                        <div
+                                                            class="border rounded p-3 h-100 d-flex flex-column justify-content-between bg-white shadow-none">
                                                             <div class="d-flex align-items-center mb-3">
-                                                                <div class="avatar-sm rounded bg-primary-subtle text-primary d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
+                                                                <div class="avatar-sm rounded bg-primary-subtle text-primary d-flex align-items-center justify-content-center me-3"
+                                                                    style="width: 42px; height: 42px;">
                                                                     <i class="mdi mdi-passport fs-22"></i>
                                                                 </div>
                                                                 <div>
@@ -275,27 +318,40 @@
 
                                                             @if ($item->passport_document)
                                                                 @php
-                                                                    $passportUrl = asset('storage/' . $item->passport_document);
-                                                                    $passportExt = strtolower(pathinfo($item->passport_document, PATHINFO_EXTENSION));
+                                                                    $passportUrl = asset(
+                                                                        'storage/' . $item->passport_document,
+                                                                    );
+                                                                    $passportExt = strtolower(
+                                                                        pathinfo(
+                                                                            $item->passport_document,
+                                                                            PATHINFO_EXTENSION,
+                                                                        ),
+                                                                    );
                                                                 @endphp
-                                                                @if(in_array($passportExt, ['jpg', 'jpeg', 'png', 'webp', 'gif']))
+                                                                @if (in_array($passportExt, ['jpg', 'jpeg', 'png', 'webp', 'gif']))
                                                                     <div class="mb-3 text-center bg-light rounded p-2">
                                                                         <a href="{{ $passportUrl }}" target="_blank">
-                                                                            <img src="{{ $passportUrl }}" alt="Passport" class="img-fluid rounded border" style="max-height: 180px; object-fit: contain;">
+                                                                            <img src="{{ $passportUrl }}" alt="Passport"
+                                                                                class="img-fluid rounded border"
+                                                                                style="max-height: 180px; object-fit: contain;">
                                                                         </a>
                                                                     </div>
                                                                 @endif
                                                                 <div class="d-flex gap-2">
-                                                                    <a href="{{ $passportUrl }}" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">
+                                                                    <a href="{{ $passportUrl }}" target="_blank"
+                                                                        class="btn btn-sm btn-outline-primary flex-fill">
                                                                         <i class="mdi mdi-eye me-1"></i> View Full
                                                                     </a>
-                                                                    <a href="{{ $passportUrl }}" download class="btn btn-sm btn-light border flex-fill">
+                                                                    <a href="{{ $passportUrl }}" download
+                                                                        class="btn btn-sm btn-light border flex-fill">
                                                                         <i class="mdi mdi-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                             @else
-                                                                <div class="text-center py-3 bg-light rounded text-muted fs-12">
-                                                                    <i class="mdi mdi-alert-circle-outline fs-18 d-block mb-1"></i>
+                                                                <div
+                                                                    class="text-center py-3 bg-light rounded text-muted fs-12">
+                                                                    <i
+                                                                        class="mdi mdi-alert-circle-outline fs-18 d-block mb-1"></i>
                                                                     No passport document attached
                                                                 </div>
                                                             @endif
@@ -304,9 +360,11 @@
 
                                                     <!-- NIC / Visa Document Card -->
                                                     <div class="col-md-6">
-                                                        <div class="border rounded p-3 h-100 d-flex flex-column justify-content-between bg-white shadow-none">
+                                                        <div
+                                                            class="border rounded p-3 h-100 d-flex flex-column justify-content-between bg-white shadow-none">
                                                             <div class="d-flex align-items-center mb-3">
-                                                                <div class="avatar-sm rounded bg-info-subtle text-info d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
+                                                                <div class="avatar-sm rounded bg-info-subtle text-info d-flex align-items-center justify-content-center me-3"
+                                                                    style="width: 42px; height: 42px;">
                                                                     <i class="mdi mdi-card-account-details fs-22"></i>
                                                                 </div>
                                                                 <div>
@@ -319,27 +377,40 @@
 
                                                             @if ($item->nic_or_visa_document)
                                                                 @php
-                                                                    $nicUrl = asset('storage/' . $item->nic_or_visa_document);
-                                                                    $nicExt = strtolower(pathinfo($item->nic_or_visa_document, PATHINFO_EXTENSION));
+                                                                    $nicUrl = asset(
+                                                                        'storage/' . $item->nic_or_visa_document,
+                                                                    );
+                                                                    $nicExt = strtolower(
+                                                                        pathinfo(
+                                                                            $item->nic_or_visa_document,
+                                                                            PATHINFO_EXTENSION,
+                                                                        ),
+                                                                    );
                                                                 @endphp
-                                                                @if(in_array($nicExt, ['jpg', 'jpeg', 'png', 'webp', 'gif']))
+                                                                @if (in_array($nicExt, ['jpg', 'jpeg', 'png', 'webp', 'gif']))
                                                                     <div class="mb-3 text-center bg-light rounded p-2">
                                                                         <a href="{{ $nicUrl }}" target="_blank">
-                                                                            <img src="{{ $nicUrl }}" alt="NIC/Visa" class="img-fluid rounded border" style="max-height: 180px; object-fit: contain;">
+                                                                            <img src="{{ $nicUrl }}" alt="NIC/Visa"
+                                                                                class="img-fluid rounded border"
+                                                                                style="max-height: 180px; object-fit: contain;">
                                                                         </a>
                                                                     </div>
                                                                 @endif
                                                                 <div class="d-flex gap-2">
-                                                                    <a href="{{ $nicUrl }}" target="_blank" class="btn btn-sm btn-outline-info flex-fill">
+                                                                    <a href="{{ $nicUrl }}" target="_blank"
+                                                                        class="btn btn-sm btn-outline-info flex-fill">
                                                                         <i class="mdi mdi-eye me-1"></i> View Full
                                                                     </a>
-                                                                    <a href="{{ $nicUrl }}" download class="btn btn-sm btn-light border flex-fill">
+                                                                    <a href="{{ $nicUrl }}" download
+                                                                        class="btn btn-sm btn-light border flex-fill">
                                                                         <i class="mdi mdi-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                             @else
-                                                                <div class="text-center py-3 bg-light rounded text-muted fs-12">
-                                                                    <i class="mdi mdi-alert-circle-outline fs-18 d-block mb-1"></i>
+                                                                <div
+                                                                    class="text-center py-3 bg-light rounded text-muted fs-12">
+                                                                    <i
+                                                                        class="mdi mdi-alert-circle-outline fs-18 d-block mb-1"></i>
                                                                     No NIC / Visa document attached
                                                                 </div>
                                                             @endif
@@ -359,7 +430,8 @@
                                                     <span class="badge bg-success text-white">Closed</span>
                                                 @endif
                                             </div>
-                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                data-bs-dismiss="modal">Close</button>
                                         </div>
                                     </div>
                                 </div>
@@ -388,13 +460,16 @@
         .bg-primary-subtle {
             background-color: rgba(13, 110, 253, 0.1) !important;
         }
+
         .bg-info-subtle {
             background-color: rgba(13, 202, 240, 0.1) !important;
         }
+
         .btn-white {
             background-color: #fff;
             color: #333;
         }
+
         .btn-white:hover {
             background-color: #f8f9fa;
         }
