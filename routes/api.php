@@ -29,4 +29,12 @@ Route::prefix('guest')->group(function () {
     Route::get('/packages', [GuestController::class, 'getPackages']);
     Route::get('/packages/{id}', [GuestController::class, 'getPackageById']);
     Route::post('/inquiry', [GuestController::class, 'submitInquiry']);
+    Route::get('/gallery', [GuestController::class, 'getGalleries']);
+    Route::get('/gallery/{id}', [GuestController::class, 'getGalleryDetail']);
+    Route::get('/books', [GuestController::class, 'getHajjBooks']);
+    Route::get('/books/{id}', [GuestController::class, 'getHajjBookDetail']);
+    Route::get('/guidelines', [GuestController::class, 'getHujjajGuidelines']);
+    Route::get('/guidelines/{id}', [GuestController::class, 'getHujjajGuidelineDetail']);
+    Route::get('/videos', [GuestController::class, 'getHajjVideos']);
+    Route::get('/videos/{id}', [GuestController::class, 'getHajjVideoDetail']);
 });

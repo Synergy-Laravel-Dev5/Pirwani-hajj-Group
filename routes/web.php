@@ -38,6 +38,10 @@ use App\Http\Controllers\RoomingListController;
 use App\Http\Controllers\HotelPersonReportController;
 use App\Http\Controllers\PilgrimPassController;
 use App\Http\Controllers\HotelSaleController;
+use App\Http\Controllers\MobileOps\GalleryController;
+use App\Http\Controllers\MobileOps\HajjBookController;
+use App\Http\Controllers\MobileOps\HujjajGuidelineController;
+use App\Http\Controllers\MobileOps\TutorialVideosController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -469,10 +473,40 @@ Route::middleware('auth')->group(function () {
             });
             Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');
         });
+
         Route::prefix('mobile-ops')->name('mobile-ops.')->group(function () {
+            // Dashboard & Inquiries
             Route::get('/dashboard', [App\Http\Controllers\MobileOps\DashboardController::class, 'index'])->name('dashboard');
             Route::get('/inquiries', [App\Http\Controllers\MobileOps\DashboardController::class, 'inquiries'])->name('inquiries.index');
             Route::post('/inquiries/{id}/status', [App\Http\Controllers\MobileOps\DashboardController::class, 'updateInquiryStatus'])->name('inquiries.status');
+
+            // Gallery / Ziarat CRUD
+            Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
+            Route::post('/gallery', [GalleryController::class, 'store'])->name('gallery.store');
+            Route::post('/gallery/{id}/update', [GalleryController::class, 'update'])->name('gallery.update');
+            Route::delete('/gallery/{id}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
+
+            // Gallery Individual Images Management
+            Route::delete('/gallery/image/{id}', [GalleryController::class, 'deleteImage'])->name('gallery.image.delete');
+            Route::post('/gallery/image/{id}/primary', [GalleryController::class, 'setPrimaryImage'])->name('gallery.image.primary');
+
+            // Hajj Information Books
+            Route::get('/books', [HajjBookController::class, 'index'])->name('books.index');
+            Route::post('/books', [HajjBookController::class, 'store'])->name('books.store');
+            Route::post('/books/{id}/update', [HajjBookController::class, 'update'])->name('books.update');
+            Route::delete('/books/{id}', [HajjBookController::class, 'destroy'])->name('books.destroy');
+
+            // Hujjaj Information / Guidelines
+            Route::get('/guidelines', [HujjajGuidelineController::class, 'index'])->name('guidelines.index');
+            Route::post('/guidelines', [HujjajGuidelineController::class, 'store'])->name('guidelines.store');
+            Route::post('/guidelines/{id}/update', [HujjajGuidelineController::class, 'update'])->name('guidelines.update');
+            Route::delete('/guidelines/{id}', [HujjajGuidelineController::class, 'destroy'])->name('guidelines.destroy');
+
+            // Hajj Video Tutorials
+            Route::get('/videos', [TutorialVideosController::class, 'index'])->name('videos.index');
+            Route::post('/videos', [TutorialVideosController::class, 'store'])->name('videos.store');
+            Route::post('/videos/{id}/update', [TutorialVideosController::class, 'update'])->name('videos.update');
+            Route::delete('/videos/{id}', [TutorialVideosController::class, 'destroy'])->name('videos.destroy');
         });
     });
 });

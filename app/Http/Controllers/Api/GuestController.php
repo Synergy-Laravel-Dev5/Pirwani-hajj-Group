@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Gallery;
+use App\Models\HajjBook;
+use App\Models\HujjajGuideline;
 use App\Models\Package;
 use App\Models\PackageInquiry;
+use App\Models\TutorialVideo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -176,5 +180,228 @@ class GuestController extends Controller
                 'status'     => $inquiry->status,
             ]
         ], 201);
+    }
+
+    public function getGalleries(Request $request): JsonResponse
+    {
+        $category = $request->query('category');
+        $search   = $request->query('search');
+
+        $query = Gallery::with('images')->latest();
+
+        if (!empty($category) && in_array($category, ['makkah', 'madina', 'other'])) {
+            $query->where('category', $category);
+        }
+
+        if (!empty($search)) {
+            $query->where('title', 'like', '%' . trim($search) . '%');
+        }
+
+        $galleries = $query->get()->map(function ($item) {
+            return [
+                'id'           => $item->id,
+                'category'     => $item->category,
+                'title'        => $item->title,
+                'cover_image'  => $item->image_url,
+                'total_images' => $item->images->count(),
+                'description'  => $item->description,
+                'created_at'   => $item->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $galleries,
+        ]);
+    }
+
+    public function getGalleryDetail($id): JsonResponse
+    {
+        $item = Gallery::with('images')->find($id);
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ziarat item not found.',
+            ], 404);
+        }
+
+        $images = $item->images->map(function ($img) {
+            return [
+                'id'         => $img->id,
+                'image_url'  => $img->image_url,
+                'is_primary' => (bool)$img->is_primary,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'          => $item->id,
+                'category'    => $item->category,
+                'title'       => $item->title,
+                'description' => $item->description,
+                'cover_image' => $item->image_url,
+                'images'      => $images,
+                'created_at'  => $item->created_at->format('Y-m-d H:i:s'),
+            ],
+        ]);
+    }
+    public function getHajjBooks(Request $request): JsonResponse
+    {
+        $search = $request->query('search');
+
+        $query = HajjBook::latest();
+
+        if (!empty($search)) {
+            $query->where('title', 'like', '%' . trim($search) . '%');
+        }
+
+        $books = $query->get()->map(function ($book) {
+            return [
+                'id'            => $book->id,
+                'title'         => $book->title,
+                'thumbnail_url' => $book->thumbnail_url,
+                'file_url'      => $book->file_url,
+                'file_type'     => $book->file_type,
+                'file_size'     => $book->file_size,
+                'created_at'    => $book->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $books,
+        ]);
+    }
+
+    public function getHajjBookDetail($id): JsonResponse
+    {
+        $book = HajjBook::find($id);
+
+        if (!$book) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Book not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'            => $book->id,
+                'title'         => $book->title,
+                'thumbnail_url' => $book->thumbnail_url,
+                'file_url'      => $book->file_url,
+                'file_type'     => $book->file_type,
+                'file_size'     => $book->file_size,
+                'created_at'    => $book->created_at->format('Y-m-d H:i:s'),
+            ],
+        ]);
+    }
+
+    public function getHujjajGuidelines(Request $request): JsonResponse
+    {
+        $search = $request->query('search');
+
+        $query = HujjajGuideline::where('is_active', true)->latest();
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . trim($search) . '%')
+                    ->orWhere('sub_heading', 'like', '%' . trim($search) . '%');
+            });
+        }
+
+        $guidelines = $query->get()->map(function ($item) {
+            return [
+                'id'          => $item->id,
+                'title'       => $item->title,
+                'sub_heading' => $item->sub_heading,
+                'content'     => $item->content,
+                'created_at'  => $item->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $guidelines,
+        ]);
+    }
+
+    public function getHajjVideos(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $search = $request->query('search');
+
+        $query = TutorialVideo::where('is_active', true)->latest();
+
+        if (!empty($search)) {
+            $query->where('title', 'like', '%' . trim($search) . '%');
+        }
+
+        $videos = $query->get()->map(function ($v) {
+            return [
+                'id'            => $v->id,
+                'title'         => $v->title,
+                'description'   => $v->description,
+                'thumbnail_url' => $v->thumbnail_url,
+                'video_type'    => $v->video_type,
+                'play_url'      => $v->play_url,
+                'created_at'    => $v->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $videos,
+        ]);
+    }
+
+    public function getHujjajGuidelineDetail($id): JsonResponse
+    {
+        $item = HujjajGuideline::where('is_active', true)->find($id);
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Guideline not found or inactive.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'          => $item->id,
+                'title'       => $item->title,
+                'sub_heading' => $item->sub_heading,
+                'content'     => $item->content,
+                'created_at'  => $item->created_at->format('Y-m-d H:i:s'),
+            ],
+        ]);
+    }
+
+    public function getHajjVideoDetail($id): \Illuminate\Http\JsonResponse
+    {
+        $video = TutorialVideo::where('is_active', true)->find($id);
+
+        if (!$video) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Video not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'            => $video->id,
+                'title'         => $video->title,
+                'description'   => $video->description,
+                'thumbnail_url' => $video->thumbnail_url,
+                'video_type'    => $video->video_type,
+                'play_url'      => $video->play_url,
+                'created_at'    => $video->created_at->format('Y-m-d H:i:s'),
+            ],
+        ]);
     }
 }
