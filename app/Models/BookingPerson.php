@@ -197,4 +197,8 @@ class BookingPerson extends Model
     {
         return $this->hasMany(BookingPersonRoomAllocation::class, 'booking_person_id');
     }
+    public function documents()
+    {
+        return $this->hasOne(\App\Models\PersonDocument::class, 'person_id');
+    }
 }

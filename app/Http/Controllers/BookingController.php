@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 class BookingController extends Controller
 {
@@ -26,7 +27,7 @@ class BookingController extends Controller
 
         $trashCount = Booking::onlyTrashed()->count();
 
-        $totalPax = $bookings->sum(function($b) {
+        $totalPax = $bookings->sum(function ($b) {
             return max($b->persons->count(), (int)($b->no_of_pax ?: 0));
         });
 
@@ -165,6 +166,10 @@ class BookingController extends Controller
             ]
         );
 
+        $plainAppPassword = '123456@';
+        $bookingData['app_password'] = \Illuminate\Support\Facades\Hash::make($plainAppPassword);
+        $bookingData['app_password_plain'] = $plainAppPassword;
+
         DB::beginTransaction();
         try {
             $booking = Booking::create($bookingData);
@@ -230,7 +235,7 @@ class BookingController extends Controller
                             }
                         }
 
-                        unset($personData['existing_photo'], $personData['existing_passport_image']);
+                        unset($personData['existing_photo'], $personData['existing_passport_image'], $personData['father_name']);
                         $booking->persons()->create($personData);
                     }
                 }
@@ -423,8 +428,19 @@ class BookingController extends Controller
             - $discount;
         $balance = $total - $totalReceived;
 
+
         $bookingData = array_merge(
-            $request->except(['persons', 'hotels', 'transports', 'visas', 'flight_persons', '_token', '_method']),
+            $request->except([
+                'persons',
+                'hotels',
+                'transports',
+                'visas',
+                'flight_persons',
+                '_token',
+                '_method',
+                'app_password',
+                'app_password_plain'
+            ]),
             [
                 'package_id'      => $request->package_id ?: null,
                 'client_id'       => $clientId,
@@ -453,11 +469,20 @@ class BookingController extends Controller
             ]
         );
 
+        // Check if existing database record is missing an app password
+        $currentPassword = $booking->getRawOriginal('app_password');
+        if (empty($currentPassword) || trim((string)$currentPassword) === '') {
+            $plainAppPassword = '123456@';
+            $bookingData['app_password']       = Hash::make($plainAppPassword);
+            $bookingData['app_password_plain'] = $plainAppPassword;
+        }
+
         DB::beginTransaction();
         try {
             $booking->update($bookingData);
 
             $booking->persons()->delete();
+
             if ($request->has('persons') && is_array($request->persons)) {
                 $uploadDir = public_path('uploads/booking_persons');
                 if (!file_exists($uploadDir)) {
