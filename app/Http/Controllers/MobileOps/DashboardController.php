@@ -3,14 +3,31 @@
 namespace App\Http\Controllers\MobileOps;
 
 use App\Http\Controllers\Controller;
+use App\Models\Gallery;
+use App\Models\HajjBook;
+use App\Models\HujjajGuideline;
 use App\Models\PackageInquiry;
+use App\Models\TutorialVideo;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        return view('mobile-ops.dashboard');
+        $stats = [
+            'inquiries_pending'   => PackageInquiry::where('status', 'pending')->count(),
+            'inquiries_contacted' => PackageInquiry::where('status', 'contacted')->count(),
+            'inquiries_closed'    => PackageInquiry::where('status', 'closed')->count(),
+            'inquiries_total'     => PackageInquiry::count(),
+            'ziarat_total'        => Gallery::count(),
+            'books_total'         => HajjBook::count(),
+            'guidelines_total'    => HujjajGuideline::count(),
+            'videos_total'        => TutorialVideo::count(),
+        ];
+
+        $recentInquiries = PackageInquiry::with('package')->latest()->take(5)->get();
+
+        return view('mobile-ops.dashboard', compact('stats', 'recentInquiries'));
     }
     public function inquiries(Request $request)
     {

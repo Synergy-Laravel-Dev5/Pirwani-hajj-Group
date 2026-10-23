@@ -215,7 +215,7 @@
                                 class="menu-link py-2 px-3 d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="mdi mdi-email-fast-outline fs-18"></i>
-                                    <span>Guest Inquiries</span>
+                                    <span>Package Inquiries</span>
                                 </div>
                                 @php
                                     $pendingCount = \App\Models\PackageInquiry::where('status', 'pending')->count();
@@ -224,6 +224,36 @@
                                     <span
                                         class="badge bg-danger rounded-pill px-2 py-1 fs-10">{{ $pendingCount }}</span>
                                 @endif
+                            </a>
+                        </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.gallery.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.gallery.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-image-multiple-outline fs-18"></i>
+                                <span>Ziarat Management</span>
+                            </a>
+                        </li>
+                        <li class="menu-item {{ request()->routeIs('mobile-ops.books.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.books.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-book-open-page-variant-outline fs-18"></i>
+                                <span>Hajj Books</span>
+                            </a>
+                        </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.guidelines.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.guidelines.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-information-outline fs-18"></i>
+                                <span>Hujjaj Guidelines</span>
+                            </a>
+                        </li>
+                        <li class="menu-item {{ request()->routeIs('mobile-ops.videos.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.videos.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-play-circle-outline fs-18"></i>
+                                <span>Video Tutorials</span>
                             </a>
                         </li>
                     </ul>
