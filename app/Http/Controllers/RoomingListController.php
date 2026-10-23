@@ -65,8 +65,10 @@ class RoomingListController extends Controller
         }
         $data['visibleColumns'] = $visibleCols;
 
+        $paperOrientation = ($visibleCols && count($visibleCols) > 7) ? 'landscape' : 'portrait';
+        $data['paperOrientation'] = $paperOrientation;
+
         $pdf = Pdf::loadView('reports.rooming_list_pdf', $data);
-        $paperOrientation = ($visibleCols && count($visibleCols) > 9) ? 'landscape' : 'portrait';
         $pdf->setPaper('A4', $paperOrientation);
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
