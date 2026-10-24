@@ -51,7 +51,7 @@
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table  align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 25%;">Title</th>

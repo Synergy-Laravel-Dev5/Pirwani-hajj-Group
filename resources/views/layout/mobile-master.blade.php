@@ -256,6 +256,22 @@
                                 <span>Video Tutorials</span>
                             </a>
                         </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.visa-countries.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.visa-countries.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-passport fs-18"></i>
+                                <span>Visa Countries</span>
+                            </a>
+                        </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.visa-inquiries.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.visa-inquiries.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-clipboard-text-clock-outline fs-18"></i>
+                                <span>Visa Inquiries</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div class="clearfix"></div>

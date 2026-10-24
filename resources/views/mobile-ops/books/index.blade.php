@@ -50,7 +50,7 @@
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table  align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 70px;">Thumbnail</th>
@@ -139,7 +139,8 @@
                                                     <label class="form-label fw-semibold">Replace Document / File</label>
                                                     <input type="file" name="file" class="form-control">
                                                     <small class="text-muted">Current: {{ $book->file_type }}
-                                                        ({{ $book->file_size }}). Leave empty to keep.</small>
+                                                        ({{ $book->file_size }})
+                                                        . Leave empty to keep.</small>
                                                 </div>
                                             </div>
                                             <div class="modal-footer bg-light">

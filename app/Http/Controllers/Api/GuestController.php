@@ -9,6 +9,8 @@ use App\Models\HujjajGuideline;
 use App\Models\Package;
 use App\Models\PackageInquiry;
 use App\Models\TutorialVideo;
+use App\Models\VisaCountry;
+use App\Models\VisaInquiry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -403,5 +405,135 @@ class GuestController extends Controller
                 'created_at'    => $video->created_at->format('Y-m-d H:i:s'),
             ],
         ]);
+    }
+    public function getVisaCountries(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $search = $request->query('search');
+
+        $query = \App\Models\VisaCountry::where('is_active', true)
+            ->with('visaTypes')
+            ->latest();
+
+        if (!empty($search)) {
+            $query->where('country_name', 'like', '%' . trim($search) . '%')
+                ->orWhere('country_code', 'like', '%' . trim($search) . '%');
+        }
+
+        $countries = $query->get()->map(function ($c) {
+            return [
+                'id'                   => $c->id,
+                'country_name'         => $c->country_name,
+                'country_code'         => $c->country_code,
+                'monument_picture_url' => $c->monument_picture_url,
+                'country_flag_url'     => $c->country_flag_url,
+                'total_visa_types'     => $c->visaTypes->count(),
+                'starting_price_pkr'   => $c->visaTypes->min('b2b_rate_pkr') ?? 0,
+                'starting_fee_usd'     => $c->visaTypes->min('visa_fee_usd') ?? 0,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $countries,
+        ]);
+    }
+
+    public function getVisaCountryDetail($id): JsonResponse
+    {
+        $country = VisaCountry::where('is_active', true)
+            ->with('visaTypes')
+            ->find($id);
+
+        if (!$country) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Visa Country not found or inactive.',
+            ], 404);
+        }
+
+        $types = $country->visaTypes->map(function ($t) {
+            return [
+                'id'           => $t->id,
+                'visa_name'    => $t->visa_name,
+                'b2b_rate_pkr' => $t->b2b_rate_pkr,
+                'visa_fee_usd' => $t->visa_fee_usd,
+                'process_time' => $t->process_time,
+                'notes'        => $t->notes,
+                'requirements' => $t->requirements ?? [],
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'                   => $country->id,
+                'country_name'         => $country->country_name,
+                'country_code'         => $country->country_code,
+                'monument_picture_url' => $country->monument_picture_url,
+                'country_flag_url'     => $country->country_flag_url,
+                'visa_types'           => $types,
+            ],
+        ]);
+    }
+    public function submitVisaInquiry(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'visa_country_id'          => 'required|exists:visa_countries,id',
+            'visa_type_id'             => 'nullable|exists:visa_types,id',
+            'full_name'                => 'required|string|max:150',
+            'phone_number'             => 'required|string|max:30',
+            'email'                    => 'nullable|email|max:150',
+            'cnic'                     => 'required|string|max:30',
+            'requirements'             => 'nullable|array',
+            'requirements.*.title'     => 'required_with:requirements|string|max:200',
+            'requirements.*.file'      => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        // Store dynamic files uploaded against each requirement
+        $uploadedRequirements = [];
+        if ($request->has('requirements') && is_array($request->requirements)) {
+            foreach ($request->requirements as $index => $item) {
+                $filePath = null;
+                if ($request->hasFile("requirements.{$index}.file")) {
+                    $filePath = $request->file("requirements.{$index}.file")->store('visa/inquiries/documents', 'public');
+                }
+
+                if ($filePath || !empty($item['title'])) {
+                    $uploadedRequirements[] = [
+                        'title'     => $item['title'],
+                        'file_path' => $filePath,
+                    ];
+                }
+            }
+        }
+
+        $inquiry = VisaInquiry::create([
+            'visa_country_id' => $request->visa_country_id,
+            'visa_type_id'    => $request->visa_type_id,
+            'full_name'       => $request->full_name,
+            'phone_number'    => $request->phone_number,
+            'email'           => $request->email,
+            'cnic'            => $request->cnic,
+            'documents'       => $uploadedRequirements, // stored in JSON column
+            'status'          => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Application submitted successfully. Our team will contact you shortly.',
+            'data'    => [
+                'id'         => $inquiry->id,
+                'status'     => $inquiry->status,
+                'created_at' => $inquiry->created_at->format('Y-m-d H:i:s'),
+            ],
+        ], 201);
     }
 }

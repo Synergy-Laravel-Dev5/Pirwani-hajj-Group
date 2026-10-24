@@ -42,6 +42,8 @@ use App\Http\Controllers\MobileOps\GalleryController;
 use App\Http\Controllers\MobileOps\HajjBookController;
 use App\Http\Controllers\MobileOps\HujjajGuidelineController;
 use App\Http\Controllers\MobileOps\TutorialVideosController;
+use App\Http\Controllers\MobileOps\VisaCountryController;
+use App\Http\Controllers\MobileOps\VisaInquiryController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -507,6 +509,20 @@ Route::middleware('auth')->group(function () {
             Route::post('/videos', [TutorialVideosController::class, 'store'])->name('videos.store');
             Route::post('/videos/{id}/update', [TutorialVideosController::class, 'update'])->name('videos.update');
             Route::delete('/videos/{id}', [TutorialVideosController::class, 'destroy'])->name('videos.destroy');
+
+            // Visa Countries Management
+            Route::get('/visa-countries', [VisaCountryController::class, 'index'])->name('visa-countries.index');
+            Route::get('/visa-countries/create', [VisaCountryController::class, 'create'])->name('visa-countries.create');
+            Route::post('/visa-countries', [VisaCountryController::class, 'store'])->name('visa-countries.store');
+            Route::get('/visa-countries/{id}/edit', [VisaCountryController::class, 'edit'])->name('visa-countries.edit');
+            Route::post('/visa-countries/{id}/update', [VisaCountryController::class, 'update'])->name('visa-countries.update');
+            Route::delete('/visa-countries/{id}', [VisaCountryController::class, 'destroy'])->name('visa-countries.destroy');
+
+            // Visa Inquiries
+            Route::get('/visa-inquiries', [VisaInquiryController::class, 'index'])->name('visa-inquiries.index');
+            Route::get('/visa-inquiries/{id}', [VisaInquiryController::class, 'show'])->name('visa-inquiries.show');
+            Route::post('/visa-inquiries/{id}/status', [VisaInquiryController::class, 'updateStatus'])->name('visa-inquiries.status');
+            Route::delete('/visa-inquiries/{id}', [VisaInquiryController::class, 'destroy'])->name('visa-inquiries.destroy');
         });
     });
 });
