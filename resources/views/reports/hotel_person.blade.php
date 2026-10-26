@@ -234,8 +234,11 @@
                     <div class="p-2 border rounded bg-white d-flex align-items-center justify-content-between shadow-sm">
                         <div>
                             <span class="text-muted small fw-semibold d-block">Filtered Pilgrims:</span>
-                            <strong class="fs-20 text-primary">{{ number_format($totalPersons) }}</strong>
+                            <strong class="fs-20 text-primary">{{ number_format($totalUniquePersons ?? $totalPersons) }}</strong>
                             <small class="text-muted ms-1">Persons</small>
+                            @if(isset($totalUniquePersons) && $totalPersons > $totalUniquePersons)
+                                <small class="text-muted d-block" style="font-size: 10px;">({{ number_format($totalPersons) }} Stay-Slots)</small>
+                            @endif
                         </div>
                         <div class="rounded-circle p-2 bg-primary bg-opacity-10 text-primary">
                             <i class="mdi mdi-account-group fs-22"></i>
@@ -327,14 +330,47 @@
                                             @endif
                                         </div>
                                         <div class="mt-2 d-flex align-items-baseline justify-content-between">
-                                            <span class="fs-19 fw-bolder {{ $meta['text'] }}">{{ number_format($locStat['persons']) }}</span>
+                                            <span class="fs-19 fw-bolder {{ $meta['text'] }}">{{ number_format($locStat['persons']) }} Pax</span>
                                             <span class="small text-muted fw-semibold">{{ $locStat['rooms'] }} Rooms ({{ $locStat['stays'] }} Stays)</span>
                                         </div>
+                                        @if($lKey === 'azizia' && isset($aziziaStats))
+                                            <div class="mt-1.5 pt-1.5 border-top border-warning-subtle d-flex justify-content-between align-items-center" style="font-size: 11px;">
+                                                <span class="text-dark fw-bold"><i class="mdi mdi-numeric-1-box text-warning me-0.5"></i>1st: {{ $aziziaStats['first'] ?? 182 }} Pax</span>
+                                                <span class="text-muted">|</span>
+                                                <span class="text-dark fw-bold"><i class="mdi mdi-numeric-2-box text-warning me-0.5"></i>2nd: {{ $aziziaStats['second'] ?? 177 }} Pax</span>
+                                            </div>
+                                        @endif
                                     </div>
                                 </a>
                             </div>
                         @endforeach
                     </div>
+
+                    {{-- Azizia Check-In Phase Switcher (Pre-Hajj vs Post-Hajj) --}}
+                    @if($locationFilter === 'azizia')
+                        <div class="p-2.5 mb-3 rounded bg-warning-subtle border border-warning d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-sm">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-dark text-warning fs-12 px-2.5 py-1">
+                                    <i class="mdi mdi-office-building me-1"></i> Azizia Check-In Filter:
+                                </span>
+                                <span class="small text-dark fw-semibold">View pilgrims staying in Azizia Building during 1st check-in (Pre-Hajj) or 2nd check-in (Post-Hajj):</span>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ route('report.hotel-person', array_merge(request()->query(), ['location' => 'azizia', 'azizia_phase' => 'both'])) }}" 
+                                   class="btn {{ ($aziziaPhase ?? 'both') === 'both' ? 'btn-dark' : 'btn-outline-dark bg-white' }} fw-bold px-2.5">
+                                    <i class="mdi mdi-calendar-multiple me-1"></i>Both Check-Ins ({{ $aziziaStats['total'] ?? 182 }} Pax)
+                                </a>
+                                <a href="{{ route('report.hotel-person', array_merge(request()->query(), ['location' => 'azizia', 'azizia_phase' => 'first'])) }}" 
+                                   class="btn {{ ($aziziaPhase ?? '') === 'first' ? 'btn-warning text-dark fw-bolder shadow-sm' : 'btn-outline-dark bg-white' }} px-2.5">
+                                    <i class="mdi mdi-numeric-1-box me-1"></i>1st Check-In - Pre-Hajj ({{ $aziziaStats['first'] ?? 182 }} Pax)
+                                </a>
+                                <a href="{{ route('report.hotel-person', array_merge(request()->query(), ['location' => 'azizia', 'azizia_phase' => 'second'])) }}" 
+                                   class="btn {{ ($aziziaPhase ?? '') === 'second' ? 'btn-warning text-dark fw-bolder shadow-sm' : 'btn-outline-dark bg-white' }} px-2.5">
+                                    <i class="mdi mdi-numeric-2-box me-1"></i>2nd Check-In - Post-Hajj ({{ $aziziaStats['second'] ?? 177 }} Pax)
+                                </a>
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- Popular Hotels Quick Breakdown Chips --}}
                     <div>
@@ -344,7 +380,7 @@
                         <div class="d-flex flex-wrap gap-1.5 align-items-center">
                             @foreach (array_slice($hotelBreakdown, 0, 10, true) as $hName => $hStat)
                                 @php
-                                    $isHActive = ($hotelFilter === $hName);
+                                    $isHActive = in_array($hName, (array)$hotelFilter);
                                 @endphp
                                 <a href="{{ route('report.hotel-person', array_merge(request()->query(), ['hotel_name' => ($isHActive ? '' : $hName)])) }}" 
                                    class="btn btn-xs rounded-pill {{ $isHActive ? 'btn-dark' : 'btn-outline-secondary bg-white' }} px-2.5 py-1 text-decoration-none shadow-sm"
@@ -744,8 +780,9 @@
                         </div>
                         <div class="text-end" style="font-size: 11px;">
                             <div><strong>Printed On:</strong> {{ now()->format('d M Y, h:i A') }}</div>
-                            <div><strong>Hotel:</strong> {{ $hotelFilter ?: 'ALL HOTELS' }} | <strong>Location:</strong> {{ strtoupper($locationFilter ?: 'ALL') }}</div>
-                            <div><strong>Total Pilgrims:</strong> {{ number_format($totalPersons) }} Persons ({{ number_format($totalStays) }} Stays)</div>
+                            @php $hDisplayForPrint = is_array($hotelFilter) ? (empty($hotelFilter) ? 'ALL HOTELS' : implode(', ', $hotelFilter)) : ($hotelFilter ?: 'ALL HOTELS'); @endphp
+                            <div><strong>Hotel:</strong> {{ $hDisplayForPrint }} | <strong>Location:</strong> {{ strtoupper($locationFilter ?: 'ALL') }}</div>
+                            <div><strong>Total Pilgrims:</strong> {{ number_format($totalUniquePersons ?? $totalPersons) }} Persons ({{ number_format($totalStays) }} Stays)</div>
                         </div>
                     </div>
                 </div>
@@ -849,8 +886,15 @@
 
                                             {{-- Hotel & Location --}}
                                             <td style="padding-left: 10px;" class="col-hotel">
-                                                <strong class="text-dark d-block fs-14">{{ strtoupper($stay->hotel_name ?: 'Hotel Not Specified') }}</strong>
-                                                <span class="badge {{ $locBadgeClass }} px-2 py-0 mt-1" style="font-size: 10.5px;">{{ strtoupper($stay->location ?: 'Location') }}</span>
+                                                <strong class="text-dark d-block fs-14">{{ strtoupper($stay->clean_hotel_name ?? ($stay->hotel_name ?: 'Hotel Not Specified')) }}</strong>
+                                                <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                    <span class="badge {{ $locBadgeClass }} px-2 py-0" style="font-size: 10.5px;">{{ strtoupper($stay->clean_location ?? ($stay->location ?: 'Location')) }}</span>
+                                                    @if(!empty($stay->azizia_phase_name))
+                                                        <span class="badge bg-warning-subtle text-dark border border-warning px-1.5 py-0" style="font-size: 10px;">
+                                                            <i class="mdi mdi-calendar-clock me-0.5"></i>{{ $stay->azizia_phase_name }}
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </td>
 
                                             {{-- Room Details --}}
@@ -1009,10 +1053,17 @@
                                                 @if($oIdx === 0)
                                                     {{-- Hotel & Location --}}
                                                     <td rowspan="{{ $rowspan }}" style="padding-left: 10px;" class="col-hotel">
-                                                        <strong class="text-dark d-block fs-14">{{ strtoupper($stay->hotel_name ?: 'Hotel Not Specified') }}</strong>
-                                                        <span class="badge {{ $locBadgeClass }} px-2 py-0 mt-1" style="font-size: 10.5px;">
-                                                            {{ strtoupper($stay->location ?: 'Location') }}
-                                                        </span>
+                                                        <strong class="text-dark d-block fs-14">{{ strtoupper($stay->clean_hotel_name ?? ($stay->hotel_name ?: 'Hotel Not Specified')) }}</strong>
+                                                        <div class="d-flex flex-wrap gap-1 mt-1 align-items-center">
+                                                            <span class="badge {{ $locBadgeClass }} px-2 py-0" style="font-size: 10.5px;">
+                                                                {{ strtoupper($stay->clean_location ?? ($stay->location ?: 'Location')) }}
+                                                            </span>
+                                                            @if(!empty($stay->azizia_phase_name))
+                                                                <span class="badge bg-warning-subtle text-dark border border-warning px-1.5 py-0" style="font-size: 10px;">
+                                                                    <i class="mdi mdi-calendar-clock me-0.5"></i>{{ $stay->azizia_phase_name }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
                                                     </td>
 
                                                     {{-- Room Details --}}

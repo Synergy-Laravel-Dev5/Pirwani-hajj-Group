@@ -307,15 +307,19 @@
                     $occupants = $room['occupants'];
                     $totalOccupants = count($occupants);
                     
-                    $rawNum = trim($room['room_number']);
-                    $isUnassigned = ($rawNum === 'PENDING' || $rawNum === 'UNASSIGNED' || empty($rawNum));
-                    $roomDisplayNo = $isUnassigned ? 'PENDING' : (str_starts_with(strtoupper($rawNum), 'R') ? strtoupper($rawNum) : ('R' . $rawNum));
+                    $rawNum = trim($room['room_number'] ?? '');
+                    $isUnassigned = ($rawNum === 'PENDING' || $rawNum === 'UNASSIGNED' || empty($rawNum) || empty($room['is_assigned']));
+                    $roomDisplayNo = $isUnassigned ? '—' : (str_starts_with(strtoupper($rawNum), 'R') ? strtoupper($rawNum) : ('R' . $rawNum));
                     
-                    $roomTypeDisplay = strtoupper($room['room_type']);
-                    if ($isUnassigned) {
-                        $roomTypeDisplay = 'PENDING ALLOCATION';
-                    } elseif (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
-                        $roomTypeDisplay = 'SIX';
+                    $isAllocated = !empty($room['is_assigned']);
+                    $rawRoomType = trim($room['room_type'] ?? '');
+                    if ($isAllocated && !empty($rawRoomType)) {
+                        $roomTypeDisplay = strtoupper($rawRoomType);
+                        if (in_array(strtolower($roomTypeDisplay), ['sharing', '6', 'six-bed', '6-bed'])) {
+                            $roomTypeDisplay = 'SIX';
+                        }
+                    } else {
+                        $roomTypeDisplay = '—';
                     }
 
                     $loc = strtolower(trim($room['location'] ?? 'makkah'));
@@ -353,7 +357,7 @@
                                 <div>{{ $roomTypeDisplay }}</div>
                             </td>
                         @endif
-                        @if($showCol('room-no')) <td class="room-no-cell">{{ $roomDisplayNo }}</td> @endif
+                        @if($showCol('room-no')) <td class="room-no-cell" style="{{ $isUnassigned ? 'color: #555; font-weight: normal;' : '' }}">{{ $roomDisplayNo }}</td> @endif
                         @if($showCol('gender')) <td style="text-align: center; color: #777;">—</td> @endif
                         @if($showCol('picture')) <td style="text-align: center; color: #777;">—</td> @endif
                     </tr>
@@ -401,18 +405,14 @@
                             @if($showCol('booking-no')) <td style="text-align: center;">{{ $occ['booking_id'] ?? '—' }}</td> @endif
                             @if($showCol('client')) <td style="text-align: left; padding-left: 3px;">{{ $occ['client_name'] ?? '—' }}</td> @endif
                             @if($showCol('room-typ'))
-                                <td class="room-typ-cell">
-                                    <div style="font-size: 6.5px; color: #444; font-weight: bold;">{{ $locLabel }}</div>
+                                <td class="room-typ-cell" style="text-align: center;">
                                     <div style="font-weight: bold;">{{ $roomTypeDisplay }}</div>
-                                    @if($oIdx === 0 && $room['total_capacity'] > 0)
-                                        <div style="font-size: 6px; color: #666;">({{ $room['total_capacity'] }} Beds)</div>
-                                    @endif
                                 </td>
                             @endif
                             @if($showCol('room-no'))
-                                <td class="room-no-cell">
+                                <td class="room-no-cell" style="{{ $isUnassigned ? 'color: #555; font-weight: normal;' : '' }}">
                                     <div>{{ $roomDisplayNo }}</div>
-                                    @if($oIdx === 0 && $room['total_capacity'] > 0)
+                                    @if(!$isUnassigned && $oIdx === 0 && $room['total_capacity'] > 0)
                                         <div style="font-size: 6px; color: #666; font-weight: normal;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }}</div>
                                     @endif
                                 </td>

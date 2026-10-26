@@ -119,7 +119,8 @@
         <div class="header-subtitle">Official Hotel Check-In Report & Rooming Manifest</div>
         <div class="header-meta">
             <strong>Generated:</strong> {{ now()->format('d M Y, h:i A') }}
-            &bull; <strong>Hotel:</strong> {{ $hotelFilter ?: 'ALL HOTELS' }}
+            @php $hCheckInPdfLabel = is_array($hotelFilter ?? null) ? (empty($hotelFilter) ? 'ALL HOTELS' : implode(', ', $hotelFilter)) : ($hotelFilter ?: 'ALL HOTELS'); @endphp
+            &bull; <strong>Hotel:</strong> {{ $hCheckInPdfLabel }}
             &bull; <strong>Location:</strong> {{ strtoupper($locationFilter ?: 'ALL') }}
             &bull; <strong>Date Range:</strong> {{ $fromDate ? date('d/m/Y', strtotime($fromDate)) : 'ALL' }} to {{ $toDate ? date('d/m/Y', strtotime($toDate)) : 'ALL' }}
             &bull; Page <span class="page-num"></span>

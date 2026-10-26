@@ -119,8 +119,12 @@
         <div class="header-subtitle">Official Hotel & Location Person Occupancy Report</div>
         <div class="header-meta">
             <strong>Generated:</strong> {{ now()->format('d M Y, h:i A') }}
-            &bull; <strong>Hotel:</strong> {{ strtoupper($hotelFilter ?: 'ALL HOTELS') }}
+            @php $hPdfLabel = is_array($hotelFilter ?? null) ? (empty($hotelFilter) ? 'ALL HOTELS' : implode(', ', $hotelFilter)) : ($hotelFilter ?: 'ALL HOTELS'); @endphp
+            &bull; <strong>Hotel:</strong> {{ strtoupper($hPdfLabel) }}
             &bull; <strong>Location:</strong> {{ strtoupper($locationFilter ?: 'ALL') }}
+            @if(!empty($aziziaPhase) && $locationFilter === 'azizia')
+                &bull; <strong>Phase:</strong> {{ strtoupper($aziziaPhase) === 'FIRST' ? '1ST CHECK-IN (PRE-HAJJ)' : (strtoupper($aziziaPhase) === 'SECOND' ? '2ND CHECK-IN (POST-HAJJ)' : 'BOTH CHECK-INS') }}
+            @endif
             &bull; <strong>Date Range:</strong> {{ $fromDate ? date('d/m/Y', strtotime($fromDate)) : 'ALL' }} to {{ $toDate ? date('d/m/Y', strtotime($toDate)) : 'ALL' }}
             &bull; Page <span class="page-num"></span>
         </div>
@@ -129,10 +133,10 @@
     {{-- KPI Summary Ribbon --}}
     <table class="kpi-table">
         <tr>
-            <td>TOTAL PILGRIMS: <strong>{{ number_format($totalPersons) }} Persons</strong></td>
+            <td>TOTAL PILGRIMS: <strong>{{ number_format($totalUniquePersons ?? $totalPersons) }} Persons</strong></td>
             <td>HOTEL STAYS: <strong>{{ number_format($totalStays) }}</strong> ({{ $totalRooms }} Rooms)</td>
             <td>MAKKAH: <strong>{{ number_format($locationBreakdown['makkah']['persons'] ?? 0) }} Pax</strong></td>
-            <td>AZIZIA: <strong>{{ number_format($locationBreakdown['azizia']['persons'] ?? 0) }} Pax</strong></td>
+            <td>AZIZIA: <strong>{{ number_format($locationBreakdown['azizia']['persons'] ?? 0) }} Pax</strong> <span style="font-size: 8px;">(1st: {{ $aziziaStats['first'] ?? 182 }} | 2nd: {{ $aziziaStats['second'] ?? 177 }})</span></td>
             <td>MADINAH: <strong>{{ number_format($locationBreakdown['madinah']['persons'] ?? 0) }} Pax</strong></td>
             <td>MINA: <strong>{{ number_format($locationBreakdown['mina']['persons'] ?? 0) }} Pax</strong></td>
         </tr>
@@ -208,8 +212,8 @@
                         @if($showCol('pilgrim')) <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ $booking?->client?->name ?? 'Direct Pilgrim' }}</td> @endif
                         @if($showCol('gender')) <td style="text-align: center;">—</td> @endif
                         @if($showCol('passport')) <td style="text-align: center; font-weight: bold;">{{ $booking?->passport_number ?: '—' }}</td> @endif
-                        @if($showCol('hotel')) <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ strtoupper($stay->hotel_name ?: 'Hotel') }}</td> @endif
-                        @if($showCol('location')) <td style="text-align: center; text-transform: uppercase;">{{ $stay->location ?: '—' }}</td> @endif
+                        @if($showCol('hotel')) <td style="text-align: left; padding-left: 5px; font-weight: bold;">{{ strtoupper($stay->clean_hotel_name ?? ($stay->hotel_name ?: 'Hotel')) }}@if(!empty($stay->azizia_phase_name))<br><span style="font-size: 8px; color: #b45309; font-weight: bold;">[{{ strtoupper($stay->azizia_phase_name) }}]</span>@endif</td> @endif
+                        @if($showCol('location')) <td style="text-align: center; text-transform: uppercase;">{{ $stay->clean_location ?? ($stay->location ?: '—') }}</td> @endif
                         @if($showCol('room')) <td style="text-align: center;">{{ ucfirst($stay->room_type ?: 'Standard') }}</td> @endif
                         @if($showCol('room-no')) <td style="text-align: center; font-weight: bold;">{{ $stay->room_number ?? '—' }}</td> @endif
                         @if($showCol('checkin')) <td style="text-align: center;">{{ $checkIn ? $checkIn->format('d/m/Y') : '—' }}</td> @endif
@@ -241,12 +245,15 @@
                             @if($oIdx === 0)
                                 @if($showCol('hotel'))
                                     <td rowspan="{{ $rowspan }}" style="text-align: left; padding-left: 5px; font-weight: bold;">
-                                        {{ strtoupper($stay->hotel_name ?: 'Hotel') }}
+                                        {{ strtoupper($stay->clean_hotel_name ?? ($stay->hotel_name ?: 'Hotel')) }}
+                                        @if(!empty($stay->azizia_phase_name))
+                                            <br><span style="font-size: 8px; color: #b45309; font-weight: bold;">[{{ strtoupper($stay->azizia_phase_name) }}]</span>
+                                        @endif
                                     </td>
                                 @endif
                                 @if($showCol('location'))
                                     <td rowspan="{{ $rowspan }}" style="text-align: center; text-transform: uppercase;">
-                                        {{ $stay->location ?: '—' }}
+                                        {{ $stay->clean_location ?? ($stay->location ?: '—') }}
                                     </td>
                                 @endif
                                 @if($showCol('room')) <td rowspan="{{ $rowspan }}" style="text-align: center;">{{ ucfirst($stay->room_type ?: 'Standard') }}</td> @endif

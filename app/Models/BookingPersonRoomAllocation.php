@@ -17,6 +17,7 @@ class BookingPersonRoomAllocation extends Model
         'location',
         'hotel_name',
         'room_number',
+        'room_group_id',
         'room_type',
         'gender',
         'check_in',

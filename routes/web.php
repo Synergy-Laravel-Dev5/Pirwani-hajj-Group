@@ -36,6 +36,7 @@ use App\Http\Controllers\PersonReportController;
 use App\Http\Controllers\FlightReportController;
 use App\Http\Controllers\RoomingListController;
 use App\Http\Controllers\HotelPersonReportController;
+use App\Http\Controllers\BusAssignmentController;
 use App\Http\Controllers\PilgrimPassController;
 use App\Http\Controllers\HotelSaleController;
 use App\Http\Controllers\MobileOps\GalleryController;
@@ -472,6 +473,19 @@ Route::middleware('auth')->group(function () {
                 Route::get('rooming-list/lookup-pilgrims', 'lookupPilgrims')->name('report.rooming-list.lookup-pilgrims');
             });
             Route::get('api/hotel-room/check-capacity', 'checkCapacityApi')->name('api.hotel-room.check-capacity');
+        });
+
+        Route::controller(BusAssignmentController::class)->group(function () {
+            Route::prefix('transport')->group(function () {
+                Route::get('bus-assignment', 'index')->name('transport.bus-assignment');
+                Route::post('bus-assignment/create-bus', 'createBus')->name('transport.bus-assignment.create-bus');
+                Route::post('bus-assignment/assign', 'assignBus')->name('transport.bus-assignment.assign');
+                Route::post('bus-assignment/unassign', 'unassignBus')->name('transport.bus-assignment.unassign');
+                Route::post('bus-assignment/update-seat', 'updateSeat')->name('transport.bus-assignment.update-seat');
+                Route::get('bus-assignment/export-pdf', 'exportPdf')->name('transport.bus-assignment.export-pdf');
+                Route::get('bus-assignment/export-excel', 'exportExcel')->name('transport.bus-assignment.export-excel');
+            });
+            Route::get('reports/bus-assignment', 'index')->name('report.bus-assignment');
         });
 
         Route::prefix('mobile-ops')->name('mobile-ops.')->group(function () {
