@@ -203,6 +203,21 @@
                                         Packages
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="tp-link" href="{{ route('mobile-ops.umrah-packages.index') }}">
+                                        Umrah Packages
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="tp-link" href="{{ route('mobile-ops.domestic-packages.index') }}">
+                                        Domestic Packages
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="tp-link" href="{{ route('mobile-ops.international-packages.index') }}">
+                                        International Packages
+                                    </a>
+                                </li>
                                 @can('hotel_view')
                                     <li>
                                         <a class="tp-link" href="{{ route('hotel.index') }}">
