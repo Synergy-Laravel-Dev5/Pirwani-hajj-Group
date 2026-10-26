@@ -205,7 +205,7 @@
                                 </li>
                                 <li>
                                     <a class="tp-link" href="{{ route('mobile-ops.umrah-packages.index') }}">
-                                        Umrah Packages
+                                        <span>&#128507;</span> Umrah Packages
                                     </a>
                                 </li>
                                 <li>
