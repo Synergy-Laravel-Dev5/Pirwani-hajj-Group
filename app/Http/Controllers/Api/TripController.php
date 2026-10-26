@@ -16,15 +16,27 @@ class TripController extends Controller
         // Check if the current device session was authenticated as Head
         $isHead = $request->user()->tokenCan('role:head');
 
-        // Eager load package and all operational relations
+        // Eager load package with all its nested child relations
         $booking->loadMissing([
             'client',
-            'package',
+            'package' => function ($q) {
+                $q->with([
+                    'accommodations',
+                    'itinerary',
+                    'terms',
+                    'maktabAddress',
+                    'transports',
+                    'transportFlights',
+                    'company',
+                ]);
+            },
             'persons',
             'hotels',
             'transports',
             'visas',
         ]);
+
+        $pkg = $booking->package;
 
         return response()->json([
             'success' => true,
@@ -34,7 +46,7 @@ class TripController extends Controller
                 'booking' => [
                     'id'              => $booking->id,
                     'hb_number'       => $booking->persons->first()?->hb_number ?? ('HB' . str_pad($booking->id, 4, '0', STR_PAD_LEFT)),
-                    'package_type'    => ucfirst($booking->package_type ?? 'Hajj'),
+                    'package_type'    => ucfirst($booking->package_type ?? ($pkg->package_type ?? 'Hajj')),
                     'camp'            => $booking->camp,
                     'departure_date'  => $booking->departure_date,
                     'arrival_date'    => $booking->arrival_date,
@@ -42,14 +54,38 @@ class TripController extends Controller
                     'arrival_time'    => $booking->arrival_time,
                     'remarks'         => $booking->remarks,
 
-                    // Package Details (from packages table if linked)
-                    'package'         => $booking->package ? [
-                        'id'          => $booking->package->id,
-                        'name'        => $booking->package->package_name ?? $booking->package->name,
-                        'description' => $booking->package->description ?? null,
+                    // Comprehensive Nested Package Details
+                    'package'         => $pkg ? [
+                        'id'                       => $pkg->id,
+                        'name'                     => $pkg->package_title ?? $pkg->package_name ?? $pkg->name ?? 'Package',
+                        'type'                     => ucfirst($pkg->package_type ?? 'Hajj'),
+                        'package_code'             => $pkg->package_code ?? $pkg->code ?? null,
+                        'is_group_package'         => (bool) $pkg->is_group_package,
+                        'visa_status'              => $pkg->visa_status ?? 'included',
+                        'is_dual_country'          => (bool) $pkg->is_dual_country,
+                        'duration_days'            => $pkg->duration_days ?? $pkg->days ?? null,
+                        'package_image'            => $pkg->package_image_url ?? (!empty($pkg->image ?? $pkg->banner_image) ? asset($pkg->image ?? $pkg->banner_image) : null),
+
+                        // Content Sections
+                        'key_features'             => $pkg->key_features,
+                        'inclusions'               => $pkg->inclusions,
+                        'exclusions'               => $pkg->exclusions,
+                        'requirements_text'        => $pkg->requirements_text,
+                        'terms_conditions'         => $pkg->terms?->content ?? $pkg->terms_conditions ?? null,
+
+                        // Matrices & JSON configs
+                        'duration_pricing_options' => $pkg->duration_pricing_options ?? [],
+                        'included_points'          => $pkg->package_included_points ?? [],
+                        'instructions'             => $pkg->instructions_points ?? [],
+
+                        // Package Allocations / Schedule
+                        'accommodations'           => $pkg->accommodations,
+                        'itinerary'                => $pkg->itinerary,
+                        'flights'                  => $pkg->transportFlights,
+                        'transports'               => $pkg->transports,
                     ] : null,
 
-                    // Financials: Strictly exposed to Head only
+                    // Financials: Exposed only to Family Head
                     'financials'      => $isHead ? [
                         'package_cost'   => (float) $booking->package_cost,
                         'visa_charges'   => (float) $booking->visa_charges,

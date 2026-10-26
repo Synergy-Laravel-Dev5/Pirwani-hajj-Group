@@ -42,6 +42,9 @@ use App\Http\Controllers\MobileOps\GalleryController;
 use App\Http\Controllers\MobileOps\HajjBookController;
 use App\Http\Controllers\MobileOps\HujjajGuidelineController;
 use App\Http\Controllers\MobileOps\TutorialVideosController;
+use App\Http\Controllers\MobileOps\UmrahPackageController;
+use App\Http\Controllers\MobileOps\DomesticPackageController;
+use App\Http\Controllers\MobileOps\InternationalPackageController;
 use App\Http\Controllers\MobileOps\VisaCountryController;
 use App\Http\Controllers\MobileOps\VisaInquiryController;
 
@@ -523,6 +526,36 @@ Route::middleware('auth')->group(function () {
             Route::get('/visa-inquiries/{id}', [VisaInquiryController::class, 'show'])->name('visa-inquiries.show');
             Route::post('/visa-inquiries/{id}/status', [VisaInquiryController::class, 'updateStatus'])->name('visa-inquiries.status');
             Route::delete('/visa-inquiries/{id}', [VisaInquiryController::class, 'destroy'])->name('visa-inquiries.destroy');
+
+            // Umrah Package Module
+            Route::get('/umrah-packages', [UmrahPackageController::class, 'index'])->name('umrah-packages.index');
+            Route::get('/umrah-packages/create', [UmrahPackageController::class, 'create'])->name('umrah-packages.create');
+            Route::post('/umrah-packages', [UmrahPackageController::class, 'store'])->name('umrah-packages.store');
+            Route::get('/umrah-packages/{id}/edit', [UmrahPackageController::class, 'edit'])->name('umrah-packages.edit');
+            Route::put('/umrah-packages/{id}', [UmrahPackageController::class, 'update'])->name('umrah-packages.update');
+            Route::delete('/umrah-packages/{id}', [UmrahPackageController::class, 'destroy'])->name('umrah-packages.destroy');
+            Route::get('/umrah-packages/trash', [UmrahPackageController::class, 'trash'])->name('umrah-packages.trash');
+            Route::post('/umrah-packages/{id}/restore', [UmrahPackageController::class, 'restore'])->name('umrah-packages.restore');
+
+            // Domestic Package Module
+            Route::get('/domestic-packages', [DomesticPackageController::class, 'index'])->name('domestic-packages.index');
+            Route::get('/domestic-packages/create', [DomesticPackageController::class, 'create'])->name('domestic-packages.create');
+            Route::post('/domestic-packages', [DomesticPackageController::class, 'store'])->name('domestic-packages.store');
+            Route::get('/domestic-packages/{id}/edit', [DomesticPackageController::class, 'edit'])->name('domestic-packages.edit');
+            Route::put('/domestic-packages/{id}', [DomesticPackageController::class, 'update'])->name('domestic-packages.update');
+            Route::delete('/domestic-packages/{id}', [DomesticPackageController::class, 'destroy'])->name('domestic-packages.destroy');
+            Route::get('/domestic-packages/trash', [DomesticPackageController::class, 'trash'])->name('domestic-packages.trash');
+            Route::post('/domestic-packages/{id}/restore', [DomesticPackageController::class, 'restore'])->name('domestic-packages.restore');
+
+            // International Package Module
+            Route::get('/international-packages', [InternationalPackageController::class, 'index'])->name('international-packages.index');
+            Route::get('/international-packages/create', [InternationalPackageController::class, 'create'])->name('international-packages.create');
+            Route::post('/international-packages', [InternationalPackageController::class, 'store'])->name('international-packages.store');
+            Route::get('/international-packages/{id}/edit', [InternationalPackageController::class, 'edit'])->name('international-packages.edit');
+            Route::put('/international-packages/{id}', [InternationalPackageController::class, 'update'])->name('international-packages.update');
+            Route::delete('/international-packages/{id}', [InternationalPackageController::class, 'destroy'])->name('international-packages.destroy');
+            Route::get('/international-packages/trash', [InternationalPackageController::class, 'trash'])->name('international-packages.trash');
+            Route::post('/international-packages/{id}/restore', [InternationalPackageController::class, 'restore'])->name('international-packages.restore');
         });
     });
 });
