@@ -64,6 +64,16 @@
                 </ul>
             </div>
 
+            @php
+                $trashTotal = \App\Models\Gallery::onlyTrashed()->count();
+            @endphp
+            <a href="{{ route('mobile-ops.ziarat.trash') }}" class="btn btn-outline-danger btn-sm px-3 shadow-sm d-inline-flex align-items-center gap-1">
+                <i class="mdi mdi-trash-can-outline"></i> View Trash
+                @if ($trashTotal > 0)
+                    <span class="badge bg-danger text-white rounded-pill ms-1">{{ $trashTotal }}</span>
+                @endif
+            </a>
+
             <!-- Add New Ziarat Button -->
             <button class="btn btn-sm btn-primary px-3 d-inline-flex align-items-center gap-1 shadow-sm"
                 data-bs-toggle="modal" data-bs-target="#createGalleryModal">

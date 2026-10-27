@@ -88,18 +88,37 @@ class HajjBookController extends Controller
     public function destroy($id)
     {
         $book = HajjBook::findOrFail($id);
-
-        if ($book->thumbnail && Storage::disk('public')->exists($book->thumbnail)) {
-            Storage::disk('public')->delete($book->thumbnail);
-        }
-
-        if ($book->file_path && Storage::disk('public')->exists($book->file_path)) {
-            Storage::disk('public')->delete($book->file_path);
-        }
-
         $book->delete();
 
-        return back()->with('success', 'Book deleted successfully.');
+        return redirect()->route('mobile-ops.books.index')->with('success', 'Book moved to trash successfully.');
+    }
+
+    public function trash(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = HajjBook::onlyTrashed()->latest('deleted_at');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . trim($search) . '%')
+                  ->orWhere('file_type', 'like', '%' . trim($search) . '%')
+                  ->orWhere('created_at', 'like', '%' . trim($search) . '%');
+            });
+        }
+
+        $books = $query->paginate(15);
+        $trashCount = HajjBook::onlyTrashed()->count();
+
+        return view('mobile-ops.books.trash', compact('books', 'search', 'trashCount'));
+    }
+
+    public function restore($id)
+    {
+        $book = HajjBook::onlyTrashed()->findOrFail($id);
+        $book->restore();
+
+        return redirect()->route('mobile-ops.books.trash')->with('success', 'Book restored successfully.');
     }
 
     private function formatFileSize(int $bytes): string

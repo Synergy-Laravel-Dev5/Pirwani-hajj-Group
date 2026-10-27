@@ -7,7 +7,16 @@
             <p class="text-muted fs-13 mb-0">Upload and manage guides, booklets, and reference manuals for the mobile app.
             </p>
         </div>
-        <div class="mt-2 mt-sm-0">
+        <div class="mt-2 mt-sm-0 d-flex gap-2">
+            @php
+                $trashTotal = \App\Models\HajjBook::onlyTrashed()->count();
+            @endphp
+            <a href="{{ route('mobile-ops.books.trash') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1">
+                <i class="mdi mdi-trash-can-outline"></i> View Trash
+                @if ($trashTotal > 0)
+                    <span class="badge bg-danger text-white rounded-pill ms-1">{{ $trashTotal }}</span>
+                @endif
+            </a>
             <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createBookModal">
                 <i class="mdi mdi-plus me-1"></i> Add New Book
             </button>

@@ -170,20 +170,36 @@ class GalleryController extends Controller
 
     public function destroy($id)
     {
-        $gallery = Gallery::with('images')->findOrFail($id);
-
-        foreach ($gallery->images as $img) {
-            if (Storage::disk('public')->exists($img->image_path)) {
-                Storage::disk('public')->delete($img->image_path);
-            }
-        }
-
-        if ($gallery->image && Storage::disk('public')->exists($gallery->image)) {
-            Storage::disk('public')->delete($gallery->image);
-        }
-
+        $gallery = Gallery::findOrFail($id);
         $gallery->delete();
 
-        return back()->with('success', 'Ziarat item and all associated photos deleted successfully.');
+        return redirect()->route('mobile-ops.gallery.index')->with('success', 'Ziarat item moved to trash successfully.');
+    }
+
+    public function trash(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = Gallery::onlyTrashed()->with('images')->latest('deleted_at');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . trim($search) . '%')
+                  ->orWhere('category', 'like', '%' . trim($search) . '%');
+            });
+        }
+
+        $galleries = $query->paginate(15);
+        $trashCount = Gallery::onlyTrashed()->count();
+
+        return view('mobile-ops.gallery.trash', compact('galleries', 'search', 'trashCount'));
+    }
+
+    public function restore($id)
+    {
+        $gallery = Gallery::onlyTrashed()->findOrFail($id);
+        $gallery->restore();
+
+        return redirect()->route('mobile-ops.gallery.trash')->with('success', 'Ziarat item restored successfully.');
     }
 }

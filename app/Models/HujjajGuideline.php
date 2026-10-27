@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HujjajGuideline extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'hujjaj_guidelines';
 
     protected $fillable = [

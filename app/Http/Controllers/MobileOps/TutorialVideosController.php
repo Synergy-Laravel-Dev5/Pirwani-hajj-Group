@@ -118,17 +118,35 @@ class TutorialVideosController extends Controller
     public function destroy($id)
     {
         $video = TutorialVideo::findOrFail($id);
-
-        if ($video->thumbnail && Storage::disk('public')->exists($video->thumbnail)) {
-            Storage::disk('public')->delete($video->thumbnail);
-        }
-
-        if ($video->video_file && Storage::disk('public')->exists($video->video_file)) {
-            Storage::disk('public')->delete($video->video_file);
-        }
-
         $video->delete();
 
-        return back()->with('success', 'Video deleted successfully.');
+        return redirect()->route('mobile-ops.videos.index')->with('success', 'Video tutorial moved to trash successfully.');
+    }
+
+    public function trash(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = TutorialVideo::onlyTrashed()->latest('deleted_at');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . trim($search) . '%')
+                    ->orWhere('description', 'like', '%' . trim($search) . '%');
+            });
+        }
+
+        $videos = $query->paginate(15);
+        $trashCount = TutorialVideo::onlyTrashed()->count();
+
+        return view('mobile-ops.videos.trash', compact('videos', 'search', 'trashCount'));
+    }
+
+    public function restore($id)
+    {
+        $video = TutorialVideo::onlyTrashed()->findOrFail($id);
+        $video->restore();
+
+        return redirect()->route('mobile-ops.videos.trash')->with('success', 'Video tutorial restored successfully.');
     }
 }

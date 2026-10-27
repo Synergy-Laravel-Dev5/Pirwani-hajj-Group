@@ -485,7 +485,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/inquiries', [App\Http\Controllers\MobileOps\DashboardController::class, 'inquiries'])->name('inquiries.index');
             Route::post('/inquiries/{id}/status', [App\Http\Controllers\MobileOps\DashboardController::class, 'updateInquiryStatus'])->name('inquiries.status');
 
-            // Gallery / Ziarat CRUD
+            // Gallery / Ziarat CRUD & Trash
+            Route::get('/gallery/trash', [GalleryController::class, 'trash'])->name('gallery.trash');
+            Route::post('/gallery/{id}/restore', [GalleryController::class, 'restore'])->name('gallery.restore');
+            Route::get('/ziarat/trash', [GalleryController::class, 'trash'])->name('ziarat.trash');
+            Route::post('/ziarat/{id}/restore', [GalleryController::class, 'restore'])->name('ziarat.restore');
             Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
             Route::post('/gallery', [GalleryController::class, 'store'])->name('gallery.store');
             Route::post('/gallery/{id}/update', [GalleryController::class, 'update'])->name('gallery.update');
@@ -495,19 +499,25 @@ Route::middleware('auth')->group(function () {
             Route::delete('/gallery/image/{id}', [GalleryController::class, 'deleteImage'])->name('gallery.image.delete');
             Route::post('/gallery/image/{id}/primary', [GalleryController::class, 'setPrimaryImage'])->name('gallery.image.primary');
 
-            // Hajj Information Books
+            // Hajj Information Books & Trash
+            Route::get('/books/trash', [HajjBookController::class, 'trash'])->name('books.trash');
+            Route::post('/books/{id}/restore', [HajjBookController::class, 'restore'])->name('books.restore');
             Route::get('/books', [HajjBookController::class, 'index'])->name('books.index');
             Route::post('/books', [HajjBookController::class, 'store'])->name('books.store');
             Route::post('/books/{id}/update', [HajjBookController::class, 'update'])->name('books.update');
             Route::delete('/books/{id}', [HajjBookController::class, 'destroy'])->name('books.destroy');
 
-            // Hujjaj Information / Guidelines
+            // Hujjaj Information / Guidelines & Trash
+            Route::get('/guidelines/trash', [HujjajGuidelineController::class, 'trash'])->name('guidelines.trash');
+            Route::post('/guidelines/{id}/restore', [HujjajGuidelineController::class, 'restore'])->name('guidelines.restore');
             Route::get('/guidelines', [HujjajGuidelineController::class, 'index'])->name('guidelines.index');
             Route::post('/guidelines', [HujjajGuidelineController::class, 'store'])->name('guidelines.store');
             Route::post('/guidelines/{id}/update', [HujjajGuidelineController::class, 'update'])->name('guidelines.update');
             Route::delete('/guidelines/{id}', [HujjajGuidelineController::class, 'destroy'])->name('guidelines.destroy');
 
-            // Hajj Video Tutorials
+            // Hajj Video Tutorials & Trash
+            Route::get('/videos/trash', [TutorialVideosController::class, 'trash'])->name('videos.trash');
+            Route::post('/videos/{id}/restore', [TutorialVideosController::class, 'restore'])->name('videos.restore');
             Route::get('/videos', [TutorialVideosController::class, 'index'])->name('videos.index');
             Route::post('/videos', [TutorialVideosController::class, 'store'])->name('videos.store');
             Route::post('/videos/{id}/update', [TutorialVideosController::class, 'update'])->name('videos.update');
