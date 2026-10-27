@@ -257,16 +257,14 @@
                                     id="packageDetailsLabel{{ $pkg->id }}">
                                     {{ $pkg->package_title ?? $pkg->name }}
                                 </h5>
-                                <div class="fs-12 text-muted">
+                                <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
                                     @if ($pkg->package_code ?? $pkg->code)
-                                        <span class="badge bg-secondary-subtle text-secondary px-2 py-0">Code:
-                                            {{ $pkg->package_code ?? $pkg->code }}</span>
+                                        <span class="badge bg-dark text-white px-2 py-1 font-monospace fs-11">Code: {{ $pkg->package_code ?? $pkg->code }}</span>
                                     @endif
-                                    <span
-                                        class="badge {{ $pkg->status === 'active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }} px-2 py-0">
+                                    <span class="badge {{ $pkg->status === 'active' ? 'bg-success text-white' : 'bg-secondary text-white' }} px-2 py-1 fs-11">
                                         {{ ucfirst($pkg->status) }}
                                     </span>
-                                    <span class="badge bg-info-subtle text-info px-2 py-0">
+                                    <span class="badge bg-info text-white px-2 py-1 fs-11">
                                         {{ $pkg->departure_city ?? 'Any' }} &rarr; {{ $pkg->destination_city ?? 'Pakistan' }}
                                     </span>
                                 </div>

@@ -262,17 +262,14 @@
                                     id="packageDetailsLabel{{ $pkg->id }}">
                                     {{ $pkg->package_title ?? $pkg->name }}
                                 </h5>
-                                <div class="fs-12 text-muted">
+                                <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
                                     @if ($pkg->package_code ?? $pkg->code)
-                                        <span class="badge bg-secondary-subtle text-secondary px-2 py-0">Code:
-                                            {{ $pkg->package_code ?? $pkg->code }}</span>
+                                        <span class="badge bg-dark text-white px-2 py-1 font-monospace fs-11">Code: {{ $pkg->package_code ?? $pkg->code }}</span>
                                     @endif
-                                    <span
-                                        class="badge {{ $pkg->status === 'active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }} px-2 py-0">
+                                    <span class="badge {{ $pkg->status === 'active' ? 'bg-success text-white' : 'bg-secondary text-white' }} px-2 py-1 fs-11">
                                         {{ ucfirst($pkg->status) }}
                                     </span>
-                                    <span
-                                        class="badge {{ $pkg->visa_status === 'included' ? 'bg-info-subtle text-info' : 'bg-warning-subtle text-warning' }} px-2 py-0">
+                                    <span class="badge {{ $pkg->visa_status === 'included' ? 'bg-info text-white' : 'bg-warning text-dark' }} px-2 py-1 fs-11">
                                         Visa {{ ucfirst($pkg->visa_status) }}
                                     </span>
                                 </div>
