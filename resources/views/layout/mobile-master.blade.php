@@ -217,20 +217,18 @@
                         @endphp
                         <li class="menu-item {{ $isPackageActive ? 'menuitem-active' : '' }}">
                             <a href="#sidebarMobilePackages" data-bs-toggle="collapse"
-                                class="menu-link py-2 px-3 d-flex align-items-center justify-content-between {{ $isPackageActive ? '' : 'collapsed' }}"
+                                class="menu-link py-2 px-3 {{ $isPackageActive ? '' : 'collapsed' }}"
                                 aria-expanded="{{ $isPackageActive ? 'true' : 'false' }}">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="mdi mdi-package-variant-closed fs-18"></i>
-                                    <span>Package Management</span>
-                                </div>
-                                <i class="mdi mdi-chevron-down fs-16 menu-arrow"></i>
+                                <i class="mdi mdi-package-variant-closed fs-18"></i>
+                                <span>Package Management</span>
+                                <span class="menu-arrow"></span>
                             </a>
                             <div class="collapse {{ $isPackageActive ? 'show' : '' }}" id="sidebarMobilePackages">
                                 <ul class="nav-second-level list-unstyled ps-4 py-1">
                                     <li class="py-1">
                                         <a href="{{ route('mobile-ops.umrah-packages.index') }}"
                                             class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.umrah-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
-                                            <i class="mdi mdi-package-variant-closed fs-18"></i>
+                                            <span>&#128507;</span>
                                             <span>Umrah Packages</span>
                                         </a>
                                     </li>
@@ -252,8 +250,7 @@
                             </div>
                         </li>
 
-                        <li
-                            class="menu-item {{ request()->routeIs('mobile-ops.inquiries.*') ? 'menuitem-active' : '' }}">
+                        <li class="menu-item {{ request()->routeIs('mobile-ops.inquiries.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.inquiries.index') }}"
                                 class="menu-link py-2 px-3 d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center gap-2">

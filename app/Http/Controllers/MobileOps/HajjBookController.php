@@ -12,17 +12,17 @@ class HajjBookController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-
+        $perPage = $request->get('per_page', 10);
         $query = HajjBook::latest();
 
         if (!empty($search)) {
             $query->where('title', 'like', '%' . trim($search) . '%');
         }
 
-        $books = $query->paginate(15);
+        $books = $query->paginate($perPage);
         $totalCount = HajjBook::count();
 
-        return view('mobile-ops.books.index', compact('books', 'search', 'totalCount'));
+        return view('mobile-ops.books.index', compact('books', 'search', 'totalCount', 'perPage'));
     }
 
     public function store(Request $request)

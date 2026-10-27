@@ -36,7 +36,17 @@
     <div class="card mb-3 border-0 shadow-sm" style="border-radius: 10px;">
         <div class="card-body p-2">
             <form method="GET" action="{{ route('mobile-ops.books.index') }}" class="d-flex gap-2">
-                <input type="text" name="search" class="form-control form-control-sm"
+
+                <div class="d-flex align-items-center me-auto">
+                    <label for="per_page" class="me-2 mb-0 text-nowrap">Show:</label>
+                    <select name="per_page" id="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10 rows</option>
+                        <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25 rows</option>
+                        <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50 rows</option>
+                        <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100 rows</option>
+                    </select>
+                </div>
+                <input type="text" name="search" class="form-control form-control-sm w-25"
                     placeholder="Search books by title..." value="{{ $search ?? '' }}">
                 <button type="submit" class="btn btn-sm btn-dark px-3">Search</button>
                 @if (!empty($search))
@@ -163,7 +173,8 @@
             </div>
             @if ($books->hasPages())
                 <div class="p-3 border-top">
-                    {{ $books->links('pagination::bootstrap-5') }}
+                    {{-- {{ $books->links('pagination::bootstrap-5') }} --}}
+                    {{ $books->appends(request()->query())->links('pagination::bootstrap-5') }}
                 </div>
             @endif
         </div>
