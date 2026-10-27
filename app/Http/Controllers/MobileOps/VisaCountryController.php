@@ -175,17 +175,35 @@ class VisaCountryController extends Controller
     public function destroy($id)
     {
         $country = VisaCountry::findOrFail($id);
-
-        if ($country->monument_picture && Storage::disk('public')->exists($country->monument_picture)) {
-            Storage::disk('public')->delete($country->monument_picture);
-        }
-
-        if ($country->country_flag && Storage::disk('public')->exists($country->country_flag)) {
-            Storage::disk('public')->delete($country->country_flag);
-        }
-
         $country->delete();
 
-        return back()->with('success', 'Visa Country deleted successfully.');
+        return redirect()->route('mobile-ops.visa-countries.index')->with('success', 'Visa Country moved to trash successfully.');
+    }
+
+    public function trash(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = VisaCountry::onlyTrashed()->withCount('visaTypes')->latest('deleted_at');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('country_name', 'like', '%' . trim($search) . '%')
+                  ->orWhere('country_code', 'like', '%' . trim($search) . '%');
+            });
+        }
+
+        $countries = $query->paginate(15);
+        $trashCount = VisaCountry::onlyTrashed()->count();
+
+        return view('mobile-ops.visa-countries.trash', compact('countries', 'search', 'trashCount'));
+    }
+
+    public function restore($id)
+    {
+        $country = VisaCountry::onlyTrashed()->findOrFail($id);
+        $country->restore();
+
+        return redirect()->route('mobile-ops.visa-countries.trash')->with('success', 'Visa Country restored successfully.');
     }
 }

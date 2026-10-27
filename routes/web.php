@@ -523,7 +523,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/videos/{id}/update', [TutorialVideosController::class, 'update'])->name('videos.update');
             Route::delete('/videos/{id}', [TutorialVideosController::class, 'destroy'])->name('videos.destroy');
 
-            // Visa Countries Management
+            // Visa Countries Management & Trash
+            Route::get('/visa-countries/trash', [VisaCountryController::class, 'trash'])->name('visa-countries.trash');
+            Route::post('/visa-countries/{id}/restore', [VisaCountryController::class, 'restore'])->name('visa-countries.restore');
             Route::get('/visa-countries', [VisaCountryController::class, 'index'])->name('visa-countries.index');
             Route::get('/visa-countries/create', [VisaCountryController::class, 'create'])->name('visa-countries.create');
             Route::post('/visa-countries', [VisaCountryController::class, 'store'])->name('visa-countries.store');
