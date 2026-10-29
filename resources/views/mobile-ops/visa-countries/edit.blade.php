@@ -43,8 +43,21 @@
 
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">Country Code <span class="text-danger">*</span></label>
-                        <input type="text" name="country_code" class="form-control" placeholder="e.g. UAE or AE"
-                            value="{{ old('country_code', $country->country_code) }}" required>
+                        <div class="input-group">
+                            <input type="text" name="country_code" id="country_code" class="form-control text-uppercase" placeholder="e.g. PK, US, SA, AE"
+                                maxlength="10" value="{{ old('country_code', $country->country_code) }}" required>
+                            <span class="input-group-text bg-white p-1" style="min-width: 48px; display: flex; align-items: center; justify-content: center;">
+                                <img id="flagPreview" src="{{ $country->country_flag_url ?? '' }}" alt="Flag Preview"
+                                    class="rounded border {{ $country->country_flag_url ? '' : 'd-none' }}" style="width: 32px; height: 22px; object-fit: cover;">
+                                <span id="flagPlaceholder" class="text-muted fs-11 {{ $country->country_flag_url ? 'd-none' : '' }}"><i class="mdi mdi-flag-outline fs-16"></i></span>
+                            </span>
+                        </div>
+                        <small class="text-muted fs-11">2-letter ISO code (e.g. PK, US, TR, SA).</small>
+                        <div id="flagStatusBadge" class="mt-1 d-none">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fs-11 py-1 px-2 text-wrap text-start">
+                                <i class="mdi mdi-check-circle-outline me-1"></i> Flag auto-detected. You can leave the upload blank to use this flag, or choose a file to override.
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Universal Active Switch -->
@@ -76,13 +89,13 @@
                         <label class="form-label fw-semibold">Country Flag (Optional)</label>
                         @if ($country->country_flag_url)
                             <div class="mb-2 d-flex align-items-center gap-2">
-                                <img src="{{ $country->country_flag_url }}" class="rounded shadow-sm"
+                                <img src="{{ $country->country_flag_url }}" id="currentFlagThumbnail" class="rounded shadow-sm"
                                     style="width: 50px; height: 32px; object-fit: cover;">
                                 <span class="text-muted fs-12">Current flag</span>
                             </div>
                         @endif
-                        <input type="file" name="country_flag" class="form-control" accept="image/*">
-                        <small class="text-muted fs-11">Leave empty to keep existing. JPG, PNG, WEBP, or SVG. Max
+                        <input type="file" name="country_flag" id="country_flag_input" class="form-control" accept="image/*">
+                        <small class="text-muted fs-11">Leave empty to keep existing (or auto-fetch if changing country code). JPG, PNG, WEBP, or SVG. Max
                             2MB.</small>
                     </div>
                 </div>
@@ -346,6 +359,81 @@
 
                 container.insertAdjacentHTML("beforeend", template);
             });
+
+            // Flag Auto-detection & Dynamic Preview
+            const countryCodeInput = document.getElementById("country_code");
+            const flagPreview = document.getElementById("flagPreview");
+            const flagPlaceholder = document.getElementById("flagPlaceholder");
+            const flagStatusBadge = document.getElementById("flagStatusBadge");
+            const flagFileInput = document.getElementById("country_flag_input");
+            const initialCountryCode = @json($country->country_code);
+            const initialFlagUrl = @json($country->country_flag_url);
+
+            function updateFlagFromCode() {
+                if (flagFileInput && flagFileInput.files && flagFileInput.files[0]) {
+                    return; // Custom file uploaded, keep local file preview
+                }
+
+                const code = (countryCodeInput.value || "").trim().toLowerCase();
+
+                // If code is same as initial and we have an initial flag url, restore that
+                if (countryCodeInput.value.trim().toUpperCase() === initialCountryCode && initialFlagUrl) {
+                    flagPreview.src = initialFlagUrl;
+                    flagPreview.classList.remove("d-none");
+                    if (flagPlaceholder) flagPlaceholder.classList.add("d-none");
+                    if (flagStatusBadge) flagStatusBadge.classList.add("d-none");
+                    return;
+                }
+
+                if (code.length === 2 && /^[a-z]{2}$/.test(code)) {
+                    flagPreview.src = `https://flagcdn.com/w80/${code}.png`;
+                    flagPreview.onload = function() {
+                        flagPreview.classList.remove("d-none");
+                        if (flagPlaceholder) flagPlaceholder.classList.add("d-none");
+                        if (flagStatusBadge) flagStatusBadge.classList.remove("d-none");
+                    };
+                    flagPreview.onerror = function() {
+                        flagPreview.classList.add("d-none");
+                        if (flagPlaceholder) flagPlaceholder.classList.remove("d-none");
+                        if (flagStatusBadge) flagStatusBadge.classList.add("d-none");
+                    };
+                } else {
+                    if (initialFlagUrl && !code) {
+                        flagPreview.src = initialFlagUrl;
+                        flagPreview.classList.remove("d-none");
+                        if (flagPlaceholder) flagPlaceholder.classList.add("d-none");
+                    } else {
+                        flagPreview.classList.add("d-none");
+                        if (flagPlaceholder) flagPlaceholder.classList.remove("d-none");
+                    }
+                    if (flagStatusBadge) flagStatusBadge.classList.add("d-none");
+                }
+            }
+
+            if (countryCodeInput) {
+                countryCodeInput.addEventListener("input", function() {
+                    this.value = this.value.toUpperCase();
+                    updateFlagFromCode();
+                });
+            }
+
+            if (flagFileInput) {
+                flagFileInput.addEventListener("change", function(e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            flagPreview.src = evt.target.result;
+                            flagPreview.classList.remove("d-none");
+                            if (flagPlaceholder) flagPlaceholder.classList.add("d-none");
+                            if (flagStatusBadge) flagStatusBadge.classList.add("d-none");
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        updateFlagFromCode();
+                    }
+                });
+            }
         });
     </script>
 @endsection

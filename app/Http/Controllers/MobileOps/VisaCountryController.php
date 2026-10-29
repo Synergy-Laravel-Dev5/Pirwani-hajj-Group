@@ -7,6 +7,8 @@ use App\Models\VisaCountry;
 use App\Models\VisaType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class VisaCountryController extends Controller
@@ -58,6 +60,8 @@ class VisaCountryController extends Controller
 
         DB::beginTransaction();
         try {
+            $countryCode = strtoupper(trim($request->country_code));
+
             $monumentPath = null;
             if ($request->hasFile('monument_picture')) {
                 $monumentPath = $request->file('monument_picture')->store('visa/monuments', 'public');
@@ -66,11 +70,14 @@ class VisaCountryController extends Controller
             $flagPath = null;
             if ($request->hasFile('country_flag')) {
                 $flagPath = $request->file('country_flag')->store('visa/flags', 'public');
+            } elseif (strlen($countryCode) === 2) {
+                // Auto-fetch flag from FlagCDN if no file uploaded and valid 2-letter ISO code
+                $flagPath = $this->fetchAndSaveCountryFlag($countryCode);
             }
 
             $country = VisaCountry::create([
                 'country_name'     => $request->country_name,
-                'country_code'     => strtoupper(trim($request->country_code)),
+                'country_code'     => $countryCode,
                 'monument_picture' => $monumentPath,
                 'country_flag'     => $flagPath,
                 'is_active'        => $request->has('is_active'),
@@ -124,9 +131,11 @@ class VisaCountryController extends Controller
 
         DB::beginTransaction();
         try {
+            $countryCode = strtoupper(trim($request->country_code));
+
             $data = [
                 'country_name' => $request->country_name,
-                'country_code' => strtoupper(trim($request->country_code)),
+                'country_code' => $countryCode,
                 'is_active'    => $request->has('is_active'),
             ];
 
@@ -142,6 +151,15 @@ class VisaCountryController extends Controller
                     Storage::disk('public')->delete($country->country_flag);
                 }
                 $data['country_flag'] = $request->file('country_flag')->store('visa/flags', 'public');
+            } elseif (strlen($countryCode) === 2 && (empty($country->country_flag) || $country->country_code !== $countryCode)) {
+                // When country code changes or no flag exists and no custom upload provided, auto-fetch
+                $fetchedFlag = $this->fetchAndSaveCountryFlag($countryCode);
+                if ($fetchedFlag) {
+                    if ($country->country_flag && $country->country_flag !== $fetchedFlag && Storage::disk('public')->exists($country->country_flag)) {
+                        Storage::disk('public')->delete($country->country_flag);
+                    }
+                    $data['country_flag'] = $fetchedFlag;
+                }
             }
 
             $country->update($data);
@@ -205,5 +223,37 @@ class VisaCountryController extends Controller
         $country->restore();
 
         return redirect()->route('mobile-ops.visa-countries.trash')->with('success', 'Visa Country restored successfully.');
+    }
+
+    /**
+     * Helper to auto-fetch country flag image from FlagCDN and store in public storage.
+     */
+    protected function fetchAndSaveCountryFlag(string $countryCode): ?string
+    {
+        $code = strtolower(trim($countryCode));
+        if (strlen($code) !== 2) {
+            return null;
+        }
+
+        $flagPath = 'visa/flags/' . $code . '.png';
+
+        // If file already exists locally, reuse it
+        if (Storage::disk('public')->exists($flagPath)) {
+            return $flagPath;
+        }
+
+        try {
+            $url = 'https://flagcdn.com/w320/' . $code . '.png';
+            $response = Http::timeout(10)->get($url);
+
+            if ($response->successful()) {
+                Storage::disk('public')->put($flagPath, $response->body());
+                return $flagPath;
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Failed to auto-fetch flag for country code {$countryCode}: " . $e->getMessage());
+        }
+
+        return null;
     }
 }
