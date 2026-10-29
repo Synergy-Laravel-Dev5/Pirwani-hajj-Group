@@ -41,7 +41,8 @@ class FlightReportController extends Controller
 
         $airlinePart = (!empty($data['airline']) && $data['airline'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['airline'])) : '';
         $typePart    = (!empty($data['flightType']) && $data['flightType'] !== 'all') ? '_' . strtoupper($data['flightType']) : '';
-        $fileName    = 'Official_Booking_Flight_Schedule' . $airlinePart . $typePart . '_' . date('Ymd_His') . '.pdf';
+        $ticketPart  = (!empty($data['ticketStatus']) && $data['ticketStatus'] !== 'all') ? '_' . strtoupper($data['ticketStatus']) : '';
+        $fileName    = 'Official_Booking_Flight_Schedule' . $airlinePart . $typePart . $ticketPart . '_' . date('Ymd_His') . '.pdf';
 
         return $pdf->download($fileName);
     }
@@ -56,8 +57,9 @@ class FlightReportController extends Controller
 
         $airlinePart = (!empty($data['airline']) && $data['airline'] !== 'all') ? '_' . strtoupper(str_replace(' ', '_', $data['airline'])) : '';
         $typePart    = (!empty($data['flightType']) && $data['flightType'] !== 'all') ? '_' . strtoupper($data['flightType']) : '';
-        $fileName    = 'Official_Booking_Flight_Schedule' . $airlinePart . $typePart . '_' . date('Ymd_His') . '.xlsx';
-        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Airline: ' . strtoupper($data['airline'] ?: 'ALL') . ' | Flight Type: ' . strtoupper($data['flightType'] ?: 'ALL');
+        $ticketPart  = (!empty($data['ticketStatus']) && $data['ticketStatus'] !== 'all') ? '_' . strtoupper($data['ticketStatus']) : '';
+        $fileName    = 'Official_Booking_Flight_Schedule' . $airlinePart . $typePart . $ticketPart . '_' . date('Ymd_His') . '.xlsx';
+        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Airline: ' . strtoupper($data['airline'] ?: 'ALL') . ' | Flight Type: ' . strtoupper($data['flightType'] ?: 'ALL') . ' | Ticket: ' . strtoupper($data['ticketStatus'] ?: 'ALL');
 
         // Check if PhpSpreadsheet is available
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
@@ -245,16 +247,47 @@ class FlightReportController extends Controller
 
     private function getFilteredFlightData(Request $request): array
     {
-        $search     = $request->get('search');
-        $airline    = $request->get('airline', 'all');
-        $flightType = $request->get('flight_type', 'all');
-        $fromDate   = $request->get('from_date');
-        $toDate     = $request->get('to_date');
-        $packageId  = $request->get('package_id');
+        $search       = $request->get('search');
+        $airline      = $request->get('airline', 'all');
+        $flightType   = $request->get('flight_type', 'all');
+        $fromDate     = $request->get('from_date');
+        $toDate       = $request->get('to_date');
+        $packageId    = $request->get('package_id');
+        $ticketStatus = $request->get('ticket_status', 'all');
 
-        $query = Booking::with(['client', 'company', 'package', 'persons'])
+        $query = Booking::with(['client', 'company', 'package'])
             ->whereNull('deleted_at')
             ->whereNotIn('status', ['cancelled', 'rejected']);
+
+        if (!empty($ticketStatus) && $ticketStatus !== 'all') {
+            if ($ticketStatus === 'without_ticket') {
+                $query->whereHas('persons', function ($pq) {
+                    $pq->where('ticket_status', 'without_ticket');
+                });
+                $query->with(['persons' => function ($pq) {
+                    $pq->where('ticket_status', 'without_ticket')->orderBy('id', 'asc');
+                }]);
+            } elseif ($ticketStatus === 'on_ticket') {
+                $query->whereHas('persons', function ($pq) {
+                    $pq->where(function ($q) {
+                        $q->where('ticket_status', 'on_ticket')
+                          ->orWhereNull('ticket_status')
+                          ->orWhere('ticket_status', '');
+                    });
+                });
+                $query->with(['persons' => function ($pq) {
+                    $pq->where(function ($q) {
+                        $q->where('ticket_status', 'on_ticket')
+                          ->orWhereNull('ticket_status')
+                          ->orWhere('ticket_status', '');
+                    })->orderBy('id', 'asc');
+                }]);
+            }
+        } else {
+            $query->with(['persons' => function ($pq) {
+                $pq->orderBy('id', 'asc');
+            }]);
+        }
 
         $today = Carbon::today()->format('Y-m-d');
 
@@ -330,9 +363,18 @@ class FlightReportController extends Controller
             });
         }
 
-        // Package Filter
-        if (!empty($packageId) && $packageId !== 'all') {
-            $query->where('package_id', $packageId);
+        // Package Filter (Multi-Select or Single)
+        $rawPackageFilter = $request->get('package_id');
+        if (is_array($rawPackageFilter)) {
+            $packageFilter = array_values(array_filter(array_map('trim', $rawPackageFilter)));
+        } elseif (!empty($rawPackageFilter) && $rawPackageFilter !== 'all') {
+            $packageFilter = [trim($rawPackageFilter)];
+        } else {
+            $packageFilter = [];
+        }
+
+        if (!empty($packageFilter)) {
+            $query->whereIn('package_id', $packageFilter);
         }
 
         // Order by departure date or booking ID
@@ -342,7 +384,10 @@ class FlightReportController extends Controller
 
         // KPI Calculations
         $totalBookings       = $bookings->count();
-        $totalPassengers     = $bookings->sum(function ($b) {
+        $totalPassengers     = $bookings->sum(function ($b) use ($ticketStatus) {
+            if (!empty($ticketStatus) && $ticketStatus !== 'all') {
+                return $b->persons->count();
+            }
             return $b->no_of_pax ?: ($b->persons->count() ?: 1);
         });
         $departuresScheduled = $bookings->filter(fn($b) => !empty($b->departure_date))->count();
@@ -371,9 +416,11 @@ class FlightReportController extends Controller
             'search',
             'airline',
             'flightType',
+            'ticketStatus',
             'fromDate',
             'toDate',
-            'packageId'
+            'packageId',
+            'packageFilter'
         );
     }
 }

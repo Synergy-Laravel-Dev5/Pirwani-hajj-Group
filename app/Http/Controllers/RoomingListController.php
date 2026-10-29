@@ -108,9 +108,15 @@ class RoomingListController extends Controller
             $filterSummary .= ' | Room Type: ' . strtoupper($data['roomTypeFilter']);
         }
 
+        $roomTypeSummary = $data['roomTypeSummary'] ?? [];
+        $roomTypeSummaryGrand = $data['roomTypeSummaryGrand'] ?? [];
+        $totalAssignedRoomsCount = $data['totalAssignedRoomsCount'] ?? 0;
+        $unassignedPilgrimsCount = $data['unassignedPilgrimsCount'] ?? 0;
+        $totalBedsOccupied = $data['totalBedsOccupied'] ?? 0;
+
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
             $xlsFileName = str_replace('.xlsx', '.xls', $fileName);
-            return response()->streamDownload(function () use ($groupedRooms, $filterSummary) {
+            return response()->streamDownload(function () use ($groupedRooms, $filterSummary, $roomTypeSummary, $roomTypeSummaryGrand, $totalAssignedRoomsCount, $unassignedPilgrimsCount, $totalBedsOccupied) {
                 echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
                 echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
                 echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Rooming Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
@@ -128,6 +134,41 @@ class RoomingListController extends Controller
                 echo '<table>';
                 echo '<tr><th colspan="23" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
                 echo '<tr><td colspan="23" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+                echo '</table>';
+
+                // Room Type Breakdown Summary Table
+                if (!empty($roomTypeSummary)) {
+                    echo '<br><table style="width: auto; border: 1.5px solid #000; margin-bottom: 15px;">';
+                    echo '<tr><th colspan="5" style="background-color: #0F172A; color: #FFFFFF; font-size: 12px; text-align: left; padding: 6px;">ROOM TYPE BREAKDOWN SUMMARY</th></tr>';
+                    echo '<tr style="background-color: #1E293B; color: #FFFFFF;">
+                        <th style="padding: 5px; text-align: left;">ROOM CATEGORY</th>
+                        <th style="padding: 5px; text-align: center;">ALLOCATED ROOMS</th>
+                        <th style="padding: 5px; text-align: center;">ALLOCATED PAX</th>
+                        <th style="padding: 5px; text-align: center;">PENDING PAX</th>
+                        <th style="padding: 5px; text-align: center; background-color: #1E3A8A;">TOTAL PILGRIMS (PAX)</th>
+                    </tr>';
+                    foreach ($roomTypeSummary as $key => $sum) {
+                        if (($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0) {
+                            echo '<tr>';
+                            echo '<td style="font-weight: bold; padding: 4px 6px;">' . htmlspecialchars($sum['name'] ?? $key) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold; color: ' . (($sum['assigned_rooms'] ?? 0) > 0 ? '#059669' : '#64748B') . ';">' . ($sum['assigned_rooms'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold;">' . ($sum['assigned_pax'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; color: ' . (($sum['pending_pax'] ?? 0) > 0 ? '#D97706' : '#64748B') . ';">' . ($sum['pending_pax'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold; background-color: #EFF6FF;">' . ($sum['total_pax'] ?? 0) . '</td>';
+                            echo '</tr>';
+                        }
+                    }
+                    echo '<tr style="background-color: #E2E8F0; font-weight: bold; border-top: 2px solid #000;">';
+                    echo '<td style="padding: 5px 6px;">GRAND TOTAL</td>';
+                    echo '<td style="text-align: center; color: #059669;">' . number_format($totalAssignedRoomsCount) . '</td>';
+                    echo '<td style="text-align: center;">' . number_format($roomTypeSummaryGrand['assigned_pax'] ?? 0) . '</td>';
+                    echo '<td style="text-align: center; color: #D97706;">' . number_format($unassignedPilgrimsCount) . '</td>';
+                    echo '<td style="text-align: center; background-color: #DBEAFE; color: #1E3A8A;">' . number_format($totalBedsOccupied) . '</td>';
+                    echo '</tr>';
+                    echo '</table><br>';
+                }
+
+                echo '<table>';
                 echo '<tr>
                     <th>SR</th>
                     <th>PICTURE</th>
@@ -269,6 +310,75 @@ class RoomingListController extends Controller
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(2)->setRowHeight(20);
 
+        // Room Type Breakdown Summary in Spreadsheet
+        $curRow = 4;
+        $sheet->mergeCells("A{$curRow}:E{$curRow}");
+        $sheet->setCellValue("A{$curRow}", "ROOM TYPE BREAKDOWN SUMMARY");
+        $sheet->getStyle("A{$curRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '0F172A']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($curRow)->setRowHeight(22);
+        $curRow++;
+
+        $sumHeaders = ['A' => 'ROOM CATEGORY', 'B' => 'ALLOCATED ROOMS', 'C' => 'ALLOCATED PAX', 'D' => 'PENDING PAX', 'E' => 'TOTAL PILGRIMS (PAX)'];
+        foreach ($sumHeaders as $scol => $stitle) {
+            $sheet->setCellValue("{$scol}{$curRow}", $stitle);
+        }
+        $sheet->getStyle("A{$curRow}:E{$curRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9.5],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+        ]);
+        $sheet->getStyle("A{$curRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle("E{$curRow}")->getFill()->getStartColor()->setRGB('1E3A8A');
+        $sheet->getRowDimension($curRow)->setRowHeight(20);
+        $curRow++;
+
+        foreach ($roomTypeSummary as $key => $sum) {
+            if (($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0) {
+                $sheet->setCellValue("A{$curRow}", $sum['name'] ?? $key);
+                $sheet->setCellValue("B{$curRow}", $sum['assigned_rooms'] ?? 0);
+                $sheet->setCellValue("C{$curRow}", $sum['assigned_pax'] ?? 0);
+                $sheet->setCellValue("D{$curRow}", $sum['pending_pax'] ?? 0);
+                $sheet->setCellValue("E{$curRow}", $sum['total_pax'] ?? 0);
+
+                $sheet->getStyle("A{$curRow}:E{$curRow}")->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+                    'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                ]);
+                $sheet->getStyle("A{$curRow}")->getFont()->setBold(true);
+                $sheet->getStyle("B{$curRow}:E{$curRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("E{$curRow}")->getFont()->setBold(true);
+                $sheet->getStyle("E{$curRow}")->getFill()->applyFromArray([
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'EFF6FF'],
+                ]);
+                $sheet->getRowDimension($curRow)->setRowHeight(18);
+                $curRow++;
+            }
+        }
+
+        // Grand Total Summary Row
+        $sheet->setCellValue("A{$curRow}", "GRAND TOTAL");
+        $sheet->setCellValue("B{$curRow}", $totalAssignedRoomsCount);
+        $sheet->setCellValue("C{$curRow}", $roomTypeSummaryGrand['assigned_pax'] ?? 0);
+        $sheet->setCellValue("D{$curRow}", $unassignedPilgrimsCount);
+        $sheet->setCellValue("E{$curRow}", $totalBedsOccupied);
+
+        $sheet->getStyle("A{$curRow}:E{$curRow}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 10],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
+            'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getStyle("B{$curRow}:E{$curRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("E{$curRow}")->getFill()->getStartColor()->setRGB('DBEAFE');
+        $sheet->getRowDimension($curRow)->setRowHeight(20);
+        $curRow += 2; // Leave space before main manifest table
+
         // Column Headers
         $headers = [
             'A' => ['title' => 'SR', 'width' => 8],
@@ -298,7 +408,7 @@ class RoomingListController extends Controller
             'Y' => ['title' => 'ROOM NOTES', 'width' => 22],
         ];
 
-        $headerRow = 4;
+        $headerRow = $curRow;
         $sheet->getRowDimension($headerRow)->setRowHeight(28);
 
         foreach ($headers as $col => $colInfo) {
@@ -330,7 +440,7 @@ class RoomingListController extends Controller
             ],
         ]);
 
-        $currentRow = 5;
+        $currentRow = $headerRow + 1;
         $sr = 1;
 
         $cacheDir = storage_path('app/temp_photos');
@@ -1080,6 +1190,7 @@ class RoomingListController extends Controller
         $targetLoc      = (!empty($locationFilter) && $locationFilter !== 'all') ? strtolower(trim($locationFilter)) : null;
         $roomTypeFilter = $request->get('room_type');
         $statusFilter   = $request->get('status'); // all, available, full, overbooked, unassigned
+        $ticketStatus   = $request->get('ticket_status', 'all'); // on_ticket, without_ticket
         $search         = $request->get('search');
         $fromDate       = $request->get('from_date');
         $toDate         = $request->get('to_date');
@@ -1093,6 +1204,22 @@ class RoomingListController extends Controller
             'hotels'
         ])->whereNull('deleted_at')
           ->whereNotIn('status', ['cancelled', 'rejected']);
+
+        if (!empty($ticketStatus) && $ticketStatus !== 'all') {
+            if ($ticketStatus === 'without_ticket') {
+                $bookingQuery->whereHas('persons', function ($pq) {
+                    $pq->where('ticket_status', 'without_ticket');
+                });
+            } elseif ($ticketStatus === 'on_ticket') {
+                $bookingQuery->whereHas('persons', function ($pq) {
+                    $pq->where(function ($q) {
+                        $q->where('ticket_status', 'on_ticket')
+                          ->orWhereNull('ticket_status')
+                          ->orWhere('ticket_status', '');
+                    });
+                });
+            }
+        }
 
         if (!empty($cleanHotelFilter)) {
             $bookingQuery->where(function ($bq) use ($cleanHotelFilter) {
@@ -1293,6 +1420,16 @@ class RoomingListController extends Controller
                 }
             }
 
+            if (!empty($ticketStatus) && $ticketStatus !== 'all') {
+                $persons = $persons->filter(function ($p) use ($ticketStatus) {
+                    $pTicket = !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket';
+                    return $pTicket === $ticketStatus;
+                });
+                if ($persons->isEmpty()) {
+                    continue;
+                }
+            }
+
             $bHotels = $b->hotels ?? collect();
             $bHotelFirst = $bHotels->first();
 
@@ -1440,6 +1577,7 @@ class RoomingListController extends Controller
                         'room_number'       => $hasValidAlloc ? $rNum : null,
                         'hotel_name'        => $hasValidAlloc ? $hName : ($stageHotel?->hotel_name ?: $uHotelName),
                         'location'          => $loc,
+                        'ticket_status'     => !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket',
                         'is_assigned'       => $hasValidAlloc,
                         'stage_assignments' => $stageAssignments,
                     ];
@@ -1518,6 +1656,7 @@ class RoomingListController extends Controller
                             'room_number'       => null,
                             'hotel_name'        => $uHotelName,
                             'location'          => $uLoc,
+                            'ticket_status'     => !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket',
                             'is_assigned'       => false,
                         ];
                         $personKey = (int)$p->id;
@@ -1605,6 +1744,7 @@ class RoomingListController extends Controller
                             'room_number'       => $hasValidAlloc ? $rNum : null,
                             'hotel_name'        => $hName,
                             'location'          => $loc,
+                            'ticket_status'     => !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket',
                             'is_assigned'       => $hasValidAlloc,
                             'stage_assignments' => $stageAssignments,
                         ];
@@ -1805,6 +1945,120 @@ class RoomingListController extends Controller
             $totalBedsOccupied += $unassignedPilgrimsCount;
         }
 
+        // Room Type Breakdown Summary calculation (Double, Triple, Quad, Quint, Six / Sharing, Single)
+        $classifyRoomType = function (?string $rawType): string {
+            $t = strtolower(trim((string)$rawType));
+            if (str_contains($t, 'double') || $t === '2' || str_contains($t, '2 bed') || str_contains($t, '2-bed')) {
+                return 'Double';
+            }
+            if (str_contains($t, 'triple') || $t === '3' || str_contains($t, '3 bed') || str_contains($t, '3-bed')) {
+                return 'Triple';
+            }
+            if (str_contains($t, 'quad') || $t === '4' || str_contains($t, '4 bed') || str_contains($t, '4-bed')) {
+                return 'Quad';
+            }
+            if (str_contains($t, 'quint') || $t === '5' || str_contains($t, '5 bed') || str_contains($t, '5-bed')) {
+                return 'Quint';
+            }
+            if (str_contains($t, 'six') || str_contains($t, 'sharing') || $t === '6' || str_contains($t, '6 bed') || str_contains($t, '6-bed')) {
+                return 'Six / Sharing';
+            }
+            if (str_contains($t, 'single') || $t === '1' || str_contains($t, '1 bed') || str_contains($t, '1-bed')) {
+                return 'Single';
+            }
+            if (!empty($t) && !in_array($t, ['—', '-', 'pending', 'unassigned'])) {
+                return ucfirst($t);
+            }
+            return 'Other';
+        };
+
+        $roomTypeSummary = [
+            'Double' => [
+                'name'           => 'Double (2 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Triple' => [
+                'name'           => 'Triple (3 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Quad' => [
+                'name'           => 'Quad (4 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Quint' => [
+                'name'           => 'Quint (5 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Six / Sharing' => [
+                'name'           => 'Six / Sharing (6 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Single' => [
+                'name'           => 'Single (1 Bed)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+        ];
+
+        foreach ($groupedRooms as $room) {
+            $isAssigned = !empty($room['is_assigned']);
+            if ($isAssigned) {
+                $cType = $classifyRoomType($room['room_type'] ?? '');
+                if (!isset($roomTypeSummary[$cType])) {
+                    $roomTypeSummary[$cType] = [
+                        'name'           => $cType,
+                        'assigned_rooms' => 0,
+                        'assigned_pax'   => 0,
+                        'pending_pax'    => 0,
+                        'total_pax'      => 0,
+                    ];
+                }
+                $roomTypeSummary[$cType]['assigned_rooms']++;
+                $pCount = count($room['occupants'] ?? []);
+                $roomTypeSummary[$cType]['assigned_pax'] += $pCount;
+                $roomTypeSummary[$cType]['total_pax'] += $pCount;
+            } else {
+                foreach ($room['occupants'] ?? [] as $uOcc) {
+                    $bType = $classifyRoomType($uOcc['booked_room_type'] ?? ($uOcc['room_type'] ?? 'Quad'));
+                    if (!isset($roomTypeSummary[$bType])) {
+                        $roomTypeSummary[$bType] = [
+                            'name'           => $bType,
+                            'assigned_rooms' => 0,
+                            'assigned_pax'   => 0,
+                            'pending_pax'    => 0,
+                            'total_pax'      => 0,
+                        ];
+                    }
+                    $roomTypeSummary[$bType]['pending_pax']++;
+                    $roomTypeSummary[$bType]['total_pax']++;
+                }
+            }
+        }
+
+        $roomTypeSummaryGrand = [
+            'assigned_rooms' => array_sum(array_column($roomTypeSummary, 'assigned_rooms')),
+            'assigned_pax'   => array_sum(array_column($roomTypeSummary, 'assigned_pax')),
+            'pending_pax'    => array_sum(array_column($roomTypeSummary, 'pending_pax')),
+            'total_pax'      => array_sum(array_column($roomTypeSummary, 'total_pax')),
+        ];
+
         return compact(
             'groupedRooms',
             'unassignedOccupants',
@@ -1817,10 +2071,13 @@ class RoomingListController extends Controller
             'fullRoomsCount',
             'partialRoomsCount',
             'overbookedRoomsCount',
+            'roomTypeSummary',
+            'roomTypeSummaryGrand',
             'hotelFilter',
             'locationFilter',
             'roomTypeFilter',
             'statusFilter',
+            'ticketStatus',
             'packageFilter',
             'search',
             'fromDate',

@@ -597,102 +597,168 @@
                                         <i class="mdi mdi-backup-restore me-1"></i>Reset
                                     </button>
                                 </div>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="sr" checked>
-                                    <span>S.No (SR)</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="picture" checked>
-                                    <span>Haji Picture</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hajj-id" checked>
-                                    <span>Hajj ID</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hb" checked>
-                                    <span>HB Number</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="pilgrim" checked>
-                                    <span>Pilgrim Full Name</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="given-name">
-                                    <span>Given Name</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="surname">
-                                    <span>Surname</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="father-name">
-                                    <span>Husband / Father Name</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="gender" checked>
-                                    <span>Gender</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport" checked>
-                                    <span>Passport No</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-doi">
-                                    <span>Date of Issue (DOI)</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-exp">
-                                    <span>Passport Expiry Date</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hotel" checked>
-                                    <span>Hotel & Location</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="room" checked>
-                                    <span>Room Details</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="room-no" checked>
-                                    <span>Room No</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="checkin" checked>
-                                    <span>Check-In Date</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="checkout" checked>
-                                    <span>Check-Out Date</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="nights" checked>
-                                    <span>Nights</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="maktab" checked>
-                                    <span>Maktab / Camp</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="package" checked>
-                                    <span>Package</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="voucher" checked>
-                                    <span>Voucher #</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="client">
-                                    <span>Client / Group</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="status" checked>
-                                    <span>Status</span>
-                                </label>
-                                <label class="column-filter-item">
-                                    <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="action" checked>
-                                    <span>Action</span>
-                                </label>
+                                @if(($viewMode ?? 'consolidated') === 'consolidated')
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="sr" checked>
+                                        <span>S.No (SR)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="picture" checked>
+                                        <span>Haji Picture</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hajj-id" checked>
+                                        <span>Hajj ID</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hb" checked>
+                                        <span>HB Number</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="pilgrim" checked>
+                                        <span>Pilgrim Full Name</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="gender" checked>
+                                        <span>Gender</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport" checked>
+                                        <span>Passport No</span>
+                                    </label>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <div class="px-2 py-0.5 text-muted text-uppercase fw-bold" style="font-size: 10px;">Stays & Camps</div>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="makkah" checked>
+                                        <span>🕋 Makkah Stay</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="azizia1" checked>
+                                        <span>🏢 Azizia 1st Stay</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="mina" checked>
+                                        <span>⛺ Mina Camp</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="azizia2" checked>
+                                        <span>🏢 Azizia 2nd Stay</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="madinah" checked>
+                                        <span>🕌 Madinah Stay</span>
+                                    </label>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="package" checked>
+                                        <span>Package</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="voucher" checked>
+                                        <span>Voucher #</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="action" checked>
+                                        <span>Action</span>
+                                    </label>
+                                @else
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="sr" checked>
+                                        <span>S.No (SR)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="picture" checked>
+                                        <span>Haji Picture</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hajj-id" checked>
+                                        <span>Hajj ID</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hb" checked>
+                                        <span>HB Number</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="pilgrim" checked>
+                                        <span>Pilgrim Full Name</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="given-name">
+                                        <span>Given Name</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="surname">
+                                        <span>Surname</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="father-name">
+                                        <span>Husband / Father Name</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="gender" checked>
+                                        <span>Gender</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport" checked>
+                                        <span>Passport No</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-doi">
+                                        <span>Date of Issue (DOI)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="passport-exp">
+                                        <span>Passport Expiry Date</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="hotel" checked>
+                                        <span>Hotel & Location</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="room" checked>
+                                        <span>Room Details</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="room-no" checked>
+                                        <span>Room No</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="checkin" checked>
+                                        <span>Check-In Date</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="checkout" checked>
+                                        <span>Check-Out Date</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="nights" checked>
+                                        <span>Nights</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="maktab" checked>
+                                        <span>Maktab / Camp</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="package" checked>
+                                        <span>Package</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="voucher" checked>
+                                        <span>Voucher #</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="client">
+                                        <span>Client / Group</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="status" checked>
+                                        <span>Status</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="action" checked>
+                                        <span>Action</span>
+                                    </label>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -707,21 +773,21 @@
                             <table class="manifest-table align-middle">
                                 <thead>
                                     <tr>
-                                        <th style="width: 45px;">SR</th>
-                                        <th style="width: 75px;">PICTURE</th>
-                                        <th style="width: 105px;">HAJJ ID</th>
-                                        <th style="width: 90px;">HB</th>
-                                        <th style="width: 220px; text-align: left; padding-left: 10px;">PILGRIM FULL NAME</th>
-                                        <th style="width: 80px;">GENDER</th>
-                                        <th style="width: 115px;">PASSPORT</th>
-                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #ecfdf5;">🕋 MAKKAH STAY</th>
-                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #fefce8;">🏢 AZIZIA 1ST STAY</th>
-                                        <th style="width: 135px; background-color: #f1f5f9;">⛺ MINA CAMP</th>
-                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #fefce8;">🏢 AZIZIA 2ND STAY</th>
-                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #eff6ff;">🕌 MADINAH STAY</th>
-                                        <th style="width: 135px; text-align: left; padding-left: 10px;">PACKAGE</th>
-                                        <th style="width: 105px;">VOUCHER #</th>
-                                        <th style="width: 65px;" class="no-print">ACTION</th>
+                                        <th style="width: 45px;" class="col-sr">SR</th>
+                                        <th style="width: 75px;" class="col-picture">PICTURE</th>
+                                        <th style="width: 105px;" class="col-hajj-id">HAJJ ID</th>
+                                        <th style="width: 90px;" class="col-hb">HB</th>
+                                        <th style="width: 220px; text-align: left; padding-left: 10px;" class="col-pilgrim">PILGRIM FULL NAME</th>
+                                        <th style="width: 80px;" class="col-gender">GENDER</th>
+                                        <th style="width: 115px;" class="col-passport">PASSPORT</th>
+                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #ecfdf5;" class="col-makkah">🕋 MAKKAH STAY</th>
+                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #fefce8;" class="col-azizia1">🏢 AZIZIA 1ST STAY</th>
+                                        <th style="width: 135px; background-color: #f1f5f9;" class="col-mina">⛺ MINA CAMP</th>
+                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #fefce8;" class="col-azizia2">🏢 AZIZIA 2ND STAY</th>
+                                        <th style="width: 215px; text-align: left; padding-left: 10px; background-color: #eff6ff;" class="col-madinah">🕌 MADINAH STAY</th>
+                                        <th style="width: 135px; text-align: left; padding-left: 10px;" class="col-package">PACKAGE</th>
+                                        <th style="width: 105px;" class="col-voucher">VOUCHER #</th>
+                                        <th style="width: 65px;" class="col-action no-print">ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -733,10 +799,10 @@
                                             $campVal = $b?->camp ?: ($b?->package?->camp_category ? 'Maktab ' . $b->package->camp_category : '—');
                                         @endphp
                                         <tr>
-                                            <td class="text-center fw-bold text-muted">{{ $cSr++ }}</td>
+                                            <td class="text-center fw-bold text-muted col-sr">{{ $cSr++ }}</td>
                                             
                                             {{-- Photo Thumbnail --}}
-                                            <td class="text-center p-1">
+                                            <td class="text-center p-1 col-picture">
                                                 @if(!empty($p?->photo) && file_exists(public_path($p->photo)))
                                                     <img src="{{ asset($p->photo) }}" alt="{{ $p->full_name }}" class="haji-photo">
                                                 @else
@@ -747,12 +813,12 @@
                                             </td>
 
                                             {{-- Hajj ID --}}
-                                            <td class="text-center fw-bold text-uppercase" style="font-size: 14px; letter-spacing: 0.5px;">
+                                            <td class="text-center fw-bold text-uppercase col-hajj-id" style="font-size: 14px; letter-spacing: 0.5px;">
                                                 {{ $row->hajj_id }}
                                             </td>
 
                                             {{-- HB Number --}}
-                                            <td class="text-center fw-bold">
+                                            <td class="text-center fw-bold col-hb">
                                                 @if(!empty($row->hb_number) && $row->hb_number !== '—')
                                                     <span class="badge bg-dark text-white px-2 py-1" style="font-size: 12.5px; font-weight: 700;">{{ $row->hb_number }}</span>
                                                 @else
@@ -761,7 +827,7 @@
                                             </td>
 
                                             {{-- Pilgrim Full Name --}}
-                                            <td style="text-align: left; padding-left: 10px;">
+                                            <td style="text-align: left; padding-left: 10px;" class="col-pilgrim">
                                                 <strong class="text-dark fs-14 d-block">{{ $row->client_name }}</strong>
                                                 @if(!empty($p?->is_family_head))
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-1 py-0 mt-0.5" style="font-size: 10px; font-weight: 700;">
@@ -771,17 +837,17 @@
                                             </td>
 
                                             {{-- Gender --}}
-                                            <td class="text-center text-uppercase fw-bold {{ strtoupper($row->gender ?? '') === 'FEMALE' ? 'gender-female' : 'gender-male' }}" style="font-size: 13px;">
+                                            <td class="text-center text-uppercase fw-bold col-gender {{ strtoupper($row->gender ?? '') === 'FEMALE' ? 'gender-female' : 'gender-male' }}" style="font-size: 13px;">
                                                 {{ strtoupper($row->gender ?? '—') }}
                                             </td>
 
                                             {{-- Passport --}}
-                                            <td class="text-center fw-bold text-uppercase" style="font-size: 13.5px; letter-spacing: 0.5px;">
+                                            <td class="text-center fw-bold text-uppercase col-passport" style="font-size: 13.5px; letter-spacing: 0.5px;">
                                                 {{ $row->passport }}
                                             </td>
 
                                             {{-- MAKKAH STAY --}}
-                                            <td style="padding-left: 10px; background-color: #fafdfc;">
+                                            <td style="padding-left: 10px; background-color: #fafdfc;" class="col-makkah">
                                                 @if($row->makkah)
                                                     @php
                                                         $mIn = $row->makkah->check_in ? \Carbon\Carbon::parse($row->makkah->check_in) : null;
@@ -807,7 +873,7 @@
                                             </td>
 
                                             {{-- AZIZIA 1ST STAY --}}
-                                            <td style="padding-left: 10px; background-color: #fefdf5;">
+                                            <td style="padding-left: 10px; background-color: #fefdf5;" class="col-azizia1">
                                                 @if($row->azizia1)
                                                     @php
                                                         $a1In = $row->azizia1->check_in ? \Carbon\Carbon::parse($row->azizia1->check_in) : null;
@@ -817,7 +883,7 @@
                                                     <div class="d-flex align-items-center gap-1 mb-0.5">
                                                         <span class="badge bg-warning text-dark px-1.5 py-0" style="font-size: 9.5px; font-weight: 800;">1ST STAY</span>
                                                         <strong class="text-dark fs-13 text-truncate" style="max-width: 135px;" title="{{ $row->azizia1->hotel_name }}">
-                                                            {{ strtoupper($row->azizia1->hotel_name) }}
+                                                             {{ strtoupper($row->azizia1->hotel_name) }}
                                                         </strong>
                                                     </div>
                                                     <div class="small text-muted" style="font-size: 11px;">
@@ -836,7 +902,7 @@
                                             </td>
 
                                             {{-- MINA CAMP --}}
-                                            <td class="text-center" style="background-color: #f8fafc;">
+                                            <td class="text-center col-mina" style="background-color: #f8fafc;">
                                                 @if($row->mina)
                                                     @php
                                                         $mnIn = $row->mina->check_in ? \Carbon\Carbon::parse($row->mina->check_in) : null;
@@ -855,7 +921,7 @@
                                             </td>
 
                                             {{-- AZIZIA 2ND STAY --}}
-                                            <td style="padding-left: 10px; background-color: #fefdf5;">
+                                            <td style="padding-left: 10px; background-color: #fefdf5;" class="col-azizia2">
                                                 @if($row->azizia2)
                                                     @php
                                                         $a2In = $row->azizia2->check_in ? \Carbon\Carbon::parse($row->azizia2->check_in) : null;
@@ -884,7 +950,7 @@
                                             </td>
 
                                             {{-- MADINAH STAY --}}
-                                            <td style="padding-left: 10px; background-color: #f8fbff;">
+                                            <td style="padding-left: 10px; background-color: #f8fbff;" class="col-madinah">
                                                 @if($row->madinah)
                                                     @php
                                                         $mdIn = $row->madinah->check_in ? \Carbon\Carbon::parse($row->madinah->check_in) : null;
@@ -910,7 +976,7 @@
                                             </td>
 
                                             {{-- PACKAGE --}}
-                                            <td style="padding-left: 10px;">
+                                            <td style="padding-left: 10px;" class="col-package">
                                                 @if ($b?->package)
                                                     <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-size: 11px;">
                                                         {{ $b->package->package_title ?: ($b->package->name ?: 'Package #' . $b->package->id) }}
@@ -921,7 +987,7 @@
                                             </td>
 
                                             {{-- VOUCHER --}}
-                                            <td class="text-center fw-bold">
+                                            <td class="text-center fw-bold col-voucher">
                                                 @if($b)
                                                     <a href="{{ route('booking.voucher', $b->id) }}" target="_blank" class="badge bg-primary text-white text-decoration-none px-2 py-1" style="font-size: 11px;">
                                                         {{ $b->voucher_number ?? 'UB' . str_pad($b->id, 6, '0', STR_PAD_LEFT) }}
@@ -932,7 +998,7 @@
                                             </td>
 
                                             {{-- ACTION --}}
-                                            <td class="text-center no-print">
+                                            <td class="text-center col-action no-print">
                                                 @if($b)
                                                     <a href="{{ route('booking.voucher', $b->id) }}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 fw-semibold" title="View Booking Voucher">
                                                         <i class="mdi mdi-eye"></i>
@@ -1341,8 +1407,9 @@
         // ═══════════════════════════════════════
         // COLUMN VISIBILITY TOGGLE (WITH LOCALSTORAGE PERSISTENCE)
         // ═══════════════════════════════════════
-        const storageKey = 'checkin_report_columns_visibility_v1';
-        const defaultHiddenCols = ['given-name', 'surname', 'father-name', 'passport-doi', 'passport-exp', 'client'];
+        const viewMode = '{{ $viewMode ?? "consolidated" }}';
+        const storageKey = 'checkin_report_columns_' + viewMode + '_v2';
+        const defaultHiddenCols = viewMode === 'consolidated' ? [] : ['given-name', 'surname', 'father-name', 'passport-doi', 'passport-exp', 'client'];
 
         function applyColumnVisibility(colName, isVisible) {
             const cells = document.querySelectorAll('.col-' + colName);

@@ -121,6 +121,7 @@
             <strong>Generated:</strong> {{ now()->format('d M Y, h:i A') }}
             &bull; <strong>Airline:</strong> {{ strtoupper($airline ?: 'ALL') }}
             &bull; <strong>Status / Type:</strong> {{ strtoupper($flightType ?: 'ALL') }}
+            &bull; <strong>Ticket:</strong> {{ (!empty($ticketStatus) && $ticketStatus !== 'all') ? strtoupper($ticketStatus) : 'ALL' }}
             &bull; <strong>Date Range:</strong> {{ $fromDate ? date('d/m/Y', strtotime($fromDate)) : 'ALL' }} to {{ $toDate ? date('d/m/Y', strtotime($toDate)) : 'ALL' }}
             &bull; Page <span class="page-num"></span>
         </div>
@@ -251,6 +252,9 @@
                                     {{ $person->full_name }}
                                     @if(!empty($person->is_family_head))
                                         <span style="font-size: 7px; color: #166534; font-weight: bold;">[Head]</span>
+                                    @endif
+                                    @if(($person->ticket_status ?? 'on_ticket') === 'without_ticket')
+                                        <span style="font-size: 7px; color: #dc2626; font-weight: bold;">[NO TICKET]</span>
                                     @endif
                                 </td>
                             @endif

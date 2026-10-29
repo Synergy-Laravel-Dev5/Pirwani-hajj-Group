@@ -128,6 +128,71 @@
     .column-filter-item:hover {
         background-color: #f1f5f9;
     }
+
+    /* Custom Multi-Select Dropdown Styles */
+    .custom-multiselect-wrapper {
+        position: relative;
+    }
+    .multiselect-trigger-box {
+        background-color: #fff !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 6px !important;
+        min-height: 38px !important;
+        padding: 4px 8px !important;
+        cursor: pointer !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        user-select: none;
+    }
+    .multiselect-trigger-box:focus,
+    .multiselect-trigger-box.active {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        outline: 0;
+    }
+    .multiselect-dropdown-menu {
+        border-radius: 8px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        z-index: 1060 !important;
+    }
+    .multiselect-option-row {
+        cursor: pointer;
+        padding: 6px 10px;
+        transition: background-color 0.12s ease;
+        border-radius: 4px;
+        margin: 1px 0;
+    }
+    .multiselect-option-row:hover {
+        background-color: #f1f5f9;
+    }
+    .multiselect-option-row.checked-row {
+        background-color: #e0f2fe !important;
+        color: #0369a1 !important;
+        font-weight: 600;
+    }
+    .multiselect-tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background-color: #e0e7ff;
+        border: 1px solid #c7d2fe;
+        color: #3730a3;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+    .multiselect-tag-pill .remove-tag {
+        cursor: pointer;
+        font-weight: bold;
+        color: #dc2626;
+        margin-left: 2px;
+    }
+    .multiselect-tag-pill .remove-tag:hover {
+        color: #991b1b;
+    }
 </style>
 
 <div class="content-page">
@@ -290,6 +355,16 @@
                                 </select>
                             </div>
 
+                            {{-- Ticket Option Filter --}}
+                            <div class="col-xl-2 col-md-3 col-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Ticket Option</label>
+                                <select name="ticket_status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="all" {{ ($ticketStatus == 'all' || empty($ticketStatus)) ? 'selected' : '' }}>All Tickets</option>
+                                    <option value="on_ticket" {{ ($ticketStatus ?? '') == 'on_ticket' ? 'selected' : '' }}>🎫 On Ticket (With Ticket)</option>
+                                    <option value="without_ticket" {{ ($ticketStatus ?? '') == 'without_ticket' ? 'selected' : '' }}>🚫 Without Ticket</option>
+                                </select>
+                            </div>
+
                             {{-- From Date --}}
                             <div class="col-xl-2 col-md-3 col-6">
                                 <label class="form-label small fw-semibold text-muted mb-1">Date From</label>
@@ -302,22 +377,87 @@
                                 <input type="date" name="to_date" class="form-control form-control-sm" value="{{ $toDate }}">
                             </div>
 
-                            {{-- Package Filter --}}
+                            {{-- Package Filter (Multi-Select) --}}
                             <div class="col-xl-4 col-md-6">
-                                <label class="form-label small fw-semibold text-muted mb-1">Package</label>
-                                <select name="package_id" class="form-select form-select-sm">
-                                    <option value="">-- All Packages --</option>
-                                    @foreach ($packages as $pkg)
-                                        @php
-                                            $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
-                                            $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
-                                            $displayText = $pkgCode ? $pkgTitle . ' (' . $pkgCode . ')' : $pkgTitle;
-                                        @endphp
-                                        <option value="{{ $pkg->id }}" {{ $packageId == $pkg->id ? 'selected' : '' }}>
-                                            {{ $displayText }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <div class="custom-multiselect-wrapper position-relative" id="packageMultiSelectWrapper">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label small fw-semibold text-muted mb-0">Package (Multi-Select)</label>
+                                        <span class="badge bg-primary-subtle text-primary multiselect-count" id="packageCountBadge" style="font-size: 10px;">
+                                            {{ count((array)($packageFilter ?? [])) > 0 ? count((array)$packageFilter) . ' selected' : 'All Packages' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Trigger Box -->
+                                    <div class="multiselect-trigger-box form-control form-control-sm d-flex justify-content-between align-items-center cursor-pointer" 
+                                         id="packageTriggerBtn" tabindex="0">
+                                        <div class="multiselect-tags-container d-flex flex-wrap gap-1 align-items-center flex-grow-1" id="packageTagsContainer" style="max-height: 58px; overflow-y: auto;">
+                                            @php $pSelectedCount = count((array)($packageFilter ?? [])); @endphp
+                                            @if($pSelectedCount === 0)
+                                                <span class="text-muted small placeholder-text">-- All Packages --</span>
+                                            @elseif($pSelectedCount <= 2)
+                                                @foreach($packages as $pkg)
+                                                    @if(in_array((string)$pkg->id, (array)($packageFilter ?? [])) || in_array($pkg->id, (array)($packageFilter ?? [])))
+                                                        @php
+                                                            $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
+                                                            $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
+                                                            $shortTitle = $pkgCode ? $pkgTitle . ' (' . $pkgCode . ')' : $pkgTitle;
+                                                        @endphp
+                                                        <span class="multiselect-tag-pill">
+                                                            <span class="text-truncate" style="max-width: 120px;">{{ $shortTitle }}</span>
+                                                            <span class="remove-tag" data-target="package" data-val="{{ $pkg->id }}">&times;</span>
+                                                        </span>
+                                                    @endif
+                                                @endforeach
+                                            @else
+                                                <span class="badge bg-primary text-white px-2 py-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-package-variant-closed me-1"></i>{{ $pSelectedCount }} Packages Selected
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1 ms-1 text-muted">
+                                            @if($pSelectedCount > 0)
+                                                <span class="multiselect-quick-clear cursor-pointer text-secondary px-1 fw-bold" data-target="package" title="Clear all" style="font-size: 14px;">&times;</span>
+                                            @endif
+                                            <i class="mdi mdi-chevron-down fs-14"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dropdown Menu -->
+                                    <div class="multiselect-dropdown-menu card shadow border position-absolute w-100 mt-1 d-none" 
+                                         id="packageDropdownMenu">
+                                        <div class="p-2 border-bottom bg-light">
+                                            <div class="input-group input-group-sm mb-1">
+                                                <span class="input-group-text bg-white border-end-0 py-0"><i class="mdi mdi-magnify text-muted"></i></span>
+                                                <input type="text" class="form-control form-control-sm border-start-0 multiselect-search py-1" data-target="package" placeholder="Search package name or code...">
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-primary py-0 px-2 btn-multiselect-all" data-target="package" style="font-size: 11px;">Select All</button>
+                                                    <button type="button" class="btn btn-outline-secondary py-0 px-2 btn-multiselect-none" data-target="package" style="font-size: 11px;">Clear</button>
+                                                </div>
+                                                <small class="text-muted multiselect-status-label" id="packageStatusLabel" style="font-size: 11px;">{{ $pSelectedCount }} selected</small>
+                                            </div>
+                                        </div>
+                                        <div class="overflow-auto p-1 multiselect-options-container" id="packageOptionsContainer" style="max-height: 220px;">
+                                            @foreach($packages as $pkg)
+                                                @php
+                                                    $pkgCode = $pkg->code ?? $pkg->package_number ?? '';
+                                                    $pkgTitle = $pkg->package_title ?: ($pkg->name ?: 'Package #' . $pkg->id);
+                                                    $isPChecked = in_array((string)$pkg->id, (array)($packageFilter ?? [])) || in_array($pkg->id, (array)($packageFilter ?? []));
+                                                @endphp
+                                                <label class="dropdown-item d-flex align-items-center gap-2 py-1.5 px-2 rounded multiselect-option-row {{ $isPChecked ? 'checked-row' : '' }}" style="font-size: 12px;">
+                                                    <input type="checkbox" name="package_id[]" value="{{ $pkg->id }}" class="form-check-input mt-0 multiselect-checkbox package-cb" {{ $isPChecked ? 'checked' : '' }}>
+                                                    <span class="option-text text-truncate">
+                                                        @if($pkgCode)
+                                                            <span class="badge bg-dark text-white me-1 px-1 py-0" style="font-size: 10px;">{{ $pkgCode }}</span>
+                                                        @endif
+                                                        {{ $pkgTitle }}
+                                                    </span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- Action Buttons --}}
@@ -749,14 +889,25 @@
 
                                                 {{-- Passenger Full Name --}}
                                                 <td style="text-align: left; padding-left: 10px;" class="col-pilgrim">
-                                                    <span class="d-inline-block fw-bold text-dark" style="font-size: 14.5px; letter-spacing: 0.2px;">
-                                                        {{ $person->full_name }}
-                                                    </span>
-                                                    @if(!empty($person->is_family_head))
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-1 py-0 ms-1" style="font-size: 10.5px; font-weight: 700;">
-                                                            <i class="mdi mdi-crown text-warning me-0.5"></i>Head
+                                                    <div class="d-flex align-items-center flex-wrap gap-1">
+                                                        <span class="d-inline-block fw-bold text-dark" style="font-size: 14.5px; letter-spacing: 0.2px;">
+                                                            {{ $person->full_name }}
                                                         </span>
-                                                    @endif
+                                                        @if(!empty($person->is_family_head))
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-1 py-0 ms-1" style="font-size: 10.5px; font-weight: 700;">
+                                                                <i class="mdi mdi-crown text-warning me-0.5"></i>Head
+                                                            </span>
+                                                        @endif
+                                                        @if(($person->ticket_status ?? 'on_ticket') === 'without_ticket')
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5" style="font-size: 10px; font-weight: 700;">
+                                                                <i class="mdi mdi-close-circle-outline me-0.5"></i>Without Ticket
+                                                            </span>
+                                                        @else
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5" style="font-size: 10px; font-weight: 700;">
+                                                                <i class="mdi mdi-ticket-confirmation-outline me-0.5"></i>On Ticket
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                 </td>
 
                                                 {{-- Extra / Toggleable columns --}}
@@ -1087,6 +1238,149 @@
             });
             saveColumnState(freshState);
         });
+
+        // ═══════════════════════════════════════
+        // CUSTOM MULTI-SELECT DROPDOWN HANDLER
+        // ═══════════════════════════════════════
+        function initCustomMultiSelect(type, itemLabel, emptyPlaceholder) {
+            const wrapper = document.getElementById(type + 'MultiSelectWrapper');
+            if (!wrapper) return;
+
+            const triggerBtn = document.getElementById(type + 'TriggerBtn');
+            const dropdownMenu = document.getElementById(type + 'DropdownMenu');
+            const searchInput = wrapper.querySelector('.multiselect-search');
+            const optionsContainer = document.getElementById(type + 'OptionsContainer');
+            const countBadge = document.getElementById(type + 'CountBadge');
+            const statusLabel = document.getElementById(type + 'StatusLabel');
+            const tagsContainer = document.getElementById(type + 'TagsContainer');
+            const selectAllBtn = wrapper.querySelector('.btn-multiselect-all');
+            const selectNoneBtn = wrapper.querySelector('.btn-multiselect-none');
+            const quickClearBtn = wrapper.querySelector('.multiselect-quick-clear');
+
+            function toggleDropdown(show) {
+                const isCurrentlyShown = !dropdownMenu.classList.contains('d-none');
+                const shouldShow = typeof show === 'boolean' ? show : !isCurrentlyShown;
+                if (shouldShow) {
+                    dropdownMenu.classList.remove('d-none');
+                    triggerBtn.classList.add('active');
+                    if (searchInput) setTimeout(() => searchInput.focus(), 50);
+                } else {
+                    dropdownMenu.classList.add('d-none');
+                    triggerBtn.classList.remove('active');
+                    if (searchInput) searchInput.value = '';
+                    filterOptions('');
+                }
+            }
+
+            triggerBtn.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-tag') || e.target.closest('.multiselect-quick-clear')) return;
+                toggleDropdown();
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!wrapper.contains(e.target)) {
+                    dropdownMenu.classList.add('d-none');
+                    triggerBtn.classList.remove('active');
+                }
+            });
+
+            function filterOptions(term) {
+                const query = term.toLowerCase().trim();
+                optionsContainer.querySelectorAll('.multiselect-option-row').forEach(row => {
+                    const text = row.querySelector('.option-text').textContent.toLowerCase();
+                    if (!query || text.includes(query)) row.classList.remove('d-none');
+                    else row.classList.add('d-none');
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() { filterOptions(this.value); });
+            }
+
+            function updateState() {
+                const allCheckboxes = optionsContainer.querySelectorAll('.multiselect-checkbox');
+                const checkedBoxes = Array.from(allCheckboxes).filter(cb => cb.checked);
+                const count = checkedBoxes.length;
+
+                allCheckboxes.forEach(cb => {
+                    const row = cb.closest('.multiselect-option-row');
+                    if (cb.checked) row.classList.add('checked-row');
+                    else row.classList.remove('checked-row');
+                });
+
+                if (countBadge) countBadge.textContent = count > 0 ? (count + ' selected') : ('All ' + itemLabel);
+                if (statusLabel) statusLabel.textContent = count + ' of ' + allCheckboxes.length + ' selected';
+
+                if (tagsContainer) {
+                    tagsContainer.innerHTML = '';
+                    if (count === 0) {
+                        const span = document.createElement('span');
+                        span.className = 'text-muted small placeholder-text';
+                        span.textContent = emptyPlaceholder;
+                        tagsContainer.appendChild(span);
+                    } else if (count <= 2) {
+                        checkedBoxes.forEach(cb => {
+                            const val = cb.value;
+                            const text = cb.closest('.multiselect-option-row').querySelector('.option-text').textContent.trim();
+                            const pill = document.createElement('span');
+                            pill.className = 'multiselect-tag-pill';
+                            pill.innerHTML = `<span class="text-truncate" style="max-width: 120px;" title="${text}">${text}</span><span class="remove-tag" data-target="${type}" data-val="${val}">&times;</span>`;
+                            tagsContainer.appendChild(pill);
+                        });
+                    } else {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-primary text-white px-2 py-1';
+                        badge.style.fontSize = '11px';
+                        badge.innerHTML = `<i class="mdi mdi-check-all me-1"></i>${count} ${itemLabel} Selected`;
+                        tagsContainer.appendChild(badge);
+                    }
+                }
+            }
+
+            optionsContainer.addEventListener('change', function(e) {
+                if (e.target.classList.contains('multiselect-checkbox')) updateState();
+            });
+
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    optionsContainer.querySelectorAll('.multiselect-option-row:not(.d-none) .multiselect-checkbox').forEach(cb => cb.checked = true);
+                    updateState();
+                });
+            }
+
+            if (selectNoneBtn) {
+                selectNoneBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    optionsContainer.querySelectorAll('.multiselect-checkbox').forEach(cb => cb.checked = false);
+                    updateState();
+                });
+            }
+
+            if (quickClearBtn) {
+                quickClearBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    optionsContainer.querySelectorAll('.multiselect-checkbox').forEach(cb => cb.checked = false);
+                    updateState();
+                    const form = wrapper.closest('form');
+                    if (form) form.submit();
+                });
+            }
+
+            wrapper.addEventListener('click', function(e) {
+                const removeBtn = e.target.closest('.remove-tag');
+                if (removeBtn) {
+                    e.stopPropagation();
+                    const val = removeBtn.getAttribute('data-val');
+                    const cb = optionsContainer.querySelector(`.multiselect-checkbox[value="${val}"]`);
+                    if (cb) {
+                        cb.checked = false;
+                        updateState();
+                    }
+                }
+            });
+        }
+        initCustomMultiSelect('package', 'Packages', '-- All Packages --');
     });
 </script>
 @endsection

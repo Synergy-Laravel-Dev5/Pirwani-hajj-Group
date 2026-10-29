@@ -404,6 +404,16 @@
                                 </select>
                             </div>
 
+                            {{-- Ticket Option Filter --}}
+                            <div class="col-xl-2 col-md-3 col-sm-6">
+                                <label class="form-label small fw-semibold text-muted mb-1">Ticket Option</label>
+                                <select name="ticket_status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="all" {{ ($ticketStatus === 'all' || empty($ticketStatus)) ? 'selected' : '' }}>All Tickets</option>
+                                    <option value="on_ticket" {{ ($ticketStatus ?? '') === 'on_ticket' ? 'selected' : '' }}>🎫 On Ticket (With Ticket)</option>
+                                    <option value="without_ticket" {{ ($ticketStatus ?? '') === 'without_ticket' ? 'selected' : '' }}>🚫 Without Ticket</option>
+                                </select>
+                            </div>
+
                             {{-- Package Filter (Multi-Select) --}}
                             <div class="col-xl-3 col-md-4 col-sm-6">
                                 <div class="custom-multiselect-wrapper position-relative" id="packageMultiSelectWrapper">
@@ -551,6 +561,69 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Room Type Breakdown Summary Ribbon (Double, Triple, Quad, etc.) --}}
+            @if(!empty($roomTypeSummary))
+            <div class="card shadow-sm border-0 mb-3 no-print">
+                <div class="card-header bg-white border-bottom py-2 px-3 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark fs-13">
+                        <i class="mdi mdi-chart-box-outline text-primary me-1"></i> Room Type Breakdown Summary @if(!empty($locationFilter) && $locationFilter !== 'all') ({{ ucfirst($locationFilter) }}) @endif
+                    </span>
+                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#roomTypeBreakdownCollapse" aria-expanded="true">
+                        <i class="mdi mdi-chevron-down"></i> Toggle Details
+                    </button>
+                </div>
+                <div class="collapse show" id="roomTypeBreakdownCollapse">
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover mb-0 align-middle" style="font-size: 12.5px;">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="padding: 6px 10px;">ROOM CATEGORY</th>
+                                        <th class="text-center" style="padding: 6px 10px;">ALLOCATED ROOMS</th>
+                                        <th class="text-center" style="padding: 6px 10px;">ALLOCATED PAX</th>
+                                        <th class="text-center" style="padding: 6px 10px;">PENDING PAX</th>
+                                        <th class="text-center bg-primary text-white" style="padding: 6px 10px;">TOTAL PILGRIMS (PAX)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($roomTypeSummary as $key => $sum)
+                                        @if(($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0)
+                                        <tr>
+                                            <td class="fw-bold text-dark px-2">
+                                                <i class="mdi mdi-bed-empty text-muted me-1"></i>{{ $sum['name'] ?? $key }}
+                                            </td>
+                                            <td class="text-center fw-bold {{ ($sum['assigned_rooms'] ?? 0) > 0 ? 'text-success' : 'text-muted' }}">
+                                                {{ number_format($sum['assigned_rooms'] ?? 0) }}
+                                            </td>
+                                            <td class="text-center fw-semibold text-dark">
+                                                {{ number_format($sum['assigned_pax'] ?? 0) }}
+                                            </td>
+                                            <td class="text-center {{ ($sum['pending_pax'] ?? 0) > 0 ? 'text-warning fw-bold' : 'text-muted' }}">
+                                                {{ number_format($sum['pending_pax'] ?? 0) }}
+                                            </td>
+                                            <td class="text-center fw-bold fs-13 text-primary bg-light">
+                                                {{ number_format($sum['total_pax'] ?? 0) }}
+                                            </td>
+                                        </tr>
+                                        @endif
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light fw-bold">
+                                    <tr style="border-top: 2px solid #000;">
+                                        <td class="text-uppercase px-2">GRAND TOTAL</td>
+                                        <td class="text-center text-success fs-13">{{ number_format($totalAssignedRoomsCount ?? 0) }}</td>
+                                        <td class="text-center fs-13">{{ number_format($roomTypeSummaryGrand['assigned_pax'] ?? 0) }}</td>
+                                        <td class="text-center text-warning fs-13">{{ number_format($unassignedPilgrimsCount ?? 0) }}</td>
+                                        <td class="text-center text-primary bg-primary-subtle fs-14">{{ number_format($totalBedsOccupied ?? 0) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             {{-- Quick Divide / Fast Selection Toolbar --}}
             <div class="card bg-light border mb-3 no-print shadow-none">
@@ -928,6 +1001,11 @@
                                                     </td>
                                                     <td style="text-align: left; padding-left: 10px;" class="fw-bold text-uppercase text-dark col-name">
                                                         <span class="d-inline-block">{{ $occ['name'] }}</span>
+                                                        @if(($occ['ticket_status'] ?? 'on_ticket') === 'without_ticket')
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1" style="font-size: 9px; font-weight: 700;">
+                                                                <i class="mdi mdi-close-circle-outline me-0.5"></i>Without Ticket
+                                                            </span>
+                                                        @endif
                                                         @if(!empty($occ['stage_assignments']) && count($occ['stage_assignments']) > 0)
                                                             <div class="d-flex flex-wrap gap-1 mt-1 no-print">
                                                                 @if(isset($occ['stage_assignments']['makkah']))
@@ -1141,6 +1219,11 @@
                                                         <td class="fw-bold">{{ $occ['passport'] }}</td>
                                                         <td class="fw-bold text-dark">
                                                             <span class="d-inline-block">{{ $occ['name'] }}</span>
+                                                            @if(($occ['ticket_status'] ?? 'on_ticket') === 'without_ticket')
+                                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1" style="font-size: 8.5px; font-weight: 700;">
+                                                                    <i class="mdi mdi-close-circle-outline me-0.5"></i>Without Ticket
+                                                                </span>
+                                                            @endif
                                                             @if(!empty($occ['stage_assignments']) && count($occ['stage_assignments']) > 0)
                                                                 <div class="d-flex flex-wrap gap-1 mt-1 no-print">
                                                                     @if(isset($occ['stage_assignments']['makkah']))

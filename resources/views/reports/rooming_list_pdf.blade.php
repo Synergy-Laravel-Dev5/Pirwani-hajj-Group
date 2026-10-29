@@ -276,6 +276,63 @@
         </tr>
     </table>
 
+    {{-- Room Type Breakdown Summary --}}
+    @if(!empty($roomTypeSummary))
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: {{ $tableFontSize }};">
+        <thead>
+            <tr style="background-color: #0f172a; color: #ffffff;">
+                <th style="border: 1px solid #000; padding: 2.5px 5px; text-align: left; font-size: {{ $thFontSize }}; text-transform: uppercase;">ROOM CATEGORY</th>
+                <th style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-size: {{ $thFontSize }}; text-transform: uppercase;">ALLOCATED ROOMS</th>
+                <th style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-size: {{ $thFontSize }}; text-transform: uppercase;">ALLOCATED PAX</th>
+                <th style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-size: {{ $thFontSize }}; text-transform: uppercase;">PENDING PAX</th>
+                <th style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-size: {{ $thFontSize }}; text-transform: uppercase; background-color: #1e3a8a; color: #ffffff;">TOTAL PILGRIMS (PAX)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($roomTypeSummary as $key => $sum)
+                @if(($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0)
+                <tr style="background-color: {{ $loop->iteration % 2 == 0 ? '#f8fafc' : '#ffffff' }};">
+                    <td style="border: 0.5px solid #000; padding: 2px 5px; font-weight: bold;">
+                        {{ $sum['name'] ?? $key }}
+                    </td>
+                    <td style="border: 0.5px solid #000; padding: 2px 5px; text-align: center; font-weight: bold; color: {{ ($sum['assigned_rooms'] ?? 0) > 0 ? '#059669' : '#64748b' }};">
+                        {{ $sum['assigned_rooms'] ?? 0 }}
+                    </td>
+                    <td style="border: 0.5px solid #000; padding: 2px 5px; text-align: center; font-weight: bold;">
+                        {{ $sum['assigned_pax'] ?? 0 }}
+                    </td>
+                    <td style="border: 0.5px solid #000; padding: 2px 5px; text-align: center; color: {{ ($sum['pending_pax'] ?? 0) > 0 ? '#d97706' : '#64748b' }};">
+                        {{ $sum['pending_pax'] ?? 0 }}
+                    </td>
+                    <td style="border: 0.5px solid #000; padding: 2px 5px; text-align: center; font-weight: 900; font-size: {{ $thFontSize }}; background-color: #eff6ff;">
+                        {{ $sum['total_pax'] ?? 0 }}
+                    </td>
+                </tr>
+                @endif
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr style="background-color: #e2e8f0; font-weight: bold; border-top: 1.5px solid #000;">
+                <td style="border: 1px solid #000; padding: 2.5px 5px; text-align: left; text-transform: uppercase;">
+                    <strong>GRAND TOTAL</strong>
+                </td>
+                <td style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-weight: bold; color: #059669;">
+                    {{ number_format($totalAssignedRoomsCount ?? 0) }}
+                </td>
+                <td style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-weight: bold;">
+                    {{ number_format($roomTypeSummaryGrand['assigned_pax'] ?? 0) }}
+                </td>
+                <td style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-weight: bold; color: #d97706;">
+                    {{ number_format($unassignedPilgrimsCount ?? 0) }}
+                </td>
+                <td style="border: 1px solid #000; padding: 2.5px 5px; text-align: center; font-weight: 900; background-color: #dbeafe; color: #1e3a8a; font-size: {{ $thFontSize }};">
+                    {{ number_format($totalBedsOccupied ?? 0) }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    @endif
+
     <table class="manifest-table">
         <thead>
             <tr>
