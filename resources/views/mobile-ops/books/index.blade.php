@@ -7,7 +7,16 @@
             <p class="text-muted fs-13 mb-0">Upload and manage guides, booklets, and reference manuals for the mobile app.
             </p>
         </div>
-        <div class="mt-2 mt-sm-0">
+        <div class="mt-2 mt-sm-0 d-flex gap-2">
+            @php
+                $trashTotal = \App\Models\HajjBook::onlyTrashed()->count();
+            @endphp
+            <a href="{{ route('mobile-ops.books.trash') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1">
+                <i class="mdi mdi-trash-can-outline"></i> View Trash
+                @if ($trashTotal > 0)
+                    <span class="badge bg-danger text-white rounded-pill ms-1">{{ $trashTotal }}</span>
+                @endif
+            </a>
             <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createBookModal">
                 <i class="mdi mdi-plus me-1"></i> Add New Book
             </button>
@@ -36,7 +45,17 @@
     <div class="card mb-3 border-0 shadow-sm" style="border-radius: 10px;">
         <div class="card-body p-2">
             <form method="GET" action="{{ route('mobile-ops.books.index') }}" class="d-flex gap-2">
-                <input type="text" name="search" class="form-control form-control-sm"
+
+                <div class="d-flex align-items-center me-auto">
+                    <label for="per_page" class="me-2 mb-0 text-nowrap">Show:</label>
+                    <select name="per_page" id="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10 rows</option>
+                        <option value="25" {{ $perPage == 25 ? 'selected' : '' }}>25 rows</option>
+                        <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50 rows</option>
+                        <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100 rows</option>
+                    </select>
+                </div>
+                <input type="text" name="search" class="form-control form-control-sm w-25"
                     placeholder="Search books by title..." value="{{ $search ?? '' }}">
                 <button type="submit" class="btn btn-sm btn-dark px-3">Search</button>
                 @if (!empty($search))
@@ -50,7 +69,7 @@
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table  align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 70px;">Thumbnail</th>
@@ -139,7 +158,8 @@
                                                     <label class="form-label fw-semibold">Replace Document / File</label>
                                                     <input type="file" name="file" class="form-control">
                                                     <small class="text-muted">Current: {{ $book->file_type }}
-                                                        ({{ $book->file_size }}). Leave empty to keep.</small>
+                                                        ({{ $book->file_size }})
+                                                        . Leave empty to keep.</small>
                                                 </div>
                                             </div>
                                             <div class="modal-footer bg-light">
@@ -162,7 +182,8 @@
             </div>
             @if ($books->hasPages())
                 <div class="p-3 border-top">
-                    {{ $books->links('pagination::bootstrap-5') }}
+                    {{-- {{ $books->links('pagination::bootstrap-5') }} --}}
+                    {{ $books->appends(request()->query())->links('pagination::bootstrap-5') }}
                 </div>
             @endif
         </div>

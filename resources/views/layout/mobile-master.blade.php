@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -209,8 +209,48 @@
                             </a>
                         </li>
 
-                        <li
-                            class="menu-item {{ request()->routeIs('mobile-ops.inquiries.*') ? 'menuitem-active' : '' }}">
+                        @php
+                            $isPackageActive =
+                                request()->routeIs('mobile-ops.umrah-packages.*') ||
+                                request()->routeIs('mobile-ops.domestic-packages.*') ||
+                                request()->routeIs('mobile-ops.international-packages.*');
+                        @endphp
+                        <li class="menu-item {{ $isPackageActive ? 'menuitem-active' : '' }}">
+                            <a href="#sidebarMobilePackages" data-bs-toggle="collapse"
+                                class="menu-link py-2 px-3 {{ $isPackageActive ? '' : 'collapsed' }}"
+                                aria-expanded="{{ $isPackageActive ? 'true' : 'false' }}">
+                                <i class="mdi mdi-package-variant-closed fs-18"></i>
+                                <span>Package Management</span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse {{ $isPackageActive ? 'show' : '' }}" id="sidebarMobilePackages">
+                                <ul class="nav-second-level list-unstyled ps-4 py-1">
+                                    <li class="py-1">
+                                        <a href="{{ route('mobile-ops.umrah-packages.index') }}"
+                                            class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.umrah-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
+                                            <span>&#128507;</span>
+                                            <span>Umrah Packages</span>
+                                        </a>
+                                    </li>
+                                    <li class="py-1">
+                                        <a href="{{ route('mobile-ops.domestic-packages.index') }}"
+                                            class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.domestic-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
+                                            <i class="mdi mdi-map-marker-distance fs-15"></i>
+                                            <span>Domestic Packages</span>
+                                        </a>
+                                    </li>
+                                    <li class="py-1">
+                                        <a href="{{ route('mobile-ops.international-packages.index') }}"
+                                            class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.international-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
+                                            <i class="mdi mdi-earth fs-15"></i>
+                                            <span>International Packages</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="menu-item {{ request()->routeIs('mobile-ops.inquiries.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.inquiries.index') }}"
                                 class="menu-link py-2 px-3 d-flex align-items-center justify-content-between">
                                 <div class="d-flex align-items-center gap-2">
@@ -254,6 +294,22 @@
                                 class="menu-link py-2 px-3 d-flex align-items-center gap-2">
                                 <i class="mdi mdi-play-circle-outline fs-18"></i>
                                 <span>Video Tutorials</span>
+                            </a>
+                        </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.visa-countries.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.visa-countries.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-passport fs-18"></i>
+                                <span>Visa Countries</span>
+                            </a>
+                        </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.visa-inquiries.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.visa-inquiries.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-clipboard-text-clock-outline fs-18"></i>
+                                <span>Visa Inquiries</span>
                             </a>
                         </li>
                     </ul>

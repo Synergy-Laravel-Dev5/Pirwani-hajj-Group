@@ -75,7 +75,7 @@
     <div class="card border-0 shadow-sm" style="overflow: visible;">
         <div class="card-body p-0" style="overflow: visible;">
             <div>
-                <table class="table table-hover align-middle mb-0">
+                <table class="table  align-middle mb-0">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Guest Details</th>

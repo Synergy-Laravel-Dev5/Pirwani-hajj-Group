@@ -8,6 +8,7 @@ use App\Models\HajjBook;
 use App\Models\HujjajGuideline;
 use App\Models\PackageInquiry;
 use App\Models\TutorialVideo;
+use App\Models\VisaInquiry;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -15,19 +16,27 @@ class DashboardController extends Controller
     public function index()
     {
         $stats = [
-            'inquiries_pending'   => PackageInquiry::where('status', 'pending')->count(),
-            'inquiries_contacted' => PackageInquiry::where('status', 'contacted')->count(),
-            'inquiries_closed'    => PackageInquiry::where('status', 'closed')->count(),
-            'inquiries_total'     => PackageInquiry::count(),
-            'ziarat_total'        => Gallery::count(),
-            'books_total'         => HajjBook::count(),
-            'guidelines_total'    => HujjajGuideline::count(),
-            'videos_total'        => TutorialVideo::count(),
+            'inquiries_pending'       => PackageInquiry::where('status', 'pending')->count(),
+            'inquiries_contacted'     => PackageInquiry::where('status', 'contacted')->count(),
+            'inquiries_closed'        => PackageInquiry::where('status', 'closed')->count(),
+            'inquiries_total'         => PackageInquiry::count(),
+
+            'visa_inquiries_pending'   => VisaInquiry::where('status', 'pending')->count(),
+            'visa_inquiries_contacted' => VisaInquiry::where('status', 'contacted')->count(),
+            'visa_inquiries_progress'  => VisaInquiry::where('status', 'in_progress')->count(),
+            'visa_inquiries_completed' => VisaInquiry::where('status', 'completed')->count(),
+            'visa_inquiries_total'     => VisaInquiry::count(),
+
+            'ziarat_total'            => Gallery::count(),
+            'books_total'             => HajjBook::count(),
+            'guidelines_total'        => HujjajGuideline::count(),
+            'videos_total'            => TutorialVideo::count(),
         ];
 
         $recentInquiries = PackageInquiry::with('package')->latest()->take(5)->get();
+        $recentVisaInquiries = VisaInquiry::with(['country', 'visaType'])->latest()->take(5)->get();
 
-        return view('mobile-ops.dashboard', compact('stats', 'recentInquiries'));
+        return view('mobile-ops.dashboard', compact('stats', 'recentInquiries', 'recentVisaInquiries'));
     }
     public function inquiries(Request $request)
     {

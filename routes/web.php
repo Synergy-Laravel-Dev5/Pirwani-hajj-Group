@@ -43,6 +43,11 @@ use App\Http\Controllers\MobileOps\GalleryController;
 use App\Http\Controllers\MobileOps\HajjBookController;
 use App\Http\Controllers\MobileOps\HujjajGuidelineController;
 use App\Http\Controllers\MobileOps\TutorialVideosController;
+use App\Http\Controllers\MobileOps\UmrahPackageController;
+use App\Http\Controllers\MobileOps\DomesticPackageController;
+use App\Http\Controllers\MobileOps\InternationalPackageController;
+use App\Http\Controllers\MobileOps\VisaCountryController;
+use App\Http\Controllers\MobileOps\VisaInquiryController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -494,7 +499,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/inquiries', [App\Http\Controllers\MobileOps\DashboardController::class, 'inquiries'])->name('inquiries.index');
             Route::post('/inquiries/{id}/status', [App\Http\Controllers\MobileOps\DashboardController::class, 'updateInquiryStatus'])->name('inquiries.status');
 
-            // Gallery / Ziarat CRUD
+            // Gallery / Ziarat CRUD & Trash
+            Route::get('/gallery/trash', [GalleryController::class, 'trash'])->name('gallery.trash');
+            Route::post('/gallery/{id}/restore', [GalleryController::class, 'restore'])->name('gallery.restore');
+            Route::get('/ziarat/trash', [GalleryController::class, 'trash'])->name('ziarat.trash');
+            Route::post('/ziarat/{id}/restore', [GalleryController::class, 'restore'])->name('ziarat.restore');
             Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
             Route::post('/gallery', [GalleryController::class, 'store'])->name('gallery.store');
             Route::post('/gallery/{id}/update', [GalleryController::class, 'update'])->name('gallery.update');
@@ -504,23 +513,75 @@ Route::middleware('auth')->group(function () {
             Route::delete('/gallery/image/{id}', [GalleryController::class, 'deleteImage'])->name('gallery.image.delete');
             Route::post('/gallery/image/{id}/primary', [GalleryController::class, 'setPrimaryImage'])->name('gallery.image.primary');
 
-            // Hajj Information Books
+            // Hajj Information Books & Trash
+            Route::get('/books/trash', [HajjBookController::class, 'trash'])->name('books.trash');
+            Route::post('/books/{id}/restore', [HajjBookController::class, 'restore'])->name('books.restore');
             Route::get('/books', [HajjBookController::class, 'index'])->name('books.index');
             Route::post('/books', [HajjBookController::class, 'store'])->name('books.store');
             Route::post('/books/{id}/update', [HajjBookController::class, 'update'])->name('books.update');
             Route::delete('/books/{id}', [HajjBookController::class, 'destroy'])->name('books.destroy');
 
-            // Hujjaj Information / Guidelines
+            // Hujjaj Information / Guidelines & Trash
+            Route::get('/guidelines/trash', [HujjajGuidelineController::class, 'trash'])->name('guidelines.trash');
+            Route::post('/guidelines/{id}/restore', [HujjajGuidelineController::class, 'restore'])->name('guidelines.restore');
             Route::get('/guidelines', [HujjajGuidelineController::class, 'index'])->name('guidelines.index');
             Route::post('/guidelines', [HujjajGuidelineController::class, 'store'])->name('guidelines.store');
             Route::post('/guidelines/{id}/update', [HujjajGuidelineController::class, 'update'])->name('guidelines.update');
             Route::delete('/guidelines/{id}', [HujjajGuidelineController::class, 'destroy'])->name('guidelines.destroy');
 
-            // Hajj Video Tutorials
+            // Hajj Video Tutorials & Trash
+            Route::get('/videos/trash', [TutorialVideosController::class, 'trash'])->name('videos.trash');
+            Route::post('/videos/{id}/restore', [TutorialVideosController::class, 'restore'])->name('videos.restore');
             Route::get('/videos', [TutorialVideosController::class, 'index'])->name('videos.index');
             Route::post('/videos', [TutorialVideosController::class, 'store'])->name('videos.store');
             Route::post('/videos/{id}/update', [TutorialVideosController::class, 'update'])->name('videos.update');
             Route::delete('/videos/{id}', [TutorialVideosController::class, 'destroy'])->name('videos.destroy');
+
+            // Visa Countries Management & Trash
+            Route::get('/visa-countries/trash', [VisaCountryController::class, 'trash'])->name('visa-countries.trash');
+            Route::post('/visa-countries/{id}/restore', [VisaCountryController::class, 'restore'])->name('visa-countries.restore');
+            Route::get('/visa-countries', [VisaCountryController::class, 'index'])->name('visa-countries.index');
+            Route::get('/visa-countries/create', [VisaCountryController::class, 'create'])->name('visa-countries.create');
+            Route::post('/visa-countries', [VisaCountryController::class, 'store'])->name('visa-countries.store');
+            Route::get('/visa-countries/{id}/edit', [VisaCountryController::class, 'edit'])->name('visa-countries.edit');
+            Route::post('/visa-countries/{id}/update', [VisaCountryController::class, 'update'])->name('visa-countries.update');
+            Route::delete('/visa-countries/{id}', [VisaCountryController::class, 'destroy'])->name('visa-countries.destroy');
+
+            // Visa Inquiries
+            Route::get('/visa-inquiries', [VisaInquiryController::class, 'index'])->name('visa-inquiries.index');
+            Route::get('/visa-inquiries/{id}', [VisaInquiryController::class, 'show'])->name('visa-inquiries.show');
+            Route::post('/visa-inquiries/{id}/status', [VisaInquiryController::class, 'updateStatus'])->name('visa-inquiries.status');
+            Route::delete('/visa-inquiries/{id}', [VisaInquiryController::class, 'destroy'])->name('visa-inquiries.destroy');
+
+            // Umrah Package Module
+            Route::get('/umrah-packages', [UmrahPackageController::class, 'index'])->name('umrah-packages.index');
+            Route::get('/umrah-packages/create', [UmrahPackageController::class, 'create'])->name('umrah-packages.create');
+            Route::post('/umrah-packages', [UmrahPackageController::class, 'store'])->name('umrah-packages.store');
+            Route::get('/umrah-packages/{id}/edit', [UmrahPackageController::class, 'edit'])->name('umrah-packages.edit');
+            Route::put('/umrah-packages/{id}', [UmrahPackageController::class, 'update'])->name('umrah-packages.update');
+            Route::delete('/umrah-packages/{id}', [UmrahPackageController::class, 'destroy'])->name('umrah-packages.destroy');
+            Route::get('/umrah-packages/trash', [UmrahPackageController::class, 'trash'])->name('umrah-packages.trash');
+            Route::post('/umrah-packages/{id}/restore', [UmrahPackageController::class, 'restore'])->name('umrah-packages.restore');
+
+            // Domestic Package Module
+            Route::get('/domestic-packages', [DomesticPackageController::class, 'index'])->name('domestic-packages.index');
+            Route::get('/domestic-packages/create', [DomesticPackageController::class, 'create'])->name('domestic-packages.create');
+            Route::post('/domestic-packages', [DomesticPackageController::class, 'store'])->name('domestic-packages.store');
+            Route::get('/domestic-packages/{id}/edit', [DomesticPackageController::class, 'edit'])->name('domestic-packages.edit');
+            Route::put('/domestic-packages/{id}', [DomesticPackageController::class, 'update'])->name('domestic-packages.update');
+            Route::delete('/domestic-packages/{id}', [DomesticPackageController::class, 'destroy'])->name('domestic-packages.destroy');
+            Route::get('/domestic-packages/trash', [DomesticPackageController::class, 'trash'])->name('domestic-packages.trash');
+            Route::post('/domestic-packages/{id}/restore', [DomesticPackageController::class, 'restore'])->name('domestic-packages.restore');
+
+            // International Package Module
+            Route::get('/international-packages', [InternationalPackageController::class, 'index'])->name('international-packages.index');
+            Route::get('/international-packages/create', [InternationalPackageController::class, 'create'])->name('international-packages.create');
+            Route::post('/international-packages', [InternationalPackageController::class, 'store'])->name('international-packages.store');
+            Route::get('/international-packages/{id}/edit', [InternationalPackageController::class, 'edit'])->name('international-packages.edit');
+            Route::put('/international-packages/{id}', [InternationalPackageController::class, 'update'])->name('international-packages.update');
+            Route::delete('/international-packages/{id}', [InternationalPackageController::class, 'destroy'])->name('international-packages.destroy');
+            Route::get('/international-packages/trash', [InternationalPackageController::class, 'trash'])->name('international-packages.trash');
+            Route::post('/international-packages/{id}/restore', [InternationalPackageController::class, 'restore'])->name('international-packages.restore');
         });
     });
 });

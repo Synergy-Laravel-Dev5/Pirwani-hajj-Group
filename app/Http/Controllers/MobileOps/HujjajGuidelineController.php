@@ -70,6 +70,34 @@ class HujjajGuidelineController extends Controller
         $guideline = HujjajGuideline::findOrFail($id);
         $guideline->delete();
 
-        return back()->with('success', 'Guideline deleted successfully.');
+        return redirect()->route('mobile-ops.guidelines.index')->with('success', 'Guideline moved to trash successfully.');
+    }
+
+    public function trash(Request $request)
+    {
+        $search = $request->get('search');
+
+        $query = HujjajGuideline::onlyTrashed()->latest('deleted_at');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . trim($search) . '%')
+                    ->orWhere('sub_heading', 'like', '%' . trim($search) . '%')
+                    ->orWhere('content', 'like', '%' . trim($search) . '%');
+            });
+        }
+
+        $guidelines = $query->paginate(15);
+        $trashCount = HujjajGuideline::onlyTrashed()->count();
+
+        return view('mobile-ops.guidelines.trash', compact('guidelines', 'search', 'trashCount'));
+    }
+
+    public function restore($id)
+    {
+        $guideline = HujjajGuideline::onlyTrashed()->findOrFail($id);
+        $guideline->restore();
+
+        return redirect()->route('mobile-ops.guidelines.trash')->with('success', 'Guideline restored successfully.');
     }
 }

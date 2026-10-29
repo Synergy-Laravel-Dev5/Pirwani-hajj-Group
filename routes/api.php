@@ -37,4 +37,7 @@ Route::prefix('guest')->group(function () {
     Route::get('/guidelines/{id}', [GuestController::class, 'getHujjajGuidelineDetail']);
     Route::get('/videos', [GuestController::class, 'getHajjVideos']);
     Route::get('/videos/{id}', [GuestController::class, 'getHajjVideoDetail']);
+    Route::get('/visa-countries', [GuestController::class, 'getVisaCountries']);
+    Route::get('/visa-countries/{id}', [GuestController::class, 'getVisaCountryDetail']);
+    Route::post('/visa-inquiry', [GuestController::class, 'submitVisaInquiry']);
 });
