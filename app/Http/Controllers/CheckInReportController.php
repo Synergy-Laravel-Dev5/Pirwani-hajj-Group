@@ -40,7 +40,18 @@ class CheckInReportController extends Controller
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        $hotelPart    = !empty($data['hotelFilter']) ? '_' . strtoupper(str_replace(' ', '_', $data['hotelFilter'])) : '';
+        $hotelString = '';
+        if (is_array($data['hotelFilter'] ?? null)) {
+            $count = count($data['hotelFilter']);
+            if ($count === 1) {
+                $hotelString = reset($data['hotelFilter']);
+            } elseif ($count > 1) {
+                $hotelString = $count . '_HOTELS';
+            }
+        } elseif (!empty($data['hotelFilter'])) {
+            $hotelString = (string)$data['hotelFilter'];
+        }
+        $hotelPart    = !empty($hotelString) ? '_' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', $hotelString)) : '';
         $locationPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
         $fileName     = 'Official_Hotel_Check_In_Manifest' . $hotelPart . $locationPart . '_' . date('Ymd_His') . '.pdf';
 
@@ -55,10 +66,22 @@ class CheckInReportController extends Controller
         $data       = $this->getFilteredCheckInData($request);
         $hotelStays = $data['hotelStays'];
 
-        $hotelPart    = !empty($data['hotelFilter']) ? '_' . strtoupper(str_replace(' ', '_', $data['hotelFilter'])) : '';
+        $hotelString = '';
+        if (is_array($data['hotelFilter'] ?? null)) {
+            $count = count($data['hotelFilter']);
+            if ($count === 1) {
+                $hotelString = reset($data['hotelFilter']);
+            } elseif ($count > 1) {
+                $hotelString = $count . '_HOTELS';
+            }
+        } elseif (!empty($data['hotelFilter'])) {
+            $hotelString = (string)$data['hotelFilter'];
+        }
+        $hotelPart    = !empty($hotelString) ? '_' . strtoupper(preg_replace('/[^A-Za-z0-9]/', '_', $hotelString)) : '';
         $locationPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
         $fileName     = 'Official_Hotel_Check_In_Manifest' . $hotelPart . $locationPart . '_' . date('Ymd_His') . '.xlsx';
-        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Hotel: ' . ($data['hotelFilter'] ?: 'ALL') . ' | Location: ' . strtoupper($data['locationFilter'] ?: 'ALL');
+        $hotelLabel   = is_array($data['hotelFilter'] ?? null) ? (empty($data['hotelFilter']) ? 'ALL' : implode(', ', $data['hotelFilter'])) : ($data['hotelFilter'] ?: 'ALL');
+        $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Hotel: ' . $hotelLabel . ' | Location: ' . strtoupper($data['locationFilter'] ?: 'ALL');
 
         // Check if PhpSpreadsheet is available
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
