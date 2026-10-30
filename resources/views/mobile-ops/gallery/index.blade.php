@@ -67,7 +67,8 @@
             @php
                 $trashTotal = \App\Models\Gallery::onlyTrashed()->count();
             @endphp
-            <a href="{{ route('mobile-ops.ziarat.trash') }}" class="btn btn-outline-danger btn-sm px-3 shadow-sm d-inline-flex align-items-center gap-1">
+            <a href="{{ route('mobile-ops.ziarat.trash') }}"
+                class="btn btn-outline-danger btn-sm px-3 shadow-sm d-inline-flex align-items-center gap-1">
                 <i class="mdi mdi-trash-can-outline"></i> View Trash
                 @if ($trashTotal > 0)
                     <span class="badge bg-danger text-white rounded-pill ms-1">{{ $trashTotal }}</span>
@@ -111,21 +112,21 @@
     <div class="card border-0 shadow-sm" style="overflow: visible;">
         <div class="card-body" style="overflow: visible;">
             <div class="table-responsive">
-                <table id="ziarat-datatable" class="table table-bordered dt-responsive nowrap align-middle mb-0 w-100">
+                <table id="ziarat-datatable" class="table table-bordered dt-responsive align-middle mb-0 w-100">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-3" style="width: 75px;">Cover</th>
-                            <th style="min-width: 180px;">Title</th>
-                            <th style="min-width: 120px;">Category</th>
-                            <th style="min-width: 110px;">Photos</th>
-                            <th>Description</th>
-                            <th class="text-end pe-3" style="width: 190px;">Action</th>
+                            <th class="ps-3 text-nowrap" style="width: 75px;">Cover</th>
+                            <th class="text-nowrap" style="min-width: 160px;">Title</th>
+                            <th class="text-nowrap" style="width: 110px;">Category</th>
+                            <th class="text-nowrap" style="width: 100px;">Photos</th>
+                            <th style="min-width: 250px;">Description</th>
+                            <th class="text-end pe-3 text-nowrap" style="width: 160px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($galleries as $item)
                             <tr>
-                                <td class="ps-3">
+                                <td class="ps-3 text-nowrap">
                                     <div role="button" data-bs-toggle="modal"
                                         data-bs-target="#ziaratDetailsModal{{ $item->id }}"
                                         class="position-relative d-inline-block rounded overflow-hidden shadow-sm"
@@ -143,9 +144,9 @@
                                 </td>
                                 <td>
                                     <div class="fw-bold text-dark">{{ $item->title }}</div>
-                                    <div class="fs-12 text-muted">ID: #{{ $item->id }}</div>
+                                    {{-- <div class="fs-12 text-muted">ID: #{{ $item->id }}</div> --}}
                                 </td>
-                                <td>
+                                <td class="text-nowrap">
                                     @if ($item->category === 'makkah')
                                         <span
                                             class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 text-uppercase fs-11">
@@ -163,16 +164,16 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td>
+                                <td class="text-nowrap">
                                     <span class="badge bg-light text-dark border px-2 py-1">
                                         <i class="mdi mdi-image-multiple text-primary me-1"></i>
                                         {{ $item->images->count() }} / 10
                                     </span>
                                 </td>
-                                <td class="text-muted fs-13" style="max-width: 320px;">
-                                    {{ $item->description ? \Illuminate\Support\Str::limit($item->description, 75) : '—' }}
+                                <td class="text-muted fs-13" style="max-width: 340px; white-space: normal; word-break: break-word;">
+                                    {{ $item->description ? \Illuminate\Support\Str::limit($item->description, 100) : '—' }}
                                 </td>
-                                <td class="text-end pe-3">
+                                <td class="text-end pe-3 text-nowrap">
                                     <div class="d-inline-flex align-items-center gap-1">
                                         <!-- View Details Button (aligned with inquiries style) -->
                                         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
@@ -352,7 +353,8 @@
                                         <div class="modal-body p-4 fs-13">
                                             <!-- Photo Strip -->
                                             <label class="form-label fw-semibold">Uploaded Photos
-                                                ({{ $item->images->count() }} of 10)</label>
+                                                ({{ $item->images->count() }} of 10)
+                                            </label>
                                             <div class="d-flex flex-wrap gap-2 p-2 bg-light rounded mb-3 border">
                                                 @forelse($item->images as $img)
                                                     <div class="position-relative text-center border rounded bg-white p-1"
@@ -561,29 +563,33 @@
 @endsection
 
 @push('scripts')
-<script>
-    $(document).ready(function() {
-        $('#ziarat-datatable').DataTable({
-            paging: true,
-            info: true,
-            searching: false,
-            lengthChange: true,
-            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            pageLength: 10,
-            responsive: true,
-            order: [],
-            columnDefs: [
-                { orderable: false, targets: [0, 5] }
-            ],
-            language: {
-                lengthMenu: "Show _MENU_ entries",
-                info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                paginate: {
-                    previous: "<i class='mdi mdi-chevron-left'>",
-                    next: "<i class='mdi mdi-chevron-right'>"
+    <script>
+        $(document).ready(function() {
+            $('#ziarat-datatable').DataTable({
+                paging: true,
+                info: true,
+                searching: false,
+                lengthChange: true,
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                pageLength: 10,
+                responsive: true,
+                order: [],
+                columnDefs: [{
+                    orderable: false,
+                    targets: [0, 5]
+                }],
+                language: {
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
                 }
-            }
+            });
         });
-    });
-</script>
+    </script>
 @endpush
