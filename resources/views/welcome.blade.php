@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PIRWANI HAJJ GROUP</title>
+    <title>Management Portal | Pirwani Hajj Group</title>
+    <link rel="shortcut icon" href="{{ asset('assets/images/PIRWANI PNG FILE.png') }}">
     <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
         *,
@@ -19,34 +20,32 @@
 
         :root {
             --gold: #C9A84C;
-            --gold-light: #F0D080;
-            --gold-dim: #96711E;
-            --emerald: #1A6B4A;
-            --emerald-light: #3DAF78;
-            --navy: #0F2544;
-            --cream: #FAF6EE;
-            --border: #E6D9BC;
-            --muted: #857860;
+            --gold-light: #F3DC9B;
+            --gold-bright: #D4AF37;
+            --gold-dim: #996515;
+            --navy-dark: #071527;
+            --navy-mid: #0E233E;
+            --navy-card: #102B4E;
+            --border-gold: rgba(201, 168, 76, 0.35);
         }
 
         html,
         body {
-            height: 100%;
-            overflow: hidden;
-            font-family: 'DM Sans', sans-serif;
-            background: white;
+            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #F8F9FA;
+            color: #1e293b;
         }
 
-        /* ── Full-screen grid ── */
         .shell {
-            height: 100vh;
-            display: grid;
-            grid-template-rows: auto 1fr;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             position: relative;
-            overflow: hidden;
+            background: linear-gradient(180deg, #FFFFFF 0%, #F5F7FA 100%);
         }
 
-        /* Ambient blobs */
+        /* Ambient luxury subtle background based on logo gold */
         .shell::before {
             content: '';
             position: absolute;
@@ -54,437 +53,424 @@
             z-index: 0;
             pointer-events: none;
             background:
-                radial-gradient(ellipse 55% 55% at 15% 20%, rgba(201, 168, 76, .13) 0%, transparent 65%),
-                radial-gradient(ellipse 45% 50% at 85% 75%, rgba(26, 107, 74, .09) 0%, transparent 60%);
+                radial-gradient(ellipse 65% 55% at 20% 20%, rgba(201, 168, 76, .10) 0%, transparent 65%),
+                radial-gradient(ellipse 55% 55% at 80% 80%, rgba(14, 35, 62, .06) 0%, transparent 60%);
         }
 
-        /* Subtle diagonal lines */
-        .shell::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            background-image:
-                repeating-linear-gradient(45deg, transparent, transparent 36px, rgba(201, 168, 76, .022) 36px, rgba(201, 168, 76, .022) 37px),
-                repeating-linear-gradient(-45deg, transparent, transparent 36px, rgba(201, 168, 76, .022) 36px, rgba(201, 168, 76, .022) 37px);
-        }
-
-        /* ── Topbar ── */
-        .topbar {
+        /* Topbar Header matching master layout */
+        .topbar-header {
             position: relative;
             z-index: 10;
+            background: linear-gradient(135deg, #071527 0%, #0E233E 55%, #08162A 100%);
+            border-bottom: 2px solid #C9A84C;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(201, 168, 76, 0.2);
+            padding: 12px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 36px;
-            border-bottom: 1px solid var(--border);
-            background: white;
-            backdrop-filter: blur(14px);
         }
 
-        .logo {
+        .logo-area {
             display: flex;
             align-items: center;
-            gap: 9px;
+            gap: 14px;
+            text-decoration: none;
         }
 
-        .logo-mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            box-shadow: 0 3px 10px rgba(201, 168, 76, .32);
+        .logo-img {
+            height: 48px;
+            width: auto;
+            max-width: 160px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(201, 168, 76, 0.3));
+        }
+
+        .logo-text-block {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
+            flex-direction: column;
         }
 
-        .logo-name {
-            font-family: 'Playfair Display', serif;
-            font-size: 15px;
+        .logo-brand-badge {
+            font-size: 10px;
             font-weight: 700;
-            color: var(--navy);
-            line-height: 1.15;
+            color: #F3DC9B;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
-        .logo-sub {
-            font-size: 9.5px;
-            color: var(--muted);
-            font-weight: 500;
-            letter-spacing: .6px;
-            text-transform: uppercase;
+        .logo-system-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: 0.3px;
         }
 
         .top-right {
             display: flex;
             align-items: center;
+            gap: 12px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
             gap: 8px;
+            background: rgba(201, 168, 76, 0.14);
+            border: 1px solid rgba(201, 168, 76, 0.35);
+            padding: 6px 14px;
+            border-radius: 50px;
+            color: #F3DC9B;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .user-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #E5C368;
+            box-shadow: 0 0 6px rgba(229, 195, 104, 0.8);
         }
 
         .date-chip {
             font-size: 11.5px;
             font-weight: 600;
-            color: var(--gold-dim);
-            background: rgba(201, 168, 76, .10);
-            border: 1px solid rgba(201, 168, 76, .22);
-            padding: 5px 13px;
+            color: #CBD5E1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 6px 13px;
             border-radius: 50px;
         }
 
-        .logout-btn {
+        .mobile-ops-btn {
+            background: rgba(201, 168, 76, 0.14);
+            color: #F3DC9B;
+            border: 1px solid rgba(201, 168, 76, 0.38);
             font-size: 11.5px;
             font-weight: 600;
-            color: var(--muted);
-            background: #fff;
-            border: 1px solid var(--border);
-            padding: 5px 13px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .mobile-ops-btn:hover {
+            background: rgba(201, 168, 76, 0.25);
+            color: #FFFFFF;
+            border-color: #D4AF37;
+        }
+
+        .logout-btn {
+            font-size: 12px;
+            font-weight: 600;
+            color: #FCA5A5;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 6px 14px;
             border-radius: 50px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
-            transition: color .18s, border-color .18s;
+            gap: 6px;
+            transition: all 0.2s ease;
         }
 
         .logout-btn:hover {
-            color: var(--navy);
-            border-color: #bbb;
+            background: rgba(239, 68, 68, 0.25);
+            color: #FEE2E2;
+            border-color: #EF4444;
         }
 
-        /* ── Main area — perfectly centered ── */
-        .main {
+        /* Main Workspace Container */
+        .portal-main {
             position: relative;
             z-index: 1;
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 28px;
-            padding: 24px 20px;
+            padding: 40px 20px 60px;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        /* ── Header text block ── */
+        /* Headline Header */
         .headline {
             text-align: center;
+            margin-bottom: 34px;
         }
 
         .eyebrow {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            font-size: 10.5px;
+            gap: 6px;
+            font-size: 11px;
             font-weight: 700;
-            letter-spacing: 1.3px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             color: var(--gold-dim);
-            background: rgba(201, 168, 76, .10);
-            border: 1px solid rgba(201, 168, 76, .25);
-            padding: 5px 14px;
+            background: rgba(201, 168, 76, 0.12);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            padding: 6px 18px;
             border-radius: 50px;
             margin-bottom: 14px;
-            animation: up .5s ease both;
         }
 
         .h1 {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(28px, 3.5vw, 42px);
+            font-size: clamp(28px, 4vw, 42px);
             font-weight: 800;
-            color: var(--navy);
-            line-height: 1.15;
+            color: #0F2544;
+            line-height: 1.2;
             margin-bottom: 10px;
-            animation: up .5s .08s ease both;
         }
 
         .h1 em {
             font-style: italic;
-            background: linear-gradient(120deg, var(--gold) 0%, var(--gold-dim) 100%);
+            background: linear-gradient(120deg, #C9A84C 0%, #996515 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
         .tagline {
-            font-size: 13.5px;
-            color: var(--muted);
+            font-size: 15px;
+            color: #64748B;
+            font-weight: 500;
+            max-width: 580px;
+            margin: 0 auto;
             line-height: 1.55;
-            animation: up .5s .16s ease both;
         }
 
-        /* ── Cards row ── */
-        .cards {
+        /* Cards Grid */
+        .cards-row {
             display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 32px;
             justify-content: center;
-            animation: up .55s .24s ease both;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 860px;
         }
 
-        .card {
-            width: 270px;
-            background: #fff;
-            border-radius: 20px;
-            border: 1.5px solid var(--border);
-            box-shadow: 0 6px 28px rgba(15, 37, 68, .07);
+        .portal-card {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            background: #FFFFFF;
+            border-radius: 22px;
+            border: 2px solid rgba(201, 168, 76, 0.3);
+            box-shadow: 0 10px 30px rgba(15, 37, 68, 0.06);
             display: flex;
             flex-direction: column;
             overflow: hidden;
             text-decoration: none;
-            transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
         }
 
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 52px rgba(15, 37, 68, .12);
+        .portal-card:hover {
+            transform: translateY(-8px);
+            border-color: #C9A84C;
+            box-shadow: 0 24px 50px rgba(201, 168, 76, 0.20);
         }
 
-        .card.hajj:hover {
-            border-color: rgba(201, 168, 76, .6);
-        }
-
-        .card.umrah:hover {
-            border-color: rgba(26, 107, 74, .5);
-        }
-
-        /* Colour band */
-        .band {
-            height: 90px;
+        /* Band Header on Card (Both themed around Logo Midnight Navy & Luxury Gold) */
+        .card-band {
+            padding: 26px 24px 22px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             position: relative;
             overflow: hidden;
-            flex-shrink: 0;
         }
 
-        .card.hajj .band {
-            background: linear-gradient(135deg, #EFE0A8, #FAF2DC);
-        }
-
-        .card.umrah .band {
-            background: linear-gradient(135deg, #A8D4BE, #DFF2E8);
-        }
-
-        .band::before {
+        .card-band::after {
             content: '';
             position: absolute;
             inset: 0;
-            background-image: repeating-linear-gradient(-45deg, transparent, transparent 7px, rgba(255, 255, 255, .35) 7px, rgba(255, 255, 255, .35) 8px);
+            background-image: repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.04) 10px, rgba(255, 255, 255, 0.04) 11px);
         }
 
-        .band-icon {
-            font-size: 46px;
+        /* Main Dashboard Band */
+        .portal-card.card-main .card-band {
+            background: linear-gradient(135deg, #071527 0%, #0E233E 55%, #183863 100%);
+            border-bottom: 3px solid #C9A84C;
+        }
+
+        /* Hotel Sale Band (Deep Royal Navy & Warm Amber Gold) */
+        .portal-card.card-hotel .card-band {
+            background: linear-gradient(135deg, #0B1E36 0%, #163259 55%, #23487A 100%);
+            border-bottom: 3px solid #E5C368;
+        }
+
+        .band-icon-wrap {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
             position: relative;
             z-index: 1;
-            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .1));
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
         }
 
-        /* Card inner */
-        .card-inner {
-            padding: 18px 20px 20px;
+        .card-main .band-icon-wrap {
+            background: linear-gradient(135deg, #D4AF37, #996515);
+            color: #FFFFFF;
+            border: 1px solid rgba(243, 220, 155, 0.5);
+        }
+
+        .card-hotel .band-icon-wrap {
+            background: linear-gradient(135deg, #E5C368, #B88E28);
+            color: #FFFFFF;
+            border: 1px solid rgba(251, 240, 204, 0.5);
+        }
+
+        .band-badge {
+            position: relative;
+            z-index: 1;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .card-main .band-badge {
+            background: rgba(201, 168, 76, 0.2);
+            color: #F3DC9B;
+            border: 1px solid rgba(201, 168, 76, 0.45);
+        }
+
+        .card-hotel .band-badge {
+            background: rgba(229, 195, 104, 0.2);
+            color: #FBF0CC;
+            border: 1px solid rgba(229, 195, 104, 0.45);
+        }
+
+        /* Card Content Area - Clean, Heading & Button Only */
+        .card-body-content {
+            padding: 32px 24px 28px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 22px;
             flex: 1;
-        }
-
-        .tag {
-            align-self: flex-start;
-            font-size: 9.5px;
-            font-weight: 700;
-            letter-spacing: .9px;
-            text-transform: uppercase;
-            padding: 3px 9px;
-            border-radius: 50px;
-            margin-bottom: 9px;
-        }
-
-        .card.hajj .tag {
-            background: #FAF0D0;
-            color: #956A10;
-        }
-
-        .card.umrah .tag {
-            background: #D2EDDF;
-            color: #1A6B4A;
         }
 
         .card-title {
             font-family: 'Playfair Display', serif;
-            font-size: 21px;
+            font-size: 26px;
             font-weight: 700;
-            margin-bottom: 7px;
-            text-align: center;
+            color: #0F172A;
+            margin: 0;
+            letter-spacing: 0.3px;
         }
 
-        .card.hajj .card-title {
-            color: #704808;
-        }
-
-        .card.umrah .card-title {
-            color: var(--emerald);
-        }
-
-        .card-desc {
-            font-size: 12px;
-            color: var(--muted);
-            line-height: 1.55;
-            margin-bottom: 16px;
-            flex: 1;
-        }
-
-        /* Mini stats */
-        .stats {
+        /* Action CTA Button */
+        .card-cta-btn {
+            width: 100%;
+            padding: 13px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
             display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
-            margin-bottom: 16px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(7, 21, 39, 0.12);
+            border: none;
+            cursor: pointer;
         }
 
-        .stat {
-            flex: 1;
-            border-radius: 10px;
-            padding: 8px 10px;
-            text-align: center;
+        .card-main .card-cta-btn {
+            background: linear-gradient(135deg, #071527 0%, #17365D 100%);
+            color: #F3DC9B;
+            border: 1.5px solid #C9A84C;
         }
 
-        .card.hajj .stat {
-            background: #FBF5E6;
-            border: 1px solid #E8D499;
+        .portal-card.card-main:hover .card-cta-btn {
+            background: linear-gradient(135deg, #D4AF37 0%, #B88E28 100%);
+            color: #071527;
+            border-color: #D4AF37;
+            box-shadow: 0 6px 22px rgba(201, 168, 76, 0.45);
         }
 
-        .card.umrah .stat {
-            background: #E8F5EE;
-            border: 1px solid #92CCA8;
+        .card-hotel .card-cta-btn {
+            background: linear-gradient(135deg, #0B1E36 0%, #1A3E6D 100%);
+            color: #FBF0CC;
+            border: 1.5px solid #E5C368;
         }
 
-        .sv {
-            font-family: 'Playfair Display', serif;
-            font-size: 18px;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 2px;
+        .portal-card.card-hotel:hover .card-cta-btn {
+            background: linear-gradient(135deg, #E5C368 0%, #C9A84C 100%);
+            color: #071527;
+            border-color: #E5C368;
+            box-shadow: 0 6px 22px rgba(201, 168, 76, 0.45);
         }
 
-        .card.hajj .sv {
-            color: #956A10;
-        }
-
-        .card.umrah .sv {
-            color: var(--emerald);
-        }
-
-        .sl {
-            font-size: 9.5px;
-            color: var(--muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .4px;
-        }
-
-        /* CTA */
-        .cta {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            padding: 11px 16px;
-            border-radius: 11px;
-            font-size: 12.5px;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: .15px;
-            transition: filter .2s, transform .2s;
-        }
-
-        .card.hajj .cta {
-            background: linear-gradient(135deg, #C9A84C, #DFC060);
-            box-shadow: 0 4px 14px rgba(201, 168, 76, .33);
-        }
-
-        .card.umrah .cta {
-            background: linear-gradient(135deg, #1A6B4A, #2E9A68);
-            box-shadow: 0 4px 14px rgba(26, 107, 74, .28);
-        }
-
-        .cta:hover {
-            filter: brightness(1.06);
-            transform: scale(1.01);
-            color: #fff;
-        }
-
-        .cta-arrow {
-            width: 17px;
-            height: 17px;
+        .arrow-bubble {
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, .22);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            transition: transform 0.2s;
         }
 
-        /* ── Animations ── */
-        @keyframes up {
-            from {
-                opacity: 0;
-                transform: translateY(16px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .portal-card:hover .arrow-bubble {
+            transform: translateX(3px);
         }
 
-        /* ── Responsive ── */
-        @media (max-height: 700px) {
-            .band {
-                height: 70px;
-            }
-
-            .band-icon {
-                font-size: 36px;
-            }
-
-            .card-inner {
-                padding: 14px 16px 16px;
-            }
-
-            .main {
-                gap: 18px;
-            }
-
-            .h1 {
-                font-size: 26px;
-            }
+        /* Footer info */
+        .portal-footer {
+            text-align: center;
+            margin-top: 36px;
+            font-size: 12.5px;
+            color: #94A3B8;
         }
 
-        @media (max-width: 600px) {
-            .shell {
-                overflow: auto;
+        @media (max-width: 768px) {
+            .topbar-header {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+                gap: 10px;
             }
 
-            html,
-            body {
-                overflow: auto;
-                height: auto;
-            }
-
-            .main {
-                padding: 28px 16px 32px;
-            }
-
-            .card {
-                width: 100%;
-                max-width: 320px;
-            }
-
-            .topbar {
-                padding: 12px 18px;
-            }
-
-            .date-chip {
+            .logo-text-block {
                 display: none;
+            }
+
+            .date-chip,
+            .mobile-ops-btn {
+                display: none;
+            }
+
+            .portal-main {
+                padding: 24px 16px 40px;
+            }
+
+            .cards-row {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .portal-card {
+                width: 100%;
+                max-width: 100%;
             }
         }
     </style>
@@ -493,92 +479,100 @@
 <body>
     <div class="shell">
 
-        {{-- Topbar --}}
-        <header class="topbar">
-            <div class="logo">
-                <div class="logo-mark">🌙</div>
-                <div>
-                    <div class="logo-name">Pirwani Hajj Group</div>
-                    <div class="logo-sub">Management Portal</div>
+        {{-- Topbar Header (Header at the top matching Pirwani Logo Navy & Gold) --}}
+        <header class="topbar-header">
+            <a href="{{ route('welcome') }}" class="logo-area">
+                <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}"
+                    alt="Pirwani Hajj Group" class="logo-img">
+                <div class="logo-text-block">
+                    <span class="logo-brand-badge">🕋 Pirwani Hajj Group</span>
+                    <span class="logo-system-title">Management System</span>
                 </div>
-            </div>
+            </a>
+
             <div class="top-right">
+                <div class="user-chip">
+                    <span class="dot"></span>
+                    <span>{{ Auth::user()->name ?? 'Admin User' }}</span>
+                </div>
+
                 <span class="date-chip">📅 {{ now()->format('d M Y') }}</span>
+
+                <a href="{{ route('mobile-ops.dashboard') }}" class="mobile-ops-btn">
+                    <span>📱</span>
+                    <span>Mobile App Portal</span>
+                </a>
+
                 <form method="POST" action="{{ route('logout') }}" style="margin:0">
                     @csrf
-                    <button class="logout-btn" type="submit">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24">
-                            <path fill="currentColor"
-                                d="M16 13v-2H7V8l-5 4l5 4v-3zm1-11H9a2 2 0 0 0-2 2v4h2V4h8v16H9v-4H7v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2" />
+                    <button class="logout-btn" type="submit" title="Sign Out">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
-                        Logout
+                        <span>Logout</span>
                     </button>
                 </form>
             </div>
         </header>
 
-        {{-- Main --}}
-        <main class="main">
+        {{-- Main Area with 2 Cards --}}
+        <main class="portal-main">
 
-            {{-- Headline --}}
             <div class="headline">
-                <div class="eyebrow">✦ Management Dashboard ✦</div>
-                <h1 class="h1">Welcome to <em>Pirwani Hajj Group</em></h1>
-                <p class="tagline">Select a package to view bookings, revenue & monthly reports.</p>
+                <div class="eyebrow">❖ Pirwani Management Portal ❖</div>
+                <h1 class="h1">Welcome, <em>{{ Auth::user()->name ?? 'User' }}</em></h1>
+                <p class="tagline">Select your workspace module below to access management tools, reports and operational records.</p>
             </div>
 
-            {{-- Cards --}}
-            <div class="cards">
+            {{-- 2 Cards Row --}}
+            <div class="cards-row">
 
-                {{-- Hajj --}}
-                <a href="{{ route('dashboard', ['package' => 'hajj', 'year' => now()->year]) }}" class="card hajj">
-                    <div class="band">
-                        <div class="band-icon">🕋</div>
-                    </div>
-                    <div class="card-inner">
-                        <div class="card-title">Hajj</div>
-                        <p class="card-desc">Bookings, clients, revenue & monthly performance at a glance.</p>
-                        <div class="stats">
-                            <div class="stat">
-                                <div class="sv">{{ number_format($hajjCount) }}</div>
-                                <div class="sl">Bookings</div>
-                            </div>
-                            <div class="stat">
-                                <div class="sv">
-                                    {{ $hajjRevenue >= 1000 ? number_format($hajjRevenue / 1000, 0) . 'K' : number_format($hajjRevenue) }}
-                                </div>
-                                <div class="sl">Revenue</div>
-                            </div>
+                {{-- CARD 1: Main Dashboard --}}
+                <a href="{{ route('module.switch', 'main') }}" class="portal-card card-main">
+                    <div class="card-band">
+                        <div class="band-icon-wrap">
+                            <span>📊</span>
                         </div>
-                        <span class="cta">View Hajj Dashboard <span class="cta-arrow">→</span></span>
+                        <span class="band-badge">Core ERP & Operations</span>
+                    </div>
+
+                    <div class="card-body-content">
+                        <div class="card-title">Main Dashboard</div>
+                        <div class="card-cta-btn">
+                            <span>Enter Main Dashboard</span>
+                            <span class="arrow-bubble">→</span>
+                        </div>
                     </div>
                 </a>
 
-                {{-- Umrah --}}
-                <a href="{{ route('dashboard', ['package' => 'umrah', 'year' => now()->year]) }}" class="card umrah">
-                    <div class="band">
-                        <div class="band-icon">🕌</div>
-                    </div>
-                    <div class="card-inner">
-                        <div class="card-title">Umrah</div>
-                        <p class="card-desc">Bookings, clients, revenue & monthly performance at a glance.</p>
-                        <div class="stats">
-                            <div class="stat">
-                                <div class="sv">{{ number_format($umrahCount) }}</div>
-                                <div class="sl">Bookings</div>
-                            </div>
-                            <div class="stat">
-                                <div class="sv">
-                                    {{ $umrahRevenue >= 1000 ? number_format($umrahRevenue / 1000, 0) . 'K' : number_format($umrahRevenue) }}
-                                </div>
-                                <div class="sl">Revenue</div>
-                            </div>
+                {{-- CARD 2: Hotel Sale --}}
+                <a href="{{ route('module.switch', 'hotel_sale') }}" class="portal-card card-hotel">
+                    <div class="card-band">
+                        <div class="band-icon-wrap">
+                            <span>🏨</span>
                         </div>
-                        <span class="cta">View Umrah Dashboard <span class="cta-arrow">→</span></span>
+                        <span class="band-badge">Hotel Inventory & Invoicing</span>
+                    </div>
+
+                    <div class="card-body-content">
+                        <div class="card-title">Hotel Sale</div>
+                        <div class="card-cta-btn">
+                            <span>Enter Hotel Sale</span>
+                            <span class="arrow-bubble">→</span>
+                        </div>
                     </div>
                 </a>
 
             </div>
+
+            <div class="portal-footer">
+                &copy; {{ date('Y') }} Pirwani Hajj Group. All rights reserved.
+            </div>
+
         </main>
 
     </div>

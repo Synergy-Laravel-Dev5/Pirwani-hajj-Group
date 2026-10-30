@@ -72,11 +72,11 @@ Route::post('/save-agreement-signature', [BookingController::class, 'saveAgreeme
 Route::get('pilgrim/e-pass/{id}', [PilgrimPassController::class, 'show'])->name('pilgrim.epass');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::get('/welcome', function () {
-        return redirect()->route('dashboard');
-    })->name('welcome');
+    Route::get('/', [DashboardController::class, 'welcome'])->name('welcome');
+    Route::get('/portal', [DashboardController::class, 'welcome'])->name('portal');
+    Route::get('/welcome', [DashboardController::class, 'welcome']);
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/switch-module/{module}', [DashboardController::class, 'switchModule'])->name('module.switch');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/change-password', [AuthController::class, 'changePassword'])->name('change.password');
     Route::post('/change-password', [AuthController::class, 'changePasswordPost'])->name('change.password.post');
