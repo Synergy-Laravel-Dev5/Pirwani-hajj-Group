@@ -109,9 +109,9 @@
 
     <!-- Ziarat Table Card -->
     <div class="card border-0 shadow-sm" style="overflow: visible;">
-        <div class="card-body p-0" style="overflow: visible;">
-            <div>
-                <table class="table  align-middle mb-0">
+        <div class="card-body" style="overflow: visible;">
+            <div class="table-responsive">
+                <table id="ziarat-datatable" class="table table-bordered dt-responsive nowrap align-middle mb-0 w-100">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 75px;">Cover</th>
@@ -451,22 +451,10 @@
                                 </div>
                             </div>
                         @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="mdi mdi-image-multiple-outline fs-36 d-block mb-2 text-secondary"></i>
-                                    <h6 class="text-muted fw-semibold mb-1">No Ziarat Entries Found</h6>
-                                    <p class="fs-12 mb-0">There are no Ziarat places matching the selected category.</p>
-                                </td>
-                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            @if ($galleries->hasPages())
-                <div class="p-3 border-top">
-                    {{ $galleries->links('pagination::bootstrap-5') }}
-                </div>
-            @endif
         </div>
     </div>
 
@@ -571,3 +559,31 @@
         }
     </style>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('#ziarat-datatable').DataTable({
+            paging: true,
+            info: true,
+            searching: false,
+            lengthChange: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 10,
+            responsive: true,
+            order: [],
+            columnDefs: [
+                { orderable: false, targets: [0, 5] }
+            ],
+            language: {
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                paginate: {
+                    previous: "<i class='mdi mdi-chevron-left'>",
+                    next: "<i class='mdi mdi-chevron-right'>"
+                }
+            }
+        });
+    });
+</script>
+@endpush

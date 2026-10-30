@@ -102,8 +102,12 @@ class GuestController extends Controller
                 return [
                     'id'                      => $pkg->id,
                     'name'                    => $pkg->package_title ?? $pkg->package_name ?? $pkg->name ?? 'Package',
+                    'title'                   => $pkg->package_title ?? $pkg->name,
                     'type'                    => ucfirst($pkg->package_type ?? 'hajj'),
                     'package_code'            => $pkg->package_code ?? $pkg->code ?? null,
+                    'is_price_on_request'     => (bool) $pkg->is_price_on_request,
+                    'price_on_request'        => (bool) $pkg->is_price_on_request,
+                    'price_on_request_note'   => $pkg->is_price_on_request ? 'Best Available Price: On Request. Final price depends on travel dates, hotel category, and flight availability.' : null,
                     'is_group_package'        => (bool) $pkg->is_group_package,
                     'visa_status'             => $pkg->visa_status ?? 'included',
                     'is_dual_country'         => (bool) $pkg->is_dual_country,
@@ -111,6 +115,7 @@ class GuestController extends Controller
                     'departure_city'          => $pkg->departure_city,
                     'destination_city'        => $pkg->destination_city,
                     'destination_country'     => $pkg->destination_country,
+                    'sightseeing_summary'     => $pkg->sightseeing_summary,
                     'price'                   => $startingPrice,
                     'starting_price'          => $startingPrice,
                     'price_per_person'        => (float) ($pkg->price_per_person ?? 0),
@@ -124,6 +129,7 @@ class GuestController extends Controller
                     'currency'                => $pkg->currency ?? 'PKR',
                     'duration_days'           => $pkg->duration_days ?? $pkg->days ?? ($pkg->stay_nights ? $pkg->stay_nights + 1 : null),
                     'stay_nights'             => $pkg->stay_nights,
+                    'duration_nights'         => $pkg->duration_nights ?? $pkg->stay_nights,
                     'valid_from'              => optional($pkg->valid_from)->format('Y-m-d') ?? $pkg->start_date ?? null,
                     'valid_until'             => optional($pkg->valid_until)->format('Y-m-d') ?? $pkg->end_date ?? null,
                     'hotels_summary'          => $hotelSummary,
@@ -196,6 +202,30 @@ class GuestController extends Controller
             }
         }
 
+        // Parse exclusions list: from package_excludes_list (or fallback to exclusions text)
+        $parsedExcludes = [];
+        if (!empty($package->package_excludes_list)) {
+            $parsedExcludes = is_array($package->package_excludes_list)
+                ? $package->package_excludes_list
+                : (json_decode($package->package_excludes_list, true) ?? []);
+        } elseif (!empty($package->exclusions)) {
+            $lines = array_filter(array_map('trim', explode("\n", $package->exclusions)));
+            foreach ($lines as $line) {
+                $parsedExcludes[] = [
+                    'title'       => $line,
+                    'description' => '',
+                ];
+            }
+        }
+
+        // Parse structured itinerary days
+        $itineraryDays = [];
+        if (!empty($package->itinerary_days)) {
+            $itineraryDays = is_array($package->itinerary_days)
+                ? $package->itinerary_days
+                : (json_decode($package->itinerary_days, true) ?? []);
+        }
+
         // Parse hotel amenities array
         $hotelAmenities = is_array($package->hotel_amenities) ? $package->hotel_amenities : [];
 
@@ -238,6 +268,9 @@ class GuestController extends Controller
                 'subtitle'                 => $package->subtitle,
                 'type'                     => ucfirst($package->package_type ?? 'hajj'),
                 'package_code'             => $package->package_code ?? $package->code ?? null,
+                'is_price_on_request'      => (bool) $package->is_price_on_request,
+                'price_on_request'         => (bool) $package->is_price_on_request,
+                'price_on_request_note'    => $package->is_price_on_request ? 'Best Available Price: On Request. Final price depends on travel dates, hotel category, and flight availability.' : null,
                 'is_group_package'         => (bool) $package->is_group_package,
                 'visa_status'              => $package->visa_status ?? 'included',
                 'is_dual_country'          => (bool) $package->is_dual_country,
@@ -245,6 +278,7 @@ class GuestController extends Controller
                 'departure_city'           => $package->departure_city,
                 'destination_city'         => $package->destination_city,
                 'destination_country'      => $package->destination_country,
+                'sightseeing_summary'      => $package->sightseeing_summary,
                 'price'                    => $startingPrice,
                 'starting_price'           => $startingPrice,
                 'price_per_person'         => (float) ($package->price_per_person ?? 0),
@@ -258,6 +292,7 @@ class GuestController extends Controller
                 'currency'                 => $package->currency ?? 'PKR',
                 'duration_days'            => $package->duration_days ?? $package->days ?? ($package->stay_nights ? $package->stay_nights + 1 : null),
                 'stay_nights'              => $package->stay_nights,
+                'duration_nights'          => $package->duration_nights ?? $package->stay_nights,
                 'valid_from'               => optional($package->valid_from)->format('Y-m-d') ?? $package->start_date ?? null,
                 'valid_until'              => optional($package->valid_until)->format('Y-m-d') ?? $package->end_date ?? null,
 
@@ -268,6 +303,9 @@ class GuestController extends Controller
                 'parsed_inclusions'        => $parsedInclusions,
                 'hotel_amenities'          => $hotelAmenities,
                 'exclusions'               => $package->exclusions,
+                'excludes_list'            => $parsedExcludes,
+                'package_excludes_list'    => $parsedExcludes,
+                'itinerary_days'           => $itineraryDays,
                 'requirements_text'        => $package->requirements_text,
                 'description_notes'        => $package->description_notes ?? $package->notes,
                 'notes'                    => $package->description_notes ?? $package->notes,

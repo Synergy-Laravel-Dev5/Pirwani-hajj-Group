@@ -57,9 +57,9 @@
 
     <!-- Videos Table -->
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-        <div class="card-body p-0">
+        <div class="card-body">
             <div class="table-responsive">
-                <table class="table  align-middle mb-0">
+                <table id="videos-datatable" class="table table-bordered dt-responsive nowrap align-middle mb-0 w-100">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 80px;">Thumbnail</th>
@@ -230,18 +230,10 @@
                                 </div>
                             </div>
                         @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">No video tutorials added yet.</td>
-                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            @if ($videos->hasPages())
-                <div class="p-3 border-top">
-                    {{ $videos->links('pagination::bootstrap-5') }}
-                </div>
-            @endif
         </div>
     </div>
 
@@ -348,3 +340,31 @@
         }
     </script>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('#videos-datatable').DataTable({
+            paging: true,
+            info: true,
+            searching: false,
+            lengthChange: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            pageLength: 10,
+            responsive: true,
+            order: [],
+            columnDefs: [
+                { orderable: false, targets: [0, 3, 6] }
+            ],
+            language: {
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                paginate: {
+                    previous: "<i class='mdi mdi-chevron-left'>",
+                    next: "<i class='mdi mdi-chevron-right'>"
+                }
+            }
+        });
+    });
+</script>
+@endpush

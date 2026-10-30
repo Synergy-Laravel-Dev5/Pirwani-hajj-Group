@@ -69,6 +69,14 @@
                             placeholder="e.g. Flame Towers, Fire Mountain, Cable Car & Luxury 5★ Stay"
                             value="{{ old('subtitle', $package->subtitle) }}">
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Sightseeing & Excursions Summary</label>
+                        <input type="text" name="sightseeing_summary" class="form-control"
+                            placeholder="e.g. Tashkent City Tour, Chimgan Mountains, Samarkand High-Speed Train Excursion"
+                            value="{{ old('sightseeing_summary', $package->sightseeing_summary) }}">
+                        <small class="text-muted fs-11">Appears as highlight badge row on mobile tour card.</small>
+                    </div>
+
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Destination Country <span class="text-danger">*</span></label>
                         <select name="destination_country" class="form-select" required>
@@ -101,9 +109,16 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold">Stay Duration (Nights)</label>
-                        <input type="number" name="stay_nights" class="form-control" placeholder="e.g. 6" min="1"
-                            value="{{ old('stay_nights', $package->stay_nights) }}">
+                        <label class="form-label fw-semibold">Duration Days</label>
+                        <input type="number" id="stay_days_input" class="form-control" placeholder="e.g. 7" readonly style="background-color: #f8f9fa;"
+                            value="{{ $package->days ?? ($package->stay_nights ? $package->stay_nights + 1 : '') }}">
+                        <small class="text-muted fs-11">Auto-calculated: Nights + 1</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Duration Nights</label>
+                        <input type="number" name="stay_nights" id="stay_nights_input" class="form-control" placeholder="e.g. 6" min="1"
+                            value="{{ old('stay_nights', $package->duration_nights ?? $package->stay_nights) }}" oninput="updateDaysFromNights(this.value)">
+                        <input type="hidden" name="duration_nights" id="duration_nights_hidden" value="{{ old('stay_nights', $package->duration_nights ?? $package->stay_nights) }}">
                     </div>
                     <div class="col-md-3 d-flex align-items-center pt-3">
                         <div class="form-check form-switch">
@@ -296,13 +311,27 @@
 
         <!-- 4. Rates & Ground Transport Fleet -->
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
-            <div class="card-header bg-white border-bottom py-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <h5 class="fs-15 fw-bold text-dark m-0 d-flex align-items-center">
                     <i class="mdi mdi-currency-usd text-success me-2 fs-18"></i>
                     <span>Pricing Matrix & Ground Fleet Logistics</span>
                 </h5>
+                <div class="d-flex align-items-center bg-warning-subtle px-3 py-1 rounded-pill border border-warning">
+                    <div class="form-check form-switch m-0 d-flex align-items-center">
+                        <input class="form-check-input me-2" type="checkbox" name="is_price_on_request" value="1" id="priceOnRequestSwitch"
+                            {{ old('is_price_on_request', $package->is_price_on_request) ? 'checked' : '' }} style="cursor: pointer; width: 42px; height: 21px;">
+                        <label class="form-check-label fw-bold text-dark fs-12 mb-0" for="priceOnRequestSwitch">
+                            Price on Request (Brochure Mode)
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="card-body p-4">
+                <div class="alert alert-info py-2 px-3 mb-3 fs-12 {{ old('is_price_on_request', $package->is_price_on_request) ? '' : 'd-none' }}" id="priceOnRequestNotice">
+                    <i class="mdi mdi-information-outline me-1"></i>
+                    <strong>Price on Request Enabled:</strong> Best Available Price will show <em>"On Request / Final price depends on travel dates, hotel category, and flight availability"</em> in the mobile app. Numeric room rate fields below become optional.
+                </div>
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-semibold fs-13">Ground Transfer Fleet Mode</label>
@@ -315,36 +344,36 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold fs-13 text-success">Per-Person Rate (PKR)</label>
-                        <input type="number" step="0.01" name="price_per_person" class="form-control fw-bold text-success" placeholder="0.00"
+                        <input type="number" step="0.01" name="price_per_person" id="price_per_person" class="form-control fw-bold text-success rate-input" placeholder="0.00"
                             value="{{ old('price_per_person', $package->price_per_person) }}">
                     </div>
 
                     <!-- Room Rates Matrix -->
                     <div class="col-md-3">
                         <label class="form-label fw-semibold fs-13">Sharing Room Rate (PKR)</label>
-                        <input type="number" step="0.01" name="price_sharing" class="form-control" placeholder="0.00"
+                        <input type="number" step="0.01" name="price_sharing" class="form-control rate-input" placeholder="0.00"
                             value="{{ old('price_sharing', $package->price_sharing) }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold fs-13">Quad Room Rate (PKR)</label>
-                        <input type="number" step="0.01" name="price_quad" class="form-control" placeholder="0.00"
+                        <input type="number" step="0.01" name="price_quad" class="form-control rate-input" placeholder="0.00"
                             value="{{ old('price_quad', $package->price_quad) }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold fs-13">Triple Room Rate (PKR)</label>
-                        <input type="number" step="0.01" name="price_triple" class="form-control" placeholder="0.00"
+                        <input type="number" step="0.01" name="price_triple" class="form-control rate-input" placeholder="0.00"
                             value="{{ old('price_triple', $package->price_triple) }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold fs-13">Double Room Rate (PKR)</label>
-                        <input type="number" step="0.01" name="price_double" class="form-control" placeholder="0.00"
+                        <input type="number" step="0.01" name="price_double" class="form-control rate-input" placeholder="0.00"
                             value="{{ old('price_double', $package->price_double) }}">
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 5. Repeatable Inclusions & Repeatable Amenities Builders -->
+        <!-- 5. Package Inclusions & Package Excludes Builders (Mirrored Brochure Repeaters) -->
         <div class="row g-4 mb-4">
             <!-- Repeatable Inclusions -->
             <div class="col-md-6">
@@ -379,32 +408,38 @@
                 </div>
             </div>
 
-            <!-- Repeatable Hotel Amenities -->
+            <!-- Repeatable Excludes (Mirror of Inclusions) -->
             <div class="col-md-6">
                 <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h5 class="fs-15 fw-bold text-dark m-0 d-flex align-items-center gap-1">
-                            <i class="mdi mdi-wifi text-primary fs-18"></i>
-                            <span>Hotel Amenities</span>
+                            <i class="mdi mdi-close-octagon text-danger fs-18"></i>
+                            <span class="text-danger">Package Excludes</span>
                         </h5>
-                        <button type="button" class="btn btn-sm btn-dark px-3 py-1 rounded" style="background-color: #0d4b43; border-color: #0d4b43;" onclick="addAmenityRow()">
-                            <i class="mdi mdi-plus me-1"></i> Add Amenity
+                        <button type="button" class="btn btn-sm btn-outline-danger px-3 py-1 rounded" onclick="addExclusionRow()">
+                            <i class="mdi mdi-plus me-1"></i> Add Exclusion
                         </button>
                     </div>
                     <div class="card-body p-4">
-                        <p class="fs-12 text-muted mb-3">Add hotel amenities surfaced to guest app (e.g. Swimming Pool, Spa & Sauna, Central Location).</p>
-                        <div id="amenitiesContainer" class="d-flex flex-column gap-2">
-                            @forelse ($hotelAmenitiesList as $amenity)
-                                <div class="input-group input-group-sm amenity-row">
-                                    <span class="input-group-text bg-light text-primary"><i class="mdi mdi-star-circle"></i></span>
-                                    <input type="text" name="hotel_amenities[]" class="form-control" value="{{ $amenity }}">
-                                    <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                        <p class="fs-12 text-muted mb-3">Add items strictly excluded per promotional brochure (e.g. International air tickets unless confirmed, personal expenses, meals not mentioned).</p>
+                        <div id="excludesContainer" class="d-flex flex-column gap-2">
+                            @forelse ($excludesList as $eIdx => $exc)
+                                <div class="border rounded p-2 bg-light-subtle exclusion-block">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="text-danger fs-14"><i class="mdi mdi-minus-circle"></i></span>
+                                        <input type="text" name="package_excludes[{{ $eIdx }}][title]" class="form-control form-control-sm fw-semibold" placeholder="Exclusion Title" value="{{ is_array($exc) ? ($exc['title'] ?? '') : $exc }}">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeBlock(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                                    </div>
+                                    <input type="text" name="package_excludes[{{ $eIdx }}][description]" class="form-control form-control-sm text-muted" placeholder="Optional details" value="{{ is_array($exc) ? ($exc['description'] ?? '') : '' }}">
                                 </div>
                             @empty
-                                <div class="input-group input-group-sm amenity-row">
-                                    <span class="input-group-text bg-light text-primary"><i class="mdi mdi-star-circle"></i></span>
-                                    <input type="text" name="hotel_amenities[]" class="form-control" placeholder="e.g. High-Speed Wi-Fi & 24/7 Room Service">
-                                    <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                                <div class="border rounded p-2 bg-light-subtle exclusion-block">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="text-danger fs-14"><i class="mdi mdi-minus-circle"></i></span>
+                                        <input type="text" name="package_excludes[0][title]" class="form-control form-control-sm fw-semibold" placeholder="Exclusion Title (e.g. International Air Tickets)" value="International Air Tickets">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeBlock(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                                    </div>
+                                    <input type="text" name="package_excludes[0][description]" class="form-control form-control-sm text-muted" placeholder="Optional details" value="Unless confirmed / issued separately">
                                 </div>
                             @endforelse
                         </div>
@@ -413,7 +448,127 @@
             </div>
         </div>
 
-        <!-- 6. Rich Content Sections -->
+        <!-- 6. Day-by-Day Suggested Itinerary Repeater -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="fs-15 fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                    <i class="mdi mdi-map-marker-path text-primary fs-18"></i>
+                    <span>Day-by-Day Suggested Itinerary</span>
+                    <span class="badge bg-primary-subtle text-primary fs-11 fw-normal">Brochure Structured View</span>
+                </h5>
+                <button type="button" class="btn btn-sm btn-primary px-3 py-1 rounded" style="background-color: #0d4b43; border-color: #0d4b43;" onclick="addItineraryDayRow()">
+                    <i class="mdi mdi-plus me-1"></i> Add Itinerary Day
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <p class="fs-12 text-muted mb-3">Structured day-by-day tour itinerary rendered as clean cards in the Flutter mobile application instead of an unformatted text block.</p>
+                <div id="itineraryDaysContainer" class="d-flex flex-column gap-3">
+                    @forelse ($itineraryDays as $dIdx => $itin)
+                        @php
+                            $dNum = $itin['day_number'] ?? ($dIdx + 1);
+                            $highlightsStr = is_array($itin['highlights'] ?? null) ? implode(', ', $itin['highlights']) : ($itin['highlights'] ?? '');
+                        @endphp
+                        <div class="card border border-light-subtle shadow-none itinerary-day-card" data-day="{{ $dNum }}" style="background-color: #fbfbfb; border-radius: 10px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fs-13 fw-bold text-dark m-0 d-flex align-items-center gap-1">
+                                        <span class="badge bg-success me-1 day-badge">Day {{ $dNum }}</span>
+                                        <span class="day-title-text">{{ $itin['title'] ?? 'Tour Day' }}</span>
+                                    </h6>
+                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeItineraryDay(this)" title="Remove Day">
+                                        <i class="mdi mdi-trash-can-outline"></i>
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Day #</label>
+                                        <input type="number" name="itinerary_days[{{ $dIdx }}][day_number]" class="form-control form-control-sm itin-day-number" value="{{ $dNum }}" min="1">
+                                    </div>
+                                    <div class="col-md-10">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Day Title / Theme</label>
+                                        <input type="text" name="itinerary_days[{{ $dIdx }}][title]" class="form-control form-control-sm itin-title" placeholder="e.g. City Tour & Highlights" value="{{ $itin['title'] ?? '' }}" oninput="updateDayTitle(this)">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Description / Activities Brief</label>
+                                        <textarea name="itinerary_days[{{ $dIdx }}][description]" rows="2" class="form-control form-control-sm" placeholder="Detailed day activities...">{{ $itin['description'] ?? '' }}</textarea>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Highlights / Badges (Comma-separated or sub-points)</label>
+                                        <input type="text" name="itinerary_days[{{ $dIdx }}][highlights]" class="form-control form-control-sm" placeholder="e.g. City Tour, Cable Car, Lunch Included" value="{{ $highlightsStr }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <!-- Default Day 1 Card if none saved -->
+                        <div class="card border border-light-subtle shadow-none itinerary-day-card" data-day="1" style="background-color: #fbfbfb; border-radius: 10px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fs-13 fw-bold text-dark m-0 d-flex align-items-center gap-1">
+                                        <span class="badge bg-success me-1 day-badge">Day 1</span>
+                                        <span class="day-title-text">Arrival & Check-in</span>
+                                    </h6>
+                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeItineraryDay(this)" title="Remove Day">
+                                        <i class="mdi mdi-trash-can-outline"></i>
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Day #</label>
+                                        <input type="number" name="itinerary_days[0][day_number]" class="form-control form-control-sm itin-day-number" value="1" min="1">
+                                    </div>
+                                    <div class="col-md-10">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Day Title / Theme</label>
+                                        <input type="text" name="itinerary_days[0][title]" class="form-control form-control-sm itin-title" placeholder="e.g. Arrival & Hotel Check-in" value="Arrival & Hotel Check-in" oninput="updateDayTitle(this)">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Description / Activities Brief</label>
+                                        <textarea name="itinerary_days[0][description]" rows="2" class="form-control form-control-sm" placeholder="Detailed day activities...">Airport pickup and transfer to hotel. Rest of the day at leisure.</textarea>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fs-11 fw-semibold mb-1">Highlights / Badges (Comma-separated)</label>
+                                        <input type="text" name="itinerary_days[0][highlights]" class="form-control form-control-sm" placeholder="e.g. Airport Transfer, Check-in" value="Airport Transfer, Check-in, Free Evening">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Repeatable Hotel Amenities -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fs-15 fw-bold text-dark m-0 d-flex align-items-center gap-1">
+                    <i class="mdi mdi-wifi text-primary fs-18"></i>
+                    <span>Hotel Amenities</span>
+                </h5>
+                <button type="button" class="btn btn-sm btn-dark px-3 py-1 rounded" style="background-color: #0d4b43; border-color: #0d4b43;" onclick="addAmenityRow()">
+                    <i class="mdi mdi-plus me-1"></i> Add Amenity
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <p class="fs-12 text-muted mb-3">Add hotel amenities surfaced to guest app (e.g. Swimming Pool, Spa & Sauna, Central Location).</p>
+                <div id="amenitiesContainer" class="d-flex flex-column gap-2">
+                    @forelse ($hotelAmenitiesList as $amenity)
+                        <div class="input-group input-group-sm amenity-row">
+                            <span class="input-group-text bg-light text-primary"><i class="mdi mdi-star-circle"></i></span>
+                            <input type="text" name="hotel_amenities[]" class="form-control" value="{{ $amenity }}">
+                            <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                        </div>
+                    @empty
+                        <div class="input-group input-group-sm amenity-row">
+                            <span class="input-group-text bg-light text-primary"><i class="mdi mdi-star-circle"></i></span>
+                            <input type="text" name="hotel_amenities[]" class="form-control" placeholder="e.g. High-Speed Wi-Fi & 24/7 Room Service">
+                            <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Rich Content Sections -->
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
             <div class="card-header bg-white border-bottom py-3">
                 <h5 class="fs-15 fw-bold text-dark m-0 d-flex align-items-center">
@@ -610,7 +765,54 @@
                     addDestinationRow(item.country || '', item);
                 });
             }
+
+            // Price on Request Switch Handler
+            const priceReqSwitch = document.getElementById('priceOnRequestSwitch');
+            const priceNotice = document.getElementById('priceOnRequestNotice');
+            const rateInputs = document.querySelectorAll('.rate-input');
+
+            function togglePriceOnRequest(enabled) {
+                if (enabled) {
+                    priceNotice.classList.remove('d-none');
+                    rateInputs.forEach(input => {
+                        input.placeholder = 'Optional (On Request)';
+                        input.classList.add('bg-light');
+                    });
+                } else {
+                    priceNotice.classList.add('d-none');
+                    rateInputs.forEach(input => {
+                        input.placeholder = '0.00';
+                        input.classList.remove('bg-light');
+                    });
+                }
+            }
+
+            if (priceReqSwitch) {
+                togglePriceOnRequest(priceReqSwitch.checked);
+                priceReqSwitch.addEventListener('change', function() {
+                    togglePriceOnRequest(this.checked);
+                });
+            }
+
+            // Duration Days Calculation
+            const nightsInput = document.getElementById('stay_nights_input');
+            if (nightsInput) {
+                updateDaysFromNights(nightsInput.value);
+            }
         });
+
+        function updateDaysFromNights(nightsVal) {
+            const daysInput = document.getElementById('stay_days_input');
+            const durationHidden = document.getElementById('duration_nights_hidden');
+            const val = parseInt(nightsVal, 10);
+            if (!isNaN(val) && val > 0) {
+                if (daysInput) daysInput.value = val + 1;
+                if (durationHidden) durationHidden.value = val;
+            } else {
+                if (daysInput) daysInput.value = '';
+                if (durationHidden) durationHidden.value = '';
+            }
+        }
 
         function addInclusionRow() {
             const container = document.getElementById('inclusionsContainer');
@@ -622,6 +824,100 @@
                 <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)"><i class="mdi mdi-trash-can-outline"></i></button>
             `;
             container.appendChild(div);
+        }
+
+        let excludeIndex = {{ count($excludesList) + 10 }};
+        function addExclusionRow() {
+            const container = document.getElementById('excludesContainer');
+            const idx = excludeIndex++;
+            const div = document.createElement('div');
+            div.className = 'border rounded p-2 bg-light-subtle exclusion-block';
+            div.innerHTML = `
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="text-danger fs-14"><i class="mdi mdi-minus-circle"></i></span>
+                    <input type="text" name="package_excludes[${idx}][title]" class="form-control form-control-sm fw-semibold" placeholder="Exclusion Title (e.g. Visa Fee / City Tax)">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeBlock(this)"><i class="mdi mdi-trash-can-outline"></i></button>
+                </div>
+                <input type="text" name="package_excludes[${idx}][description]" class="form-control form-control-sm text-muted" placeholder="Optional details (e.g. Payable directly at hotel reception)">
+            `;
+            container.appendChild(div);
+        }
+
+        let itineraryIndex = {{ count($itineraryDays) + 10 }};
+        function addItineraryDayRow() {
+            const container = document.getElementById('itineraryDaysContainer');
+            const idx = itineraryIndex++;
+            const dayNum = container.querySelectorAll('.itinerary-day-card').length + 1;
+            const div = document.createElement('div');
+            div.className = 'card border border-light-subtle shadow-none itinerary-day-card';
+            div.style.backgroundColor = '#fbfbfb';
+            div.style.borderRadius = '10px';
+            div.dataset.day = dayNum;
+            div.innerHTML = `
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fs-13 fw-bold text-dark m-0 d-flex align-items-center gap-1">
+                            <span class="badge bg-success me-1 day-badge">Day ${dayNum}</span>
+                            <span class="day-title-text">New Tour Day</span>
+                        </h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="removeItineraryDay(this)" title="Remove Day">
+                            <i class="mdi mdi-trash-can-outline"></i>
+                        </button>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label fs-11 fw-semibold mb-1">Day #</label>
+                            <input type="number" name="itinerary_days[${idx}][day_number]" class="form-control form-control-sm itin-day-number" value="${dayNum}" min="1">
+                        </div>
+                        <div class="col-md-10">
+                            <label class="form-label fs-11 fw-semibold mb-1">Day Title / Theme</label>
+                            <input type="text" name="itinerary_days[${idx}][title]" class="form-control form-control-sm itin-title" placeholder="e.g. Full Day Excursion & Sightseeing Tour" oninput="updateDayTitle(this)">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fs-11 fw-semibold mb-1">Description / Activities Brief</label>
+                            <textarea name="itinerary_days[${idx}][description]" rows="2" class="form-control form-control-sm" placeholder="Detailed day activities, pickup timings, meal schedules..."></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fs-11 fw-semibold mb-1">Highlights / Badges (Comma-separated or sub-points)</label>
+                            <input type="text" name="itinerary_days[${idx}][highlights]" class="form-control form-control-sm" placeholder="e.g. City Tour, Cable Car, Lunch Included">
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateDayTitle(input) {
+            const card = input.closest('.itinerary-day-card');
+            const titleSpan = card.querySelector('.day-title-text');
+            if (titleSpan) {
+                titleSpan.textContent = input.value.trim() || 'New Tour Day';
+            }
+        }
+
+        function removeItineraryDay(btn) {
+            const card = btn.closest('.itinerary-day-card');
+            if (card) {
+                card.remove();
+                reindexItineraryDays();
+            }
+        }
+
+        function reindexItineraryDays() {
+            const container = document.getElementById('itineraryDaysContainer');
+            const cards = container.querySelectorAll('.itinerary-day-card');
+            cards.forEach((card, index) => {
+                const dayNum = index + 1;
+                const badge = card.querySelector('.day-badge');
+                const numInput = card.querySelector('.itin-day-number');
+                if (badge) badge.textContent = `Day ${dayNum}`;
+                if (numInput) numInput.value = dayNum;
+            });
+        }
+
+        function removeBlock(btn) {
+            const block = btn.closest('.exclusion-block');
+            if (block) block.remove();
         }
 
         function addAmenityRow() {

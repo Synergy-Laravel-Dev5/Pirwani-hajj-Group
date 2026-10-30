@@ -67,9 +67,9 @@
 
     <!-- Books Table -->
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-        <div class="card-body p-0">
+        <div class="card-body">
             <div class="table-responsive">
-                <table class="table  align-middle mb-0">
+                <table id="books-datatable" class="table table-bordered dt-responsive nowrap align-middle mb-0 w-100">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 70px;">Thumbnail</th>
@@ -173,16 +173,12 @@
                                 </div>
                             </div>
                         @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">No Hajj books uploaded yet.</td>
-                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
             @if ($books->hasPages())
                 <div class="p-3 border-top">
-                    {{-- {{ $books->links('pagination::bootstrap-5') }} --}}
                     {{ $books->appends(request()->query())->links('pagination::bootstrap-5') }}
                 </div>
             @endif
@@ -229,3 +225,20 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('#books-datatable').DataTable({
+            paging: false,
+            info: false,
+            searching: false,
+            responsive: true,
+            order: [],
+            columnDefs: [
+                { orderable: false, targets: [0, 4, 6] }
+            ]
+        });
+    });
+</script>
+@endpush
