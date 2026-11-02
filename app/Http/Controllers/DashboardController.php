@@ -13,18 +13,34 @@ class DashboardController extends Controller
 
     public function welcome()
     {
-        $hajjCount   = Booking::where('package_type', 'hajj')->count();
-        $umrahCount  = Booking::where('package_type', 'umrah')->count();
+        $totalBookings      = Booking::count();
+        $totalClients       = \App\Models\Client::count();
+        $hotelSalesCount    = \App\Models\HotelSale::count();
+        $roomInventoryCount = \App\Models\RoomInventory::count();
 
-        $hajjRevenue  = Booking::where('package_type', 'hajj')->sum('total_amount');
-        $umrahRevenue = Booking::where('package_type', 'umrah')->sum('total_amount');
+        return view('welcome', compact(
+            'totalBookings',
+            'totalClients',
+            'hotelSalesCount',
+            'roomInventoryCount'
+        ));
+    }
 
-        return view('welcome', compact('hajjCount', 'umrahCount', 'hajjRevenue', 'umrahRevenue'));
+    public function switchModule(string $module)
+    {
+        if ($module === 'hotel_sale') {
+            session(['active_module' => 'hotel_sale']);
+            return redirect()->route('hotel-sales.index');
+        }
+
+        session(['active_module' => 'main']);
+        return redirect()->route('dashboard');
     }
 
 
     public function index(Request $request)
     {
+        session(['active_module' => 'main']);
         $package = 'hajj';
         $year    = (int) $request->get('year', session('dashboard_year', Carbon::now()->year));
 

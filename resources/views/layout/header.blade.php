@@ -22,6 +22,40 @@
                 </ul>
 
                 <ul class="list-unstyled topnav-menu mb-0 d-flex align-items-center gap-2">
+                    @if(session('active_module') === 'hotel_sale')
+                        <li class="d-none d-sm-block">
+                            <span class="badge"
+                                style="background: rgba(201, 168, 76, 0.18); color: #F3DC9B; border: 1px solid rgba(201, 168, 76, 0.45); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px;">
+                                🏨 Hotel Sale
+                            </span>
+                        </li>
+                        <li class="d-none d-sm-block">
+                            <a href="{{ route('module.switch', 'main') }}"
+                                class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1"
+                                style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
+                                <i class="mdi mdi-view-dashboard-outline"></i>
+                                <span>Main Dashboard</span>
+                            </a>
+                        </li>
+                    @else
+                        <li class="d-none d-sm-block">
+                            <a href="{{ route('module.switch', 'hotel_sale') }}"
+                                class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1"
+                                style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
+                                <i class="mdi mdi-domain"></i>
+                                <span>Hotel Sale</span>
+                            </a>
+                        </li>
+                    @endif
+                    <li class="d-none d-md-block">
+                        <a href="{{ route('welcome') }}"
+                            class="btn btn-sm text-white d-inline-flex align-items-center gap-1 me-2"
+                            title="Switch Portal / Module"
+                            style="border-radius: 20px; font-weight: 500; padding: 5px 12px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.06);">
+                            <i class="mdi mdi-apps"></i>
+                            <span>Portal</span>
+                        </a>
+                    </li>
                     <li class="d-none d-lg-block">
                         <div class="position-relative">
                             <a href="{{ route('mobile-ops.dashboard') }}"
@@ -60,6 +94,12 @@
 
                             <div class="dropdown-divider my-1"></div>
 
+                            <a href="{{ route('welcome') }}"
+                                class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
+                                <i class="mdi mdi-apps fs-16 text-warning"></i>
+                                <span>Switch Portal / Module</span>
+                            </a>
+
                             <a href="{{ route('change.password') }}"
                                 class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
                                 <i class="mdi mdi-lock-reset fs-16 text-primary"></i>
@@ -86,7 +126,7 @@
         <div class="h-100" data-simplebar>
             <div id="sidebar-menu">
                 <div class="logo-box text-center">
-                    <a class="logo logo-dark" href="{{ route('dashboard') }}">
+                    <a class="logo logo-dark" href="{{ session('active_module') === 'hotel_sale' ? route('hotel-sales.index') : route('dashboard') }}">
                         <span class="logo-lg">
                             <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}"
                                 alt="Pirwani Hajj Group" class="sidebar-logo-full"
@@ -100,7 +140,26 @@
                     </a>
                 </div>
                 <ul id="side-menu">
-                    <li class="menu-title">Menu</li>
+                    @if(session('active_module') === 'hotel_sale')
+                        <li class="menu-title" style="color: #C9A84C; font-weight: 700; letter-spacing: 0.8px;">
+                            HOTEL SALE MODULE
+                        </li>
+
+                        <li class="{{ request()->routeIs('room-inventory.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('room-inventory.index') }}">
+                                <i data-feather="home"></i>
+                                <span>Rooming List & Stock</span>
+                            </a>
+                        </li>
+
+                        <li class="{{ request()->routeIs('hotel-sales.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('hotel-sales.index') }}">
+                                <i data-feather="file-text"></i>
+                                <span>Hotel Sale Invoices</span>
+                            </a>
+                        </li>
+                    @else
+                        <li class="menu-title">Menu</li>
                     <li>
                         <a href="{{ route('dashboard') }}">
                             <i data-feather="home"></i>
@@ -391,6 +450,7 @@
                             <span>Company Filter</span>
                         </a>
                     </li>
+                    @endif
                 </ul>
             </div>
             <div class="clearfix"></div>
