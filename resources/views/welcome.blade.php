@@ -525,7 +525,8 @@
             <div class="headline">
                 <div class="eyebrow">❖ Pirwani Management Portal ❖</div>
                 <h1 class="h1">Welcome, <em>{{ Auth::user()->name ?? 'User' }}</em></h1>
-                <p class="tagline">Select your workspace module below to access management tools, reports and operational records.</p>
+                <p class="tagline">Select your workspace module below to access management tools, reports and
+                    operational records.</p>
             </div>
 
             {{-- 2 Cards Row --}}
