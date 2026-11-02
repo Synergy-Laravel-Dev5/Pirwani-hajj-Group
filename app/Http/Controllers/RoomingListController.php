@@ -54,8 +54,22 @@ class RoomingListController extends Controller
     {
         $data = $this->getFilteredRoomingData($request);
 
+        $visibleCols = null;
+        if ($request->has('columns')) {
+            $raw = trim($request->get('columns'));
+            if ($raw === 'none' || $raw === '') {
+                $visibleCols = [];
+            } else {
+                $visibleCols = array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
+            }
+        }
+        $data['visibleColumns'] = $visibleCols;
+
+        $paperOrientation = ($visibleCols && count($visibleCols) > 7) ? 'landscape' : 'portrait';
+        $data['paperOrientation'] = $paperOrientation;
+
         $pdf = Pdf::loadView('reports.rooming_list_pdf', $data);
-        $pdf->setPaper('A4', 'portrait');
+        $pdf->setPaper('A4', $paperOrientation);
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
@@ -94,9 +108,15 @@ class RoomingListController extends Controller
             $filterSummary .= ' | Room Type: ' . strtoupper($data['roomTypeFilter']);
         }
 
+        $roomTypeSummary = $data['roomTypeSummary'] ?? [];
+        $roomTypeSummaryGrand = $data['roomTypeSummaryGrand'] ?? [];
+        $totalAssignedRoomsCount = $data['totalAssignedRoomsCount'] ?? 0;
+        $unassignedPilgrimsCount = $data['unassignedPilgrimsCount'] ?? 0;
+        $totalBedsOccupied = $data['totalBedsOccupied'] ?? 0;
+
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
             $xlsFileName = str_replace('.xlsx', '.xls', $fileName);
-            return response()->streamDownload(function () use ($groupedRooms, $filterSummary) {
+            return response()->streamDownload(function () use ($groupedRooms, $filterSummary, $roomTypeSummary, $roomTypeSummaryGrand, $totalAssignedRoomsCount, $unassignedPilgrimsCount, $totalBedsOccupied) {
                 echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
                 echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
                 echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Rooming Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
@@ -114,6 +134,41 @@ class RoomingListController extends Controller
                 echo '<table>';
                 echo '<tr><th colspan="23" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
                 echo '<tr><td colspan="23" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+                echo '</table>';
+
+                // Room Type Breakdown Summary Table
+                if (!empty($roomTypeSummary)) {
+                    echo '<br><table style="width: auto; border: 1.5px solid #000; margin-bottom: 15px;">';
+                    echo '<tr><th colspan="5" style="background-color: #0F172A; color: #FFFFFF; font-size: 12px; text-align: left; padding: 6px;">ROOM TYPE BREAKDOWN SUMMARY</th></tr>';
+                    echo '<tr style="background-color: #1E293B; color: #FFFFFF;">
+                        <th style="padding: 5px; text-align: left;">ROOM CATEGORY</th>
+                        <th style="padding: 5px; text-align: center;">ALLOCATED ROOMS</th>
+                        <th style="padding: 5px; text-align: center;">ALLOCATED PAX</th>
+                        <th style="padding: 5px; text-align: center;">PENDING PAX</th>
+                        <th style="padding: 5px; text-align: center; background-color: #1E3A8A;">TOTAL PILGRIMS (PAX)</th>
+                    </tr>';
+                    foreach ($roomTypeSummary as $key => $sum) {
+                        if (($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0) {
+                            echo '<tr>';
+                            echo '<td style="font-weight: bold; padding: 4px 6px;">' . htmlspecialchars($sum['name'] ?? $key) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold; color: ' . (($sum['assigned_rooms'] ?? 0) > 0 ? '#059669' : '#64748B') . ';">' . ($sum['assigned_rooms'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold;">' . ($sum['assigned_pax'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; color: ' . (($sum['pending_pax'] ?? 0) > 0 ? '#D97706' : '#64748B') . ';">' . ($sum['pending_pax'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold; background-color: #EFF6FF;">' . ($sum['total_pax'] ?? 0) . '</td>';
+                            echo '</tr>';
+                        }
+                    }
+                    echo '<tr style="background-color: #E2E8F0; font-weight: bold; border-top: 2px solid #000;">';
+                    echo '<td style="padding: 5px 6px;">GRAND TOTAL</td>';
+                    echo '<td style="text-align: center; color: #059669;">' . number_format($totalAssignedRoomsCount) . '</td>';
+                    echo '<td style="text-align: center;">' . number_format($roomTypeSummaryGrand['assigned_pax'] ?? 0) . '</td>';
+                    echo '<td style="text-align: center; color: #D97706;">' . number_format($unassignedPilgrimsCount) . '</td>';
+                    echo '<td style="text-align: center; background-color: #DBEAFE; color: #1E3A8A;">' . number_format($totalBedsOccupied) . '</td>';
+                    echo '</tr>';
+                    echo '</table><br>';
+                }
+
+                echo '<table>';
                 echo '<tr>
                     <th>SR</th>
                     <th>PICTURE</th>
@@ -144,9 +199,9 @@ class RoomingListController extends Controller
 
                 $sr = 1;
                 foreach ($groupedRooms as $room) {
-                    $rNum = trim($room['room_number']);
-                    $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum));
-                    $roomDisplayNo = $isUnassigned ? 'UNASSIGNED' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
+                    $rNum = trim($room['room_number'] ?? '');
+                    $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum) || empty($room['is_assigned']));
+                    $roomDisplayNo = $isUnassigned ? '—' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
                     $locLabel = strtoupper($room['location'] ?? 'MAKKAH');
 
                     if (empty($room['occupants'])) {
@@ -164,7 +219,8 @@ class RoomingListController extends Controller
                         echo '<td class="center">—</td>';
                         echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
                         echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($room['room_type']) . '</td>';
+                        $roomTypeExp = (!empty($room['is_assigned']) && !empty($room['room_type'])) ? $room['room_type'] : '—';
+                        echo '<td class="center">' . htmlspecialchars($roomTypeExp) . '</td>';
                         echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
                         echo '<td class="center">' . $room['total_capacity'] . '</td>';
                         echo '<td class="center">0</td>';
@@ -211,7 +267,8 @@ class RoomingListController extends Controller
                             echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($occGender) . '</td>';
                             echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
                             echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($room['room_type']) . '</td>';
+                            $roomTypeExp = (!empty($room['is_assigned']) && !empty($room['room_type'])) ? $room['room_type'] : '—';
+                        echo '<td class="center">' . htmlspecialchars($roomTypeExp) . '</td>';
                             echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
                             echo '<td class="center">' . $room['total_capacity'] . '</td>';
                             echo '<td class="center">' . $room['occupied_beds'] . '</td>';
@@ -253,6 +310,75 @@ class RoomingListController extends Controller
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(2)->setRowHeight(20);
 
+        // Room Type Breakdown Summary in Spreadsheet
+        $curRow = 4;
+        $sheet->mergeCells("A{$curRow}:E{$curRow}");
+        $sheet->setCellValue("A{$curRow}", "ROOM TYPE BREAKDOWN SUMMARY");
+        $sheet->getStyle("A{$curRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '0F172A']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($curRow)->setRowHeight(22);
+        $curRow++;
+
+        $sumHeaders = ['A' => 'ROOM CATEGORY', 'B' => 'ALLOCATED ROOMS', 'C' => 'ALLOCATED PAX', 'D' => 'PENDING PAX', 'E' => 'TOTAL PILGRIMS (PAX)'];
+        foreach ($sumHeaders as $scol => $stitle) {
+            $sheet->setCellValue("{$scol}{$curRow}", $stitle);
+        }
+        $sheet->getStyle("A{$curRow}:E{$curRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9.5],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+        ]);
+        $sheet->getStyle("A{$curRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle("E{$curRow}")->getFill()->getStartColor()->setRGB('1E3A8A');
+        $sheet->getRowDimension($curRow)->setRowHeight(20);
+        $curRow++;
+
+        foreach ($roomTypeSummary as $key => $sum) {
+            if (($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0) {
+                $sheet->setCellValue("A{$curRow}", $sum['name'] ?? $key);
+                $sheet->setCellValue("B{$curRow}", $sum['assigned_rooms'] ?? 0);
+                $sheet->setCellValue("C{$curRow}", $sum['assigned_pax'] ?? 0);
+                $sheet->setCellValue("D{$curRow}", $sum['pending_pax'] ?? 0);
+                $sheet->setCellValue("E{$curRow}", $sum['total_pax'] ?? 0);
+
+                $sheet->getStyle("A{$curRow}:E{$curRow}")->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'CBD5E1']]],
+                    'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                ]);
+                $sheet->getStyle("A{$curRow}")->getFont()->setBold(true);
+                $sheet->getStyle("B{$curRow}:E{$curRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("E{$curRow}")->getFont()->setBold(true);
+                $sheet->getStyle("E{$curRow}")->getFill()->applyFromArray([
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'EFF6FF'],
+                ]);
+                $sheet->getRowDimension($curRow)->setRowHeight(18);
+                $curRow++;
+            }
+        }
+
+        // Grand Total Summary Row
+        $sheet->setCellValue("A{$curRow}", "GRAND TOTAL");
+        $sheet->setCellValue("B{$curRow}", $totalAssignedRoomsCount);
+        $sheet->setCellValue("C{$curRow}", $roomTypeSummaryGrand['assigned_pax'] ?? 0);
+        $sheet->setCellValue("D{$curRow}", $unassignedPilgrimsCount);
+        $sheet->setCellValue("E{$curRow}", $totalBedsOccupied);
+
+        $sheet->getStyle("A{$curRow}:E{$curRow}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 10],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
+            'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getStyle("B{$curRow}:E{$curRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("E{$curRow}")->getFill()->getStartColor()->setRGB('DBEAFE');
+        $sheet->getRowDimension($curRow)->setRowHeight(20);
+        $curRow += 2; // Leave space before main manifest table
+
         // Column Headers
         $headers = [
             'A' => ['title' => 'SR', 'width' => 8],
@@ -282,7 +408,7 @@ class RoomingListController extends Controller
             'Y' => ['title' => 'ROOM NOTES', 'width' => 22],
         ];
 
-        $headerRow = 4;
+        $headerRow = $curRow;
         $sheet->getRowDimension($headerRow)->setRowHeight(28);
 
         foreach ($headers as $col => $colInfo) {
@@ -314,7 +440,7 @@ class RoomingListController extends Controller
             ],
         ]);
 
-        $currentRow = 5;
+        $currentRow = $headerRow + 1;
         $sr = 1;
 
         $cacheDir = storage_path('app/temp_photos');
@@ -323,9 +449,9 @@ class RoomingListController extends Controller
         }
 
         foreach ($groupedRooms as $room) {
-            $rNum = trim($room['room_number']);
-            $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum));
-            $roomDisplayNo = $isUnassigned ? 'UNASSIGNED' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
+            $rNum = trim($room['room_number'] ?? '');
+            $isUnassigned = ($rNum === 'PENDING' || $rNum === 'UNASSIGNED' || empty($rNum) || empty($room['is_assigned']));
+            $roomDisplayNo = $isUnassigned ? '—' : (str_starts_with(strtoupper($rNum), 'R') ? strtoupper($rNum) : ('R' . $rNum));
             $locLabel = strtoupper($room['location'] ?? 'MAKKAH');
 
             if (empty($room['occupants'])) {
@@ -344,7 +470,7 @@ class RoomingListController extends Controller
                 $sheet->setCellValue('K' . $currentRow, '—');
                 $sheet->setCellValue('L' . $currentRow, $locLabel);
                 $sheet->setCellValue('M' . $currentRow, $room['hotel_name']);
-                $sheet->setCellValue('N' . $currentRow, $room['room_type']);
+                $sheet->setCellValue('N' . $currentRow, (!empty($room['is_assigned']) && !empty($room['room_type'])) ? $room['room_type'] : '—');
                 $sheet->setCellValue('O' . $currentRow, $roomDisplayNo);
                 $sheet->setCellValue('P' . $currentRow, $room['total_capacity']);
                 $sheet->setCellValue('Q' . $currentRow, 0);
@@ -423,7 +549,7 @@ class RoomingListController extends Controller
 
                     $sheet->setCellValue('L' . $currentRow, $locLabel);
                     $sheet->setCellValue('M' . $currentRow, $room['hotel_name']);
-                    $sheet->setCellValue('N' . $currentRow, $room['room_type']);
+                    $sheet->setCellValue('N' . $currentRow, (!empty($room['is_assigned']) && !empty($room['room_type'])) ? $room['room_type'] : '—');
                     $sheet->setCellValue('O' . $currentRow, $roomDisplayNo);
                     $sheet->setCellValue('P' . $currentRow, $room['total_capacity']);
                     $sheet->setCellValue('Q' . $currentRow, $room['occupied_beds']);
@@ -553,8 +679,11 @@ class RoomingListController extends Controller
             // 3. Hajj ID format: e.g. PW27001, PW-27001, 27001, or 001
             if (preg_match('/^(?:PW)?\s*[-_]?\s*(?:27)?\s*[-_]?\s*(\d{1,5})$/i', $cleanToken, $m)) {
                 $num = (int)$m[1];
-                $hId = 'PW27' . str_pad($num, 3, '0', STR_PAD_LEFT);
-                $candidateHajjIds[] = $hId;
+                $candidateHajjIds[] = 'PW27' . str_pad($num, 3, '0', STR_PAD_LEFT);
+                $candidateHajjIds[] = 'PW' . $num;
+                $candidateHajjIds[] = 'PW27' . $num;
+                $candidateHajjIds[] = '27' . str_pad($num, 3, '0', STR_PAD_LEFT);
+                $candidateHajjIds[] = (string)$num;
                 $candidateHajjIds[] = $upperNoPunct;
                 $candidateHajjIds[] = $cleanToken;
                 // If small number > 100, could also be a direct person ID
@@ -596,7 +725,14 @@ class RoomingListController extends Controller
         ) {
             $hasWhere = false;
             if (!empty($candidateHajjIds)) {
-                $q->whereIn('hajj_id', $candidateHajjIds);
+                $cleanIds = array_values(array_unique(array_map(function($v) {
+                    return strtolower(preg_replace('/[^a-z0-9]/i', '', $v));
+                }, $candidateHajjIds)));
+
+                $q->where(function($hq) use ($candidateHajjIds, $cleanIds) {
+                    $hq->whereIn('hajj_id', $candidateHajjIds)
+                       ->orWhereIn(DB::raw("LOWER(REPLACE(REPLACE(REPLACE(COALESCE(hajj_id, ''), ' ', ''), '-', ''), '_', ''))"), $cleanIds);
+                });
                 $hasWhere = true;
             }
             if (!empty($candidateHbNumbers)) {
@@ -620,6 +756,28 @@ class RoomingListController extends Controller
                 $hasWhere = true;
             }
         })->pluck('id')->toArray();
+
+        // Fallback: If no match found through active booking scope, check BookingPerson table directly
+        if (empty($matchedPersons) && (!empty($candidateHajjIds) || !empty($candidatePersonIds) || !empty($candidatePassports))) {
+            $matchedPersons = BookingPerson::where(function ($q) use ($candidateHajjIds, $candidatePersonIds, $candidatePassports) {
+                if (!empty($candidateHajjIds)) {
+                    $cleanIds = array_values(array_unique(array_map(function($v) {
+                        return strtolower(preg_replace('/[^a-z0-9]/i', '', $v));
+                    }, $candidateHajjIds)));
+
+                    $q->where(function($hq) use ($candidateHajjIds, $cleanIds) {
+                        $hq->whereIn('hajj_id', $candidateHajjIds)
+                           ->orWhereIn(DB::raw("LOWER(REPLACE(REPLACE(REPLACE(COALESCE(hajj_id, ''), ' ', ''), '-', ''), '_', ''))"), $cleanIds);
+                    });
+                }
+                if (!empty($candidatePersonIds)) {
+                    $q->orWhereIn('id', $candidatePersonIds);
+                }
+                if (!empty($candidatePassports)) {
+                    $q->orWhereIn('passport_number', $candidatePassports);
+                }
+            })->pluck('id')->toArray();
+        }
 
         return array_values(array_unique(array_merge($personIds, $matchedPersons)));
     }
@@ -708,7 +866,7 @@ class RoomingListController extends Controller
 
         $hotelName  = trim((string)$request->hotel_name);
         $rawRoomNo  = trim((string)$request->room_number);
-        $roomNumber = (!empty($rawRoomNo) && !in_array(strtoupper($rawRoomNo), ['PENDING', 'UNASSIGNED', '—', '-'])) ? $rawRoomNo : null;
+        $roomNumber = (!empty($rawRoomNo) && !in_array(strtoupper($rawRoomNo), ['PENDING', 'UNASSIGNED', '—', '-'])) ? $rawRoomNo : 'PENDING';
         $roomType   = $request->room_type ? ucfirst(trim($request->room_type)) : 'Quad';
         $location   = $request->location ? strtolower(trim($request->location)) : 'makkah';
         $gender     = $request->gender ? trim($request->gender) : 'Any';
@@ -736,12 +894,20 @@ class RoomingListController extends Controller
             if ($matchedBHotel && !empty($matchedBHotel->hotel_name)) {
                 $hotelName = $matchedBHotel->hotel_name;
             } else {
-                $firstRegHotel = Hotel::orderBy('name')->first();
-                $hotelName = $firstRegHotel ? $firstRegHotel->name : 'Anjum Makkah';
+                $firstRegHotel = Hotel::where(function($q) use ($location) {
+                    $q->whereRaw('LOWER(TRIM(place)) = ?', [$location])
+                      ->orWhereRaw('LOWER(TRIM(city)) = ?', [$location]);
+                })->first();
+                if (!$firstRegHotel) {
+                    $firstRegHotel = Hotel::orderBy('name')->first();
+                }
+                $hotelName = $firstRegHotel ? $firstRegHotel->name : ($location === 'madinah' ? 'NUSK AL HIJRA' : 'Anjum Makkah');
             }
         }
 
         $updatedCount = 0;
+        $batchRoomGroupId = 'rg_' . ($roomNumber === 'PENDING' ? 'pnd_' : 'rm_') . time() . '_' . mt_rand(100, 999);
+
         foreach ($personIds as $pid) {
             if (is_numeric($pid)) {
                 $person = BookingPerson::find($pid);
@@ -759,11 +925,12 @@ class RoomingListController extends Controller
                         $allocation->booking_person_id = $person->id;
                     }
 
-                    $allocation->location    = $location;
-                    $allocation->hotel_name  = $hotelName;
-                    $allocation->room_number = $roomNumber;
-                    $allocation->room_type   = $roomType;
-                    $allocation->gender      = $gender;
+                    $allocation->location      = $location;
+                    $allocation->hotel_name    = $hotelName;
+                    $allocation->room_number   = $roomNumber;
+                    $allocation->room_group_id = $batchRoomGroupId;
+                    $allocation->room_type     = $roomType;
+                    $allocation->gender        = $gender;
                     $allocation->save();
 
                     // Clean up any old duplicate or unassigned allocations for this person at this stage
@@ -777,11 +944,12 @@ class RoomingListController extends Controller
                         ->delete();
 
                     // Sync to person model
-                    $person->room_number = $roomNumber;
-                    $person->room_type   = $roomType;
-                    $person->hotel_name  = $hotelName;
-                    $person->location    = $location;
-                    $person->room_gender = $gender;
+                    $person->room_number   = $roomNumber;
+                    $person->room_group_id = $batchRoomGroupId;
+                    $person->room_type     = $roomType;
+                    $person->hotel_name    = $hotelName;
+                    $person->location      = $location;
+                    $person->room_gender   = $gender;
                     $person->save();
 
                     $updatedCount++;
@@ -879,16 +1047,18 @@ class RoomingListController extends Controller
                         ->latest()
                         ->first();
                     if ($otherAlloc) {
-                        $p->room_number = $otherAlloc->room_number;
-                        $p->room_type   = $otherAlloc->room_type;
-                        $p->hotel_name  = $otherAlloc->hotel_name;
-                        $p->location    = $otherAlloc->location;
-                        $p->room_gender = $otherAlloc->gender;
+                        $p->room_number   = $otherAlloc->room_number;
+                        $p->room_group_id = $otherAlloc->room_group_id;
+                        $p->room_type     = $otherAlloc->room_type;
+                        $p->hotel_name    = $otherAlloc->hotel_name;
+                        $p->location      = $otherAlloc->location;
+                        $p->room_gender   = $otherAlloc->gender;
                     } else {
-                        $p->room_number = null;
-                        $p->room_type   = null;
-                        $p->hotel_name  = null;
-                        $p->room_gender = null;
+                        $p->room_number   = null;
+                        $p->room_group_id = null;
+                        $p->room_type     = null;
+                        $p->hotel_name    = null;
+                        $p->room_gender   = null;
                     }
                     $p->save();
                 }
@@ -911,16 +1081,18 @@ class RoomingListController extends Controller
                         ->latest()
                         ->first();
                     if ($otherAlloc) {
-                        $p->room_number = $otherAlloc->room_number;
-                        $p->room_type   = $otherAlloc->room_type;
-                        $p->hotel_name  = $otherAlloc->hotel_name;
-                        $p->location    = $otherAlloc->location;
-                        $p->room_gender = $otherAlloc->gender;
+                        $p->room_number   = $otherAlloc->room_number;
+                        $p->room_group_id = $otherAlloc->room_group_id;
+                        $p->room_type     = $otherAlloc->room_type;
+                        $p->hotel_name    = $otherAlloc->hotel_name;
+                        $p->location      = $otherAlloc->location;
+                        $p->room_gender   = $otherAlloc->gender;
                     } else {
-                        $p->room_number = null;
-                        $p->room_type   = null;
-                        $p->hotel_name  = null;
-                        $p->room_gender = null;
+                        $p->room_number   = null;
+                        $p->room_group_id = null;
+                        $p->room_type     = null;
+                        $p->hotel_name    = null;
+                        $p->room_gender   = null;
                     }
                     $p->save();
                 }
@@ -936,10 +1108,11 @@ class RoomingListController extends Controller
                     if ($person) {
                         $bId = $person->booking_id;
                         BookingPersonRoomAllocation::where('booking_person_id', $person->id)->delete();
-                        $person->room_number = null;
-                        $person->room_type   = null;
-                        $person->hotel_name  = null;
-                        $person->room_gender = null;
+                        $person->room_number   = null;
+                        $person->room_group_id = null;
+                        $person->room_type     = null;
+                        $person->hotel_name    = null;
+                        $person->room_gender   = null;
                         $person->save();
                         $unassignedCount++;
                         if ($bId) $affectedBookings[$bId] = true;
@@ -982,15 +1155,42 @@ class RoomingListController extends Controller
         $rawHotelFilter = $request->get('hotel_name');
         if (is_array($rawHotelFilter)) {
             $hotelFilter = array_values(array_filter(array_map('trim', $rawHotelFilter)));
-        } elseif (!empty($rawHotelFilter)) {
+        } elseif (!empty($rawHotelFilter) && $rawHotelFilter !== 'all') {
             $hotelFilter = [trim($rawHotelFilter)];
         } else {
             $hotelFilter = [];
         }
+
+        $cleanHotelFilter = [];
+        foreach ($hotelFilter as $hf) {
+            $cleanHf = trim(preg_replace('/\s*\([^)]*\)/', '', (string)$hf));
+            if (!empty($cleanHf)) {
+                $cleanHotelFilter[] = $cleanHf;
+            }
+            $cleanHotelFilter[] = $hf;
+        }
+        $cleanHotelFilter = array_values(array_unique($cleanHotelFilter));
+
+        $hotelMatchesFilter = function (?string $name) use ($cleanHotelFilter): bool {
+            if (empty($cleanHotelFilter)) {
+                return true;
+            }
+            if (empty($name)) {
+                return false;
+            }
+            foreach ($cleanHotelFilter as $hf) {
+                if (stripos($name, $hf) !== false) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
         $locationFilter = $request->get('location');
         $targetLoc      = (!empty($locationFilter) && $locationFilter !== 'all') ? strtolower(trim($locationFilter)) : null;
         $roomTypeFilter = $request->get('room_type');
         $statusFilter   = $request->get('status'); // all, available, full, overbooked, unassigned
+        $ticketStatus   = $request->get('ticket_status', 'all'); // on_ticket, without_ticket
         $search         = $request->get('search');
         $fromDate       = $request->get('from_date');
         $toDate         = $request->get('to_date');
@@ -1004,6 +1204,50 @@ class RoomingListController extends Controller
             'hotels'
         ])->whereNull('deleted_at')
           ->whereNotIn('status', ['cancelled', 'rejected']);
+
+        if (!empty($ticketStatus) && $ticketStatus !== 'all') {
+            if ($ticketStatus === 'without_ticket') {
+                $bookingQuery->whereHas('persons', function ($pq) {
+                    $pq->where('ticket_status', 'without_ticket');
+                });
+            } elseif ($ticketStatus === 'on_ticket') {
+                $bookingQuery->whereHas('persons', function ($pq) {
+                    $pq->where(function ($q) {
+                        $q->where('ticket_status', 'on_ticket')
+                          ->orWhereNull('ticket_status')
+                          ->orWhere('ticket_status', '');
+                    });
+                });
+            }
+        }
+
+        if (!empty($cleanHotelFilter)) {
+            $bookingQuery->where(function ($bq) use ($cleanHotelFilter) {
+                $bq->whereHas('hotels', function ($hq) use ($cleanHotelFilter) {
+                    $hq->where(function ($q) use ($cleanHotelFilter) {
+                        foreach ($cleanHotelFilter as $hf) {
+                            $q->orWhere('hotel_name', 'LIKE', '%' . $hf . '%');
+                        }
+                    });
+                })->orWhereHas('persons.roomAllocations', function ($raq) use ($cleanHotelFilter) {
+                    $raq->where(function ($q) use ($cleanHotelFilter) {
+                        foreach ($cleanHotelFilter as $hf) {
+                            $q->orWhere('hotel_name', 'LIKE', '%' . $hf . '%');
+                        }
+                    });
+                });
+            });
+        }
+
+        if (!empty($targetLoc)) {
+            $bookingQuery->where(function ($bq) use ($targetLoc) {
+                $bq->whereHas('hotels', function ($hq) use ($targetLoc) {
+                    $hq->whereRaw('LOWER(location) = ?', [$targetLoc]);
+                })->orWhereHas('persons.roomAllocations', function ($raq) use ($targetLoc) {
+                    $raq->whereRaw('LOWER(location) = ?', [$targetLoc]);
+                });
+            });
+        }
 
         if (!empty($search)) {
             $term = '%' . $search . '%';
@@ -1072,6 +1316,89 @@ class RoomingListController extends Controller
 
         $groupedRooms = [];
         $unassignedOccupants = [];
+        $alreadyAddedPersonIds = []; // Track persons added to prevent duplicates
+
+        $addGroupedRoomOccupant = function (
+            array &$groupedRooms,
+            array $occData,
+            string $displayRoomNo,
+            string $hName,
+            string $loc,
+            string $rType,
+            string $rGender,
+            $cIn,
+            $cOut,
+            $bId,
+            $p,
+            $roomGroupId = null
+        ) {
+            $isPendingRoom = (strtoupper(trim($displayRoomNo)) === 'PENDING' || empty($displayRoomNo));
+            $cleanDisplayNo = $isPendingRoom ? 'PENDING' : $displayRoomNo;
+            $occData['room_number'] = $cleanDisplayNo;
+            $occData['hotel_name'] = $hName;
+            $occData['location'] = $loc;
+            $occData['room_type'] = $rType;
+            $occData['is_assigned'] = true;
+
+            if ($isPendingRoom) {
+                $groupTag = !empty($roomGroupId) ? $roomGroupId : ('b_' . $bId . '_' . strtolower($rType));
+                $groupKey = strtolower($loc . '___' . $hName . '___pending___' . $groupTag);
+            } else {
+                $groupKey = strtolower($loc . '___' . $hName . '___' . $cleanDisplayNo);
+            }
+
+            if (!isset($groupedRooms[$groupKey])) {
+                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $cleanDisplayNo, $rType, $loc);
+                $customCap = null;
+                if (!$isPendingRoom) {
+                    $customCap = HotelRoomCapacity::where(function ($q) use ($cleanDisplayNo) {
+                        foreach (HotelRoomCapacity::normalizeRoomNumber($cleanDisplayNo) as $v) {
+                            $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                        }
+                    })->first();
+                }
+
+                $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;
+                $effectiveCap = max(1, $baseCap);
+                $roomGender = !empty($customCap->gender) && $customCap->gender !== 'Any' ? $customCap->gender : $rGender;
+
+                $groupedRooms[$groupKey] = [
+                    'hotel_name'      => $hName,
+                    'room_number'     => $cleanDisplayNo,
+                    'room_type'       => $rType,
+                    'room_gender'     => $roomGender,
+                    'location'        => $loc,
+                    'is_assigned'     => true,
+                    'capacity_id'     => $customCap ? $customCap->id : null,
+                    'base_capacity'   => $baseCap,
+                    'extra_beds'      => $extraBeds,
+                    'total_capacity'  => $effectiveCap,
+                    'occupied_beds'   => 0,
+                    'available_beds'  => $effectiveCap,
+                    'is_full'         => false,
+                    'is_overbooked'   => false,
+                    'notes'           => $customCap ? $customCap->notes : null,
+                    'occupants'       => [],
+                    'check_in_min'    => $cIn,
+                    'check_out_max'   => $cOut,
+                    'booking_ids'     => [],
+                    'latest_activity' => 0,
+                ];
+            }
+
+            $groupedRooms[$groupKey]['occupied_beds']++;
+            if (!in_array($bId, $groupedRooms[$groupKey]['booking_ids'])) {
+                $groupedRooms[$groupKey]['booking_ids'][] = $bId;
+            }
+            $groupedRooms[$groupKey]['occupants'][] = $occData;
+
+            $pActivity = $p->updated_at ? $p->updated_at->timestamp : ($p->created_at ? $p->created_at->timestamp : 0);
+            if ($pActivity > ($groupedRooms[$groupKey]['latest_activity'] ?? 0)) {
+                $groupedRooms[$groupKey]['latest_activity'] = $pActivity;
+            }
+        };
+
+        $isFilteredByHotelOrLoc = (!empty($cleanHotelFilter) || !empty($targetLoc));
 
         foreach ($allBookings as $b) {
             $persons = $b->persons;
@@ -1093,9 +1420,21 @@ class RoomingListController extends Controller
                 }
             }
 
+            if (!empty($ticketStatus) && $ticketStatus !== 'all') {
+                $persons = $persons->filter(function ($p) use ($ticketStatus) {
+                    $pTicket = !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket';
+                    return $pTicket === $ticketStatus;
+                });
+                if ($persons->isEmpty()) {
+                    continue;
+                }
+            }
+
+            $bHotels = $b->hotels ?? collect();
+            $bHotelFirst = $bHotels->first();
+
             // Determine Booked Room Type & default hotel from booking
             $bookedRoomType = 'Quad';
-            $bHotelFirst = $b->hotels ? $b->hotels->first() : null;
             if ($bHotelFirst && !empty($bHotelFirst->room_type)) {
                 $bookedRoomType = ucfirst(trim($bHotelFirst->room_type));
             } elseif (!empty($b->package?->room_type)) {
@@ -1116,59 +1455,100 @@ class RoomingListController extends Controller
                 $bookedRoomType = 'Six / Sharing';
             }
 
-            foreach ($persons as $p) {
-                $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
-                $hbNumber = !empty($p->hb_number) ? BookingPerson::formatHbNumber($p->hb_number) : '';
-                $gender = !empty($p->gender) ? ucfirst(strtolower($p->gender)) : 'Male';
-
-                if (empty($p->gender) || $p->gender === 'Male') {
-                    $fCheck = strtolower($p->full_name . ' ' . $p->given_name . ' ' . $p->surname);
-                    if (preg_match('/\b(bibi|khatoon|fatima|ayesha|aisha|maryam|begum|bano|naz|uzma|zahra|zainab|amna|rabia|samina|sumaira|hira|sana|madiha|tooba|javeria|rubab|shagufta|roshan|safia)\b/i', $fCheck)) {
-                        $gender = 'Female';
-                    }
-                }
-
-                // Get all room allocations for this person
-                $allocations = $p->roomAllocations ?? collect();
-
-                // If person has no allocations table records yet, fall back to person model columns
-                if ($allocations->isEmpty() && (!empty($p->room_number) || !empty($p->hotel_name))) {
-                    $allocations = collect([(object)[
-                        'id'          => null,
-                        'hotel_name'  => $p->hotel_name,
-                        'room_number' => $p->room_number,
-                        'room_type'   => $p->room_type,
-                        'location'    => $p->location ?: 'makkah',
-                        'gender'      => $p->room_gender ?: 'Any',
-                        'check_in'    => null,
-                        'check_out'   => null,
-                    ]]);
-                }
-
-                // If location filter is set, determine if this pilgrim has an allocation for that location
-                $allocForTargetLoc = null;
-                if (!empty($targetLoc)) {
-                    $allocForTargetLoc = $allocations->first(function($al) use ($targetLoc) {
-                        return strtolower(trim($al->location ?? '')) === $targetLoc;
+            if ($isFilteredByHotelOrLoc) {
+                // Find relevant hotel stage for this booking matching filter
+                $stageHotel = null;
+                if (!empty($cleanHotelFilter)) {
+                    $stageHotel = $bHotels->first(function ($bh) use ($hotelMatchesFilter, $targetLoc) {
+                        if (!$hotelMatchesFilter($bh->hotel_name)) return false;
+                        if (!empty($targetLoc) && strtolower(trim($bh->location ?? '')) !== $targetLoc) return false;
+                        return true;
+                    });
+                } elseif (!empty($targetLoc)) {
+                    $stageHotel = $bHotels->first(function ($bh) use ($targetLoc) {
+                        $bhLoc = strtolower(trim($bh->location ?? ''));
+                        if ($bhLoc === $targetLoc) return true;
+                        if ($targetLoc === 'madinah' && (str_contains($bhLoc, 'madina') || stripos($bh->hotel_name ?? '', 'madina') !== false || stripos($bh->hotel_name ?? '', 'hijra') !== false)) {
+                            return true;
+                        }
+                        return false;
                     });
                 }
 
-                if ($allocations->isEmpty() || (!empty($targetLoc) && !$allocForTargetLoc)) {
-                    // Pilgrim awaiting room allocation for this location
-                    $targetStageHotel = null;
-                    if (!empty($targetLoc) && $b->hotels && $b->hotels->count() > 0) {
-                        $targetStageHotel = $b->hotels->first(fn($bh) => strtolower(trim($bh->location ?? '')) === $targetLoc);
-                    }
-                    if (!$targetStageHotel) {
-                        $targetStageHotel = $bHotelFirst;
+                $uHotelName = $stageHotel?->hotel_name ?: (!empty($cleanHotelFilter) ? $cleanHotelFilter[0] : 'Unspecified Hotel');
+                $uLoc = $stageHotel?->location ?: (!empty($targetLoc) ? $targetLoc : 'makkah');
+                $uCheckIn = $stageHotel?->check_in;
+                $uCheckOut = $stageHotel?->check_out;
+                $uRoomType = $stageHotel?->room_type ? ucfirst($stageHotel->room_type) : $bookedRoomType;
+
+                foreach ($persons as $p) {
+                    $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
+                    $hbNumber = !empty($p->hb_number) ? BookingPerson::formatHbNumber($p->hb_number) : '';
+                    $gender = !empty($p->gender) ? ucfirst(strtolower($p->gender)) : 'Male';
+
+                    if (empty($p->gender) || $p->gender === 'Male') {
+                        $fCheck = strtolower($p->full_name . ' ' . $p->given_name . ' ' . $p->surname);
+                        if (preg_match('/\b(bibi|khatoon|fatima|ayesha|aisha|maryam|begum|bano|naz|uzma|zahra|zainab|amna|rabia|samina|sumaira|hira|sana|madiha|tooba|javeria|rubab|shagufta|roshan|safia)\b/i', $fCheck)) {
+                            $gender = 'Female';
+                        }
                     }
 
-                    $uLoc = !empty($targetLoc) ? $targetLoc : ($targetStageHotel?->location ?: 'makkah');
-                    $uHotelName = $targetStageHotel?->hotel_name ?: ($uLoc === 'madinah' ? 'Madinah Hotel' : ($uLoc === 'azizia' ? 'Azizia Building' : 'Makkah Hotel'));
-                    $uRoomType = $targetStageHotel?->room_type ? ucfirst($targetStageHotel->room_type) : $bookedRoomType;
+                    $allocations = $p->roomAllocations ?? collect();
+                    if ($allocations->isEmpty() && (!empty($p->room_number) || !empty($p->hotel_name))) {
+                        $allocations = collect([(object)[
+                            'id'          => null,
+                            'hotel_name'  => $p->hotel_name,
+                            'room_number' => $p->room_number,
+                            'room_type'   => $p->room_type,
+                            'location'    => $p->location ?: 'makkah',
+                            'gender'      => $p->room_gender ?: 'Any',
+                            'check_in'    => null,
+                            'check_out'   => null,
+                        ]]);
+                    }
+
+                    // Collect all active stage assignments for this person
+                    $stageAssignments = [];
+                    foreach ($allocations as $ra) {
+                        $locK = strtolower(trim($ra->location ?? 'makkah'));
+                        if (!empty($ra->hotel_name) && !in_array(strtolower(trim($ra->hotel_name)), ['pending room allocation', 'unassigned', 'unspecified hotel', '—', '-'])) {
+                            $stageAssignments[$locK] = [
+                                'location'    => $ra->location ?: $locK,
+                                'hotel_name'  => $ra->hotel_name,
+                                'room_number' => $ra->room_number ?: 'PENDING',
+                                'room_type'   => $ra->room_type ?: '',
+                            ];
+                        }
+                    }
+
+                    $matchedAlloc = $allocations->first(function ($ra) use ($targetLoc, $cleanHotelFilter, $hotelMatchesFilter) {
+                        if (!empty($targetLoc)) {
+                            $raLoc = strtolower(trim($ra->location ?? ''));
+                            if ($raLoc !== $targetLoc) return false;
+                        }
+                        if (!empty($cleanHotelFilter)) {
+                            if (!$hotelMatchesFilter($ra->hotel_name ?? '')) return false;
+                        }
+                        return true;
+                    });
+
+                    $hasValidAlloc = $matchedAlloc && !empty($matchedAlloc->hotel_name)
+                        && !in_array(strtolower(trim($matchedAlloc->hotel_name)), ['pending room allocation', 'unassigned', 'unspecified hotel', '—', '-'])
+                        && strtoupper(trim((string)$matchedAlloc->room_number)) !== 'UNASSIGNED';
+
+                    $rawRoomNo = !empty($matchedAlloc?->room_number) ? trim($matchedAlloc->room_number) : null;
+                    $rNum = (!empty($rawRoomNo) && !in_array(strtoupper($rawRoomNo), ['PENDING', 'UNASSIGNED', '—', '-'])) ? $rawRoomNo : 'PENDING';
+
+                    $hName = $matchedAlloc?->hotel_name ?: $uHotelName;
+                    $rType = ucfirst($matchedAlloc?->room_type ?: $uRoomType);
+                    $loc = $matchedAlloc?->location ?: $uLoc;
+                    $rGender = !empty($matchedAlloc?->gender) ? trim($matchedAlloc->gender) : 'Any';
+                    $cIn = $matchedAlloc?->check_in ?? $uCheckIn;
+                    $cOut = $matchedAlloc?->check_out ?? $uCheckOut;
+                    $roomGroupId = $matchedAlloc?->room_group_id ?? ($p->room_group_id ?? null);
 
                     $occData = [
-                        'allocation_id'     => null,
+                        'allocation_id'     => $matchedAlloc?->id ?? null,
                         'person_id'         => $p->id,
                         'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
                         'hajj_id'           => $hajjId,
@@ -1188,47 +1568,154 @@ class RoomingListController extends Controller
                         'booking_id'        => $b->id,
                         'booking_number'    => $b->booking_number ?? ('#BK-' . $b->id),
                         'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
-                        'check_in'          => $targetStageHotel?->check_in ? date('d M Y', strtotime($targetStageHotel->check_in)) : '—',
-                        'check_out'         => $targetStageHotel?->check_out ? date('d M Y', strtotime($targetStageHotel->check_out)) : '—',
-                        'room_type'         => $uRoomType,
-                        'booked_room_type'  => $bookedRoomType,
+                        'check_in'          => $cIn ? date('d M Y', strtotime($cIn)) : '—',
+                        'check_out'         => $cOut ? date('d M Y', strtotime($cOut)) : '—',
+                        'room_type'         => $hasValidAlloc ? $rType : '',
+                        'booked_room_type'  => $uRoomType,
                         'booked_hotel_name' => $uHotelName,
                         'booking_pax'       => $b->no_of_pax ?: 1,
-                        'room_number'       => null,
-                        'hotel_name'        => $uHotelName,
-                        'location'          => $uLoc,
+                        'room_number'       => $hasValidAlloc ? $rNum : null,
+                        'hotel_name'        => $hasValidAlloc ? $hName : ($stageHotel?->hotel_name ?: $uHotelName),
+                        'location'          => $loc,
+                        'ticket_status'     => !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket',
+                        'is_assigned'       => $hasValidAlloc,
+                        'stage_assignments' => $stageAssignments,
                     ];
-                    $unassignedOccupants[] = $occData;
-                } else {
-                    $allocsToProcess = !empty($targetLoc) ? collect([$allocForTargetLoc]) : $allocations;
-                    foreach ($allocsToProcess as $alloc) {
-                        $rNum = !empty($alloc->room_number) ? trim($alloc->room_number) : null;
-                        if (in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
-                            $rNum = null;
+
+                    if (!$hasValidAlloc) {
+                        // Prevent duplicate unassigned entries for same person across allocations
+                        $personKey = (int)$p->id;
+                        if (!in_array($personKey, $alreadyAddedPersonIds)) {
+                            $alreadyAddedPersonIds[] = $personKey;
+                            $unassignedOccupants[] = $occData;
                         }
-                        $hName = !empty($alloc->hotel_name) ? trim($alloc->hotel_name) : null;
-                        $loc = !empty($alloc->location) ? trim($alloc->location) : 'makkah';
-                        $rType = !empty($alloc->room_type) ? trim($alloc->room_type) : null;
-                        $rGender = !empty($alloc->gender) ? trim($alloc->gender) : 'Any';
+                    } else {
+                        $addGroupedRoomOccupant($groupedRooms, $occData, $rNum, $hName, $loc, $rType, $rGender, $cIn, $cOut, $b->id, $p, $roomGroupId);
+                    }
+                }
+            } else {
+                // All Hotels & All Locations
+                foreach ($persons as $p) {
+                    $hajjId = !empty($p->hajj_id) ? trim($p->hajj_id) : '';
+                    $hbNumber = !empty($p->hb_number) ? BookingPerson::formatHbNumber($p->hb_number) : '';
+                    $gender = !empty($p->gender) ? ucfirst(strtolower($p->gender)) : 'Male';
+
+                    if (empty($p->gender) || $p->gender === 'Male') {
+                        $fCheck = strtolower($p->full_name . ' ' . $p->given_name . ' ' . $p->surname);
+                        if (preg_match('/\b(bibi|khatoon|fatima|ayesha|aisha|maryam|begum|bano|naz|uzma|zahra|zainab|amna|rabia|samina|sumaira|hira|sana|madiha|tooba|javeria|rubab|shagufta|roshan|safia)\b/i', $fCheck)) {
+                            $gender = 'Female';
+                        }
+                    }
+
+                    $allocations = $p->roomAllocations ?? collect();
+                    if ($allocations->isEmpty() && (!empty($p->room_number) || !empty($p->hotel_name))) {
+                        $allocations = collect([(object)[
+                            'id'          => null,
+                            'hotel_name'  => $p->hotel_name,
+                            'room_number' => $p->room_number,
+                            'room_type'   => $p->room_type,
+                            'location'    => $p->location ?: 'makkah',
+                            'gender'      => $p->room_gender ?: 'Any',
+                            'check_in'    => null,
+                            'check_out'   => null,
+                        ]]);
+                    }
+
+                    if ($allocations->isEmpty()) {
+                        $uLoc = $bHotelFirst?->location ?: 'makkah';
+                        $uHotelName = $bHotelFirst?->hotel_name ?: 'Anjum Makkah';
+                        $uRoomType = $bHotelFirst?->room_type ? ucfirst($bHotelFirst->room_type) : $bookedRoomType;
+
+                        $occData = [
+                            'allocation_id'     => null,
+                            'person_id'         => $p->id,
+                            'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
+                            'hajj_id'           => $hajjId,
+                            'hb_number'         => $hbNumber,
+                            'name'              => $p->full_name ?: trim(($p->given_name ?? '') . ' ' . ($p->surname ?? 'Pilgrim')),
+                            'given_name'        => $p->given_name ?? null,
+                            'surname'           => $p->surname ?? null,
+                            'father_name'       => $p->father_name ?? null,
+                            'dob'               => $p->dob ? date('d M Y', strtotime($p->dob)) : null,
+                            'passport'          => $p->passport_number ?: '—',
+                            'date_of_issue'     => ($p->date_of_issue ?: $p->passport_issue_date) ? date('d M Y', strtotime($p->date_of_issue ?: $p->passport_issue_date)) : null,
+                            'passport_expiry_date' => $p->passport_expiry_date ? date('d M Y', strtotime($p->passport_expiry_date)) : null,
+                            'gender'            => $gender,
+                            'photo'             => $p->photo,
+                            'cnic'              => $p->cnic,
+                            'phone'             => $p->phone ?: $b->phone,
+                            'booking_id'        => $b->id,
+                            'booking_number'    => $b->booking_number ?? ('#BK-' . $b->id),
+                            'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
+                            'check_in'          => $bHotelFirst?->check_in ? date('d M Y', strtotime($bHotelFirst->check_in)) : '—',
+                            'check_out'         => $bHotelFirst?->check_out ? date('d M Y', strtotime($bHotelFirst->check_out)) : '—',
+                            'room_type'         => '',
+                            'booked_room_type'  => $uRoomType,
+                            'booked_hotel_name' => $uHotelName,
+                            'booking_pax'       => $b->no_of_pax ?: 1,
+                            'room_number'       => null,
+                            'hotel_name'        => $uHotelName,
+                            'location'          => $uLoc,
+                            'ticket_status'     => !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket',
+                            'is_assigned'       => false,
+                        ];
+                        $personKey = (int)$p->id;
+                        if (!in_array($personKey, $alreadyAddedPersonIds)) {
+                            $alreadyAddedPersonIds[] = $personKey;
+                            $unassignedOccupants[] = $occData;
+                        }
+                    } else {
+                        // Collect all active stage assignments for this person
+                        $stageAssignments = [];
+                        foreach ($allocations as $ra) {
+                            $locK = strtolower(trim($ra->location ?? 'makkah'));
+                            if (!empty($ra->hotel_name) && !in_array(strtolower(trim($ra->hotel_name)), ['pending room allocation', 'unassigned', 'unspecified hotel', '—', '-'])) {
+                                $stageAssignments[$locK] = [
+                                    'location'    => $ra->location ?: $locK,
+                                    'hotel_name'  => $ra->hotel_name,
+                                    'room_number' => $ra->room_number ?: 'PENDING',
+                                    'room_type'   => $ra->room_type ?: '',
+                                ];
+                            }
+                        }
+
+                        // For 'all locations' view: pick the primary stage allocation to display so each person appears only ONCE
+                        $alloc = $allocations->first(fn($a) => strtolower(trim($a->location ?? '')) === 'makkah')
+                            ?: $allocations->first(fn($a) => strtolower(trim($a->location ?? '')) === 'azizia')
+                            ?: $allocations->first(fn($a) => strtolower(trim($a->location ?? '')) === 'madinah')
+                            ?: $allocations->first();
+
+                        $hasValidAlloc = $alloc && !empty($alloc->hotel_name)
+                            && !in_array(strtolower(trim($alloc->hotel_name)), ['pending room allocation', 'unassigned', 'unspecified hotel', '—', '-'])
+                            && strtoupper(trim((string)$alloc->room_number)) !== 'UNASSIGNED';
+
+                        $rawRoomNo = !empty($alloc?->room_number) ? trim($alloc->room_number) : null;
+                        $rNum = (!empty($rawRoomNo) && !in_array(strtoupper($rawRoomNo), ['PENDING', 'UNASSIGNED', '—', '-'])) ? $rawRoomNo : 'PENDING';
+
+                        $hName = !empty($alloc?->hotel_name) ? trim($alloc->hotel_name) : null;
+                        $loc = !empty($alloc?->location) ? trim($alloc->location) : 'makkah';
+                        $rType = !empty($alloc?->room_type) ? trim($alloc->room_type) : null;
+                        $rGender = !empty($alloc?->gender) ? trim($alloc->gender) : 'Any';
+                        $roomGroupId = $alloc?->room_group_id ?? ($p->room_group_id ?? null);
 
                         $matchedHotel = null;
-                        if ($b->hotels && $b->hotels->count() > 0) {
-                            $matchedHotel = $b->hotels->first(function ($bh) use ($loc, $hName) {
+                        if ($bHotels->count() > 0) {
+                            $matchedHotel = $bHotels->first(function ($bh) use ($loc, $hName) {
                                 return (!empty($hName) && stripos($bh->hotel_name, $hName) !== false) ||
                                        (strtolower($bh->location) === strtolower($loc));
                             });
                             if (!$matchedHotel) {
-                                $matchedHotel = $b->hotels->first();
+                                $matchedHotel = $bHotelFirst;
                             }
                         }
 
-                        $cIn = $alloc->check_in ?? ($matchedHotel?->check_in);
-                        $cOut = $alloc->check_out ?? ($matchedHotel?->check_out);
+                        $cIn = $alloc?->check_in ?? ($matchedHotel?->check_in);
+                        $cOut = $alloc?->check_out ?? ($matchedHotel?->check_out);
                         $rType = $rType ?: ($matchedHotel?->room_type ? ucfirst($matchedHotel->room_type) : $bookedRoomType);
                         $hName = $hName ?: ($matchedHotel?->hotel_name ?: 'Unspecified Hotel');
 
                         $occData = [
-                            'allocation_id'     => $alloc->id ?? null,
+                            'allocation_id'     => $alloc?->id ?? null,
                             'person_id'         => $p->id,
                             'real_person_id'    => is_numeric($p->id) ? (int)$p->id : null,
                             'hajj_id'           => $hajjId,
@@ -1250,77 +1737,29 @@ class RoomingListController extends Controller
                             'client_name'       => $b->client->name ?? ($b->company->company_name ?? ($b->company->name ?? 'N/A')),
                             'check_in'          => $cIn ? date('d M Y', strtotime($cIn)) : '—',
                             'check_out'         => $cOut ? date('d M Y', strtotime($cOut)) : '—',
-                            'room_type'         => $rType,
-                            'booked_room_type'  => $bookedRoomType,
+                            'room_type'         => $hasValidAlloc ? $rType : '',
+                            'booked_room_type'  => $rType,
                             'booked_hotel_name' => $hName,
                             'booking_pax'       => $b->no_of_pax ?: 1,
-                            'room_number'       => $rNum,
+                            'room_number'       => $hasValidAlloc ? $rNum : null,
                             'hotel_name'        => $hName,
                             'location'          => $loc,
+                            'ticket_status'     => !empty($p->ticket_status) ? $p->ticket_status : 'on_ticket',
+                            'is_assigned'       => $hasValidAlloc,
+                            'stage_assignments' => $stageAssignments,
                         ];
 
-                        $hasExplicitHotel = !empty($hName) && !in_array(strtolower($hName), ['pending room allocation', 'unassigned', '—', '-']);
-                        $hasExplicitRoom = !empty($rNum) && !in_array(strtoupper((string)$rNum), ['PENDING', 'UNASSIGNED', '—', '-']);
-
-                        if (!$hasExplicitHotel && !$hasExplicitRoom) {
-                            $unassignedOccupants[] = $occData;
+                        $personKey = (int)$p->id;
+                        if (!$hasValidAlloc) {
+                            // Prevent duplicate unassigned entries for same person
+                            if (!in_array($personKey, $alreadyAddedPersonIds)) {
+                                $alreadyAddedPersonIds[] = $personKey;
+                                $unassignedOccupants[] = $occData;
+                            }
                         } else {
-                            $hName = $hasExplicitHotel ? $hName : ($matchedHotel?->hotel_name ?: 'Anjum Makkah');
-                            $rType = ucfirst($rType ?: 'Quad');
-                            $loc = (!empty($loc) && $loc !== 'unassigned') ? $loc : 'makkah';
-                            $displayRoomNo = $hasExplicitRoom ? $rNum : 'PENDING';
-                            $occData['room_number'] = $displayRoomNo;
-                            $occData['hotel_name'] = $hName;
-                            $occData['location'] = $loc;
-
-                            $groupKey = ($displayRoomNo === 'PENDING')
-                                ? strtolower($loc . '___' . $hName . '___pending___' . $b->id . '___' . $rType)
-                                : strtolower($loc . '___' . $hName . '___' . $displayRoomNo);
-
-                            if (!isset($groupedRooms[$groupKey])) {
-                                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $displayRoomNo, $rType, $loc);
-                                $customCap = HotelRoomCapacity::where(function ($q) use ($displayRoomNo) {
-                                    foreach (HotelRoomCapacity::normalizeRoomNumber($displayRoomNo) as $v) {
-                                        $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
-                                    }
-                                })->first();
-
-                                $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;
-                                $effectiveCap = max(1, $baseCap);
-                                $roomGender = !empty($customCap->gender) && $customCap->gender !== 'Any' ? $customCap->gender : $rGender;
-
-                                $groupedRooms[$groupKey] = [
-                                    'hotel_name'      => $hName,
-                                    'room_number'     => $displayRoomNo,
-                                    'room_type'       => $rType,
-                                    'room_gender'     => $roomGender,
-                                    'location'        => $loc,
-                                    'capacity_id'     => $customCap ? $customCap->id : null,
-                                    'base_capacity'   => $baseCap,
-                                    'extra_beds'      => $extraBeds,
-                                    'total_capacity'  => $effectiveCap,
-                                    'occupied_beds'   => 0,
-                                    'available_beds'  => $effectiveCap,
-                                    'is_full'         => false,
-                                    'is_overbooked'   => false,
-                                    'notes'           => $customCap ? $customCap->notes : null,
-                                    'occupants'       => [],
-                                    'check_in_min'    => $cIn,
-                                    'check_out_max'   => $cOut,
-                                    'booking_ids'     => [],
-                                    'latest_activity' => 0,
-                                ];
-                            }
-
-                            $groupedRooms[$groupKey]['occupied_beds']++;
-                            if (!in_array($b->id, $groupedRooms[$groupKey]['booking_ids'])) {
-                                $groupedRooms[$groupKey]['booking_ids'][] = $b->id;
-                            }
-                            $groupedRooms[$groupKey]['occupants'][] = $occData;
-
-                            $pActivity = $p->updated_at ? $p->updated_at->timestamp : ($p->created_at ? $p->created_at->timestamp : 0);
-                            if ($pActivity > ($groupedRooms[$groupKey]['latest_activity'] ?? 0)) {
-                                $groupedRooms[$groupKey]['latest_activity'] = $pActivity;
+                            if (!in_array($personKey, $alreadyAddedPersonIds)) {
+                                $alreadyAddedPersonIds[] = $personKey;
+                                $addGroupedRoomOccupant($groupedRooms, $occData, $rNum, $hName, $loc, $rType, $rGender, $cIn, $cOut, $b->id, $p, $roomGroupId);
                             }
                         }
                     }
@@ -1329,19 +1768,13 @@ class RoomingListController extends Controller
         }
 
         // Apply filters to assigned rooms
-        if (!empty($hotelFilter)) {
-            $groupedRooms = array_filter($groupedRooms, function ($r) use ($hotelFilter) {
-                $rHotel = $r['hotel_name'] ?? '';
-                foreach ($hotelFilter as $hf) {
-                    if (stripos($rHotel, $hf) !== false) {
-                        return true;
-                    }
-                }
-                return false;
+        if (!empty($cleanHotelFilter)) {
+            $groupedRooms = array_filter($groupedRooms, function ($r) use ($hotelMatchesFilter) {
+                return $hotelMatchesFilter($r['hotel_name'] ?? '');
             });
         }
-        if (!empty($locationFilter) && $locationFilter !== 'all') {
-            $groupedRooms = array_filter($groupedRooms, fn($r) => strtolower($r['location']) === strtolower($locationFilter));
+        if (!empty($targetLoc)) {
+            $groupedRooms = array_filter($groupedRooms, fn($r) => strtolower($r['location']) === $targetLoc);
         }
         if (!empty($roomTypeFilter) && $roomTypeFilter !== 'all') {
             $cleanType = strtolower(trim($roomTypeFilter));
@@ -1384,10 +1817,17 @@ class RoomingListController extends Controller
         }
         unset($room);
 
+        $assignedRoomsOnly = array_filter($groupedRooms, function ($room) {
+            return !empty($room['is_assigned']);
+        });
+        $totalAssignedRoomsCount = count($assignedRoomsOnly);
+
         // Filter by Status if requested
         if (!empty($statusFilter) && $statusFilter !== 'all') {
             if ($statusFilter === 'unassigned') {
                 $groupedRooms = [];
+            } elseif ($statusFilter === 'assigned') {
+                $groupedRooms = $assignedRoomsOnly;
             } else {
                 $groupedRooms = array_filter($groupedRooms, function ($room) use ($statusFilter) {
                     if ($statusFilter === 'available') {
@@ -1428,20 +1868,15 @@ class RoomingListController extends Controller
         unset($gRoom);
 
         // Apply filters to unassigned occupants so they strictly match selected criteria
-        if (!empty($hotelFilter)) {
-            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($hotelFilter) {
+        if (!empty($cleanHotelFilter)) {
+            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($hotelMatchesFilter) {
                 $occHotel = $occ['hotel_name'] ?? ($occ['booked_hotel_name'] ?? '');
-                foreach ($hotelFilter as $hf) {
-                    if (stripos($occHotel, $hf) !== false) {
-                        return true;
-                    }
-                }
-                return false;
+                return $hotelMatchesFilter($occHotel);
             }));
         }
-        if (!empty($locationFilter) && $locationFilter !== 'all') {
-            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($locationFilter) {
-                return strtolower($occ['location'] ?? '') === strtolower($locationFilter);
+        if (!empty($targetLoc)) {
+            $unassignedOccupants = array_values(array_filter($unassignedOccupants, function ($occ) use ($targetLoc) {
+                return strtolower($occ['location'] ?? '') === $targetLoc;
             }));
         }
         if (!empty($roomTypeFilter) && $roomTypeFilter !== 'all') {
@@ -1473,12 +1908,13 @@ class RoomingListController extends Controller
                 $uType = $uOcc['booked_room_type'] ?? ($uOcc['room_type'] ?? 'Quad');
                 $uLoc = $uOcc['location'] ?? 'makkah';
                 $uHotel = $uOcc['booked_hotel_name'] ?? ($uOcc['hotel_name'] ?? 'Pending Room Allocation');
-                $subKey = '__pending_b_' . $bId . '_' . strtolower($uType);
+                $subKey = '__pending_b_' . $bId;
                 if (!isset($pendingByBooking[$subKey])) {
                     $pendingByBooking[$subKey] = [
                         'hotel_name'      => $uHotel,
                         'room_number'     => 'PENDING',
-                        'room_type'       => $uType,
+                        'room_type'       => '', // BLANK until user explicitly allocates room
+                        'is_assigned'     => false,
                         'room_gender'     => 'Any',
                         'location'        => $uLoc,
                         'capacity_id'     => null,
@@ -1509,10 +1945,125 @@ class RoomingListController extends Controller
             $totalBedsOccupied += $unassignedPilgrimsCount;
         }
 
+        // Room Type Breakdown Summary calculation (Double, Triple, Quad, Quint, Six / Sharing, Single)
+        $classifyRoomType = function (?string $rawType): string {
+            $t = strtolower(trim((string)$rawType));
+            if (str_contains($t, 'double') || $t === '2' || str_contains($t, '2 bed') || str_contains($t, '2-bed')) {
+                return 'Double';
+            }
+            if (str_contains($t, 'triple') || $t === '3' || str_contains($t, '3 bed') || str_contains($t, '3-bed')) {
+                return 'Triple';
+            }
+            if (str_contains($t, 'quad') || $t === '4' || str_contains($t, '4 bed') || str_contains($t, '4-bed')) {
+                return 'Quad';
+            }
+            if (str_contains($t, 'quint') || $t === '5' || str_contains($t, '5 bed') || str_contains($t, '5-bed')) {
+                return 'Quint';
+            }
+            if (str_contains($t, 'six') || str_contains($t, 'sharing') || $t === '6' || str_contains($t, '6 bed') || str_contains($t, '6-bed')) {
+                return 'Six / Sharing';
+            }
+            if (str_contains($t, 'single') || $t === '1' || str_contains($t, '1 bed') || str_contains($t, '1-bed')) {
+                return 'Single';
+            }
+            if (!empty($t) && !in_array($t, ['—', '-', 'pending', 'unassigned'])) {
+                return ucfirst($t);
+            }
+            return 'Other';
+        };
+
+        $roomTypeSummary = [
+            'Double' => [
+                'name'           => 'Double (2 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Triple' => [
+                'name'           => 'Triple (3 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Quad' => [
+                'name'           => 'Quad (4 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Quint' => [
+                'name'           => 'Quint (5 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Six / Sharing' => [
+                'name'           => 'Six / Sharing (6 Beds)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+            'Single' => [
+                'name'           => 'Single (1 Bed)',
+                'assigned_rooms' => 0,
+                'assigned_pax'   => 0,
+                'pending_pax'    => 0,
+                'total_pax'      => 0,
+            ],
+        ];
+
+        foreach ($groupedRooms as $room) {
+            $isAssigned = !empty($room['is_assigned']);
+            if ($isAssigned) {
+                $cType = $classifyRoomType($room['room_type'] ?? '');
+                if (!isset($roomTypeSummary[$cType])) {
+                    $roomTypeSummary[$cType] = [
+                        'name'           => $cType,
+                        'assigned_rooms' => 0,
+                        'assigned_pax'   => 0,
+                        'pending_pax'    => 0,
+                        'total_pax'      => 0,
+                    ];
+                }
+                $roomTypeSummary[$cType]['assigned_rooms']++;
+                $pCount = count($room['occupants'] ?? []);
+                $roomTypeSummary[$cType]['assigned_pax'] += $pCount;
+                $roomTypeSummary[$cType]['total_pax'] += $pCount;
+            } else {
+                foreach ($room['occupants'] ?? [] as $uOcc) {
+                    $bType = $classifyRoomType($uOcc['booked_room_type'] ?? ($uOcc['room_type'] ?? 'Quad'));
+                    if (!isset($roomTypeSummary[$bType])) {
+                        $roomTypeSummary[$bType] = [
+                            'name'           => $bType,
+                            'assigned_rooms' => 0,
+                            'assigned_pax'   => 0,
+                            'pending_pax'    => 0,
+                            'total_pax'      => 0,
+                        ];
+                    }
+                    $roomTypeSummary[$bType]['pending_pax']++;
+                    $roomTypeSummary[$bType]['total_pax']++;
+                }
+            }
+        }
+
+        $roomTypeSummaryGrand = [
+            'assigned_rooms' => array_sum(array_column($roomTypeSummary, 'assigned_rooms')),
+            'assigned_pax'   => array_sum(array_column($roomTypeSummary, 'assigned_pax')),
+            'pending_pax'    => array_sum(array_column($roomTypeSummary, 'pending_pax')),
+            'total_pax'      => array_sum(array_column($roomTypeSummary, 'total_pax')),
+        ];
+
         return compact(
             'groupedRooms',
             'unassignedOccupants',
             'unassignedPilgrimsCount',
+            'totalAssignedRoomsCount',
             'totalRoomsInUse',
             'totalBedsCapacity',
             'totalBedsOccupied',
@@ -1520,10 +2071,13 @@ class RoomingListController extends Controller
             'fullRoomsCount',
             'partialRoomsCount',
             'overbookedRoomsCount',
+            'roomTypeSummary',
+            'roomTypeSummaryGrand',
             'hotelFilter',
             'locationFilter',
             'roomTypeFilter',
             'statusFilter',
+            'ticketStatus',
             'packageFilter',
             'search',
             'fromDate',

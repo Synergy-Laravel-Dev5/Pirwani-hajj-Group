@@ -64,9 +64,15 @@
                         @forelse($countries as $c)
                             <tr>
                                 <td class="ps-3">
-                                    @if ($c->country_flag_url)
-                                        <img src="{{ $c->country_flag_url }}" alt="{{ $c->country_name }}"
-                                            class="rounded object-fit-cover opacity-75 border" style="width: 38px; height: 26px;">
+                                    @php
+                                        $flagSrc = $c->country_flag_url;
+                                        $isoCode = strtolower(trim($c->country_code ?? ''));
+                                        $fallbackFlag = (strlen($isoCode) === 2 && ctype_alpha($isoCode)) ? "https://flagcdn.com/w160/{$isoCode}.png" : null;
+                                    @endphp
+                                    @if ($flagSrc || $fallbackFlag)
+                                        <img src="{{ $flagSrc ?: $fallbackFlag }}" alt="{{ $c->country_name }}"
+                                            class="rounded object-fit-cover opacity-75 border" style="width: 38px; height: 26px;"
+                                            @if($fallbackFlag) onerror="if(this.src!=='{{ $fallbackFlag }}'){ this.src='{{ $fallbackFlag }}'; } else { this.onerror=null; this.parentElement.innerHTML='<span class=\'badge bg-light text-muted border\'>No Flag</span>'; }" @endif>
                                     @else
                                         <span class="badge bg-light text-muted border">No Flag</span>
                                     @endif
@@ -74,7 +80,8 @@
                                 <td>
                                     @if ($c->monument_picture_url)
                                         <img src="{{ $c->monument_picture_url }}" alt="{{ $c->country_name }}"
-                                            class="rounded object-fit-cover opacity-75 border" style="width: 45px; height: 35px;">
+                                            class="rounded object-fit-cover opacity-75 border" style="width: 45px; height: 35px;"
+                                            onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-muted fs-12\'>—</span>';">
                                     @else
                                         <span class="text-muted fs-12">—</span>
                                     @endif

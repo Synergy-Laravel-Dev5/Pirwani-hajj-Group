@@ -170,6 +170,17 @@ class PersonReportController extends Controller
     {
         $data = $this->getFilteredPersons($request);
 
+        $visibleCols = null;
+        if ($request->has('columns')) {
+            $raw = trim($request->get('columns'));
+            if ($raw === 'none' || $raw === '') {
+                $visibleCols = [];
+            } else {
+                $visibleCols = array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
+            }
+        }
+        $data['visibleColumns'] = $visibleCols;
+
         $pdf = Pdf::loadView('reports.person_pdf', $data);
         $pdf->setPaper('A4', 'landscape');
         $pdf->setOption('isHtml5ParserEnabled', true);

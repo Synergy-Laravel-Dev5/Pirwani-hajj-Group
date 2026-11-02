@@ -65,7 +65,11 @@
 
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Monument Picture (Optional)</label>
-                    <input type="file" name="monument_picture" class="form-control" accept="image/*">
+                    <input type="file" name="monument_picture" id="monument_picture_input" class="form-control" accept="image/*">
+                    <div id="monumentPreviewContainer" class="mt-2 d-none align-items-center gap-2">
+                        <img id="monumentPreview" src="" alt="Monument Preview" class="rounded border shadow-sm" style="width: 70px; height: 48px; object-fit: cover;">
+                        <span class="text-muted fs-12">Selected image preview</span>
+                    </div>
                     <small class="text-muted fs-11">Famous monument image (e.g., Burj Khalifa, Eiffel Tower). JPG, PNG, WEBP. Max 5MB.</small>
                 </div>
 
@@ -309,6 +313,28 @@
                     reader.readAsDataURL(file);
                 } else {
                     updateFlagFromCode();
+                }
+            });
+        }
+
+        // Monument Picture Preview
+        const monumentInput = document.getElementById("monument_picture_input");
+        const monumentPreview = document.getElementById("monumentPreview");
+        const monumentContainer = document.getElementById("monumentPreviewContainer");
+        if (monumentInput) {
+            monumentInput.addEventListener("change", function(e) {
+                const file = e.target.files && e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        monumentPreview.src = evt.target.result;
+                        monumentContainer.classList.remove("d-none");
+                        monumentContainer.classList.add("d-flex");
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    monumentContainer.classList.add("d-none");
+                    monumentContainer.classList.remove("d-flex");
                 }
             });
         }

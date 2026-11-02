@@ -28,6 +28,7 @@ class BookingPerson extends Model
         'ticket_status',
         'passport_image',
         'room_number',
+        'room_group_id',
         'room_type',
         'hotel_name',
         'location',

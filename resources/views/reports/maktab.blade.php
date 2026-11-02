@@ -136,12 +136,12 @@
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a href="{{ route('report.maktab.export-excel', request()->query()) }}" 
-                       class="btn btn-success btn-sm"
+                       class="btn btn-success btn-sm btn-export-excel" id="btnExportExcel"
                        title="Download official maktab report as Excel spreadsheet">
                         <i class="mdi mdi-file-excel me-1"></i> Download Excel
                     </a>
                     <a href="{{ route('report.maktab.export-pdf', request()->query()) }}" 
-                       class="btn btn-danger btn-sm"
+                       class="btn btn-danger btn-sm btn-export-pdf" id="btnExportPdf"
                        title="Download official maktab report as PDF document">
                         <i class="mdi mdi-file-pdf-box me-1"></i> Download PDF
                     </a>
@@ -936,6 +936,47 @@
             });
         }
 
+        function getActiveColumnsString() {
+            const activeCols = [];
+            colCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    activeCols.push(cb.getAttribute('data-col'));
+                }
+            });
+            return activeCols.length > 0 ? activeCols.join(',') : 'none';
+        }
+
+        function updateExportLinksWithColumns() {
+            const colStr = getActiveColumnsString();
+
+            document.querySelectorAll('a[href*="export-pdf"], .btn-export-pdf, #btnExportPdf').forEach(btn => {
+                try {
+                    const url = new URL(btn.href, window.location.href);
+                    url.searchParams.set('columns', colStr);
+                    btn.href = url.href;
+                } catch(e) {}
+            });
+
+            document.querySelectorAll('a[href*="export-excel"], .btn-export-excel, #btnExportExcel').forEach(btn => {
+                try {
+                    const url = new URL(btn.href, window.location.href);
+                    url.searchParams.set('columns', colStr);
+                    btn.href = url.href;
+                } catch(e) {}
+            });
+        }
+
+        document.querySelectorAll('a[href*="export-pdf"], .btn-export-pdf, #btnExportPdf, a[href*="export-excel"], .btn-export-excel, #btnExportExcel').forEach(btn => {
+            btn.addEventListener('click', function() {
+                try {
+                    const colStr = getActiveColumnsString();
+                    const url = new URL(this.href, window.location.href);
+                    url.searchParams.set('columns', colStr);
+                    this.href = url.href;
+                } catch(e) {}
+            });
+        });
+
         function saveColumnPreferences() {
             const prefs = {};
             colCheckboxes.forEach(cb => {
@@ -945,6 +986,7 @@
             try {
                 localStorage.setItem(storageKey, JSON.stringify(prefs));
             } catch(e) {}
+            updateExportLinksWithColumns();
         }
 
         function loadColumnPreferences() {
@@ -959,6 +1001,7 @@
                             applyColumnVisibility(col, !!prefs[col]);
                         }
                     });
+                    updateExportLinksWithColumns();
                     return;
                 }
             } catch(e) {}
@@ -970,6 +1013,7 @@
                 cb.checked = isDefault;
                 applyColumnVisibility(col, isDefault);
             });
+            updateExportLinksWithColumns();
         }
 
         colCheckboxes.forEach(cb => {
@@ -992,6 +1036,7 @@
             try {
                 localStorage.removeItem(storageKey);
             } catch(e) {}
+            updateExportLinksWithColumns();
         });
 
         // Load saved column preferences on page load

@@ -60,6 +60,7 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th>S:NO</th>
+                                                <th>Booking Date</th>
                                                 <th>HB #</th>
                                                 <th>Client / Company</th>
                                                 <th>Package Type</th>
@@ -76,6 +77,13 @@
                                                 <tr>
 
                                                     <td>{{ $loop->iteration }}</td>
+
+                                                    <td>
+                                                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size:11.5px; font-weight:600;">
+                                                            <i class="mdi mdi-calendar-blank-outline me-1 text-primary"></i>
+                                                            {{ $booking->created_at ? $booking->created_at->format('d M Y') : '—' }}
+                                                        </span>
+                                                    </td>
 
                                                     <td>
                                                         @php
@@ -198,7 +206,7 @@
                                         </tbody>
                                         <tfoot class="table-light fw-bold">
                                             <tr>
-                                                <td colspan="4" class="text-end text-uppercase" style="font-size:12px; letter-spacing:0.5px;">Grand Total:</td>
+                                                <td colspan="5" class="text-end text-uppercase" style="font-size:12px; letter-spacing:0.5px;">Grand Total:</td>
                                                 <td class="text-primary fw-bold fs-13">
                                                     <i class="mdi mdi-account-group me-1"></i>{{ $totalPax ?? $bookings->sum('no_of_pax') }}
                                                 </td>

@@ -48,9 +48,17 @@
                         @forelse($countries as $c)
                             <tr>
                                 <td class="ps-3">
-                                    @if ($c->country_flag_url)
-                                        <img src="{{ $c->country_flag_url }}" class="rounded shadow-sm"
-                                            style="width: 38px; height: 26px; object-fit: cover;">
+                                    @php
+                                        $flagSrc = $c->country_flag_url;
+                                        $isoCode = strtolower(trim($c->country_code ?? ''));
+                                        $fallbackFlag = (strlen($isoCode) === 2 && ctype_alpha($isoCode)) ? "https://flagcdn.com/w160/{$isoCode}.png" : null;
+                                    @endphp
+                                    @if ($flagSrc || $fallbackFlag)
+                                        <img src="{{ $flagSrc ?: $fallbackFlag }}" 
+                                             alt="{{ $c->country_name }} Flag" 
+                                             class="rounded shadow-sm border"
+                                             style="width: 38px; height: 26px; object-fit: cover;"
+                                             @if($fallbackFlag) onerror="if(this.src!=='{{ $fallbackFlag }}'){ this.src='{{ $fallbackFlag }}'; } else { this.onerror=null; this.parentElement.innerHTML='<span class=\'badge bg-light text-muted border\'>No Flag</span>'; }" @endif>
                                     @else
                                         <span class="badge bg-light text-muted border">No Flag</span>
                                     @endif
@@ -66,9 +74,12 @@
                                 </td>
                                 <td>
                                     @if ($c->monument_picture_url)
-                                        <a href="{{ $c->monument_picture_url }}" target="_blank">
-                                            <img src="{{ $c->monument_picture_url }}" class="rounded shadow-sm"
-                                                style="width: 45px; height: 35px; object-fit: cover;">
+                                        <a href="{{ $c->monument_picture_url }}" target="_blank" title="View Monument Image">
+                                            <img src="{{ $c->monument_picture_url }}" 
+                                                 alt="{{ $c->country_name }} Monument"
+                                                 class="rounded shadow-sm border"
+                                                 style="width: 45px; height: 35px; object-fit: cover;"
+                                                 onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-muted fs-12\'>—</span>';">
                                         </a>
                                     @else
                                         <span class="text-muted fs-12">—</span>

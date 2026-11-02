@@ -24,6 +24,17 @@ class MaktabReportController extends Controller
     {
         $data = $this->getFilteredMaktabStays($request);
 
+        $visibleCols = null;
+        if ($request->has('columns')) {
+            $raw = trim($request->get('columns'));
+            if ($raw === 'none' || $raw === '') {
+                $visibleCols = [];
+            } else {
+                $visibleCols = array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
+            }
+        }
+        $data['visibleColumns'] = $visibleCols;
+
         $pdf = Pdf::loadView('reports.maktab_pdf', $data);
         $pdf->setPaper('A4', 'landscape');
         $pdf->setOption('isHtml5ParserEnabled', true);

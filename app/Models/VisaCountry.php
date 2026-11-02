@@ -31,11 +31,34 @@ class VisaCountry extends Model
 
     public function getMonumentPictureUrlAttribute(): ?string
     {
-        return $this->monument_picture ? asset('storage/' . $this->monument_picture) : null;
+        if (!$this->monument_picture) {
+            return null;
+        }
+
+        $path = ltrim($this->monument_picture, '/');
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset('storage/' . $path);
     }
 
     public function getCountryFlagUrlAttribute(): ?string
     {
-        return $this->country_flag ? asset('storage/' . $this->country_flag) : null;
+        if ($this->country_flag) {
+            $path = ltrim($this->country_flag, '/');
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                return $path;
+            }
+            return asset('storage/' . $path);
+        }
+
+        // Automatic fallback to FlagCDN if country code is a 2-letter ISO code
+        $code = strtolower(trim($this->country_code ?? ''));
+        if (strlen($code) === 2 && ctype_alpha($code)) {
+            return "https://flagcdn.com/w160/{$code}.png";
+        }
+
+        return null;
     }
 }

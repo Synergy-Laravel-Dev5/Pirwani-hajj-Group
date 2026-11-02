@@ -304,6 +304,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('transport.bus-assignment') }}">
+                            <i data-feather="truck"></i>
+                            <span>Bus Assignment & Manifest</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('report.check-in') }}">
                             <i data-feather="check-square"></i>
                             <span>Check-In Report</span>

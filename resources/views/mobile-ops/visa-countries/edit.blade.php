@@ -74,13 +74,17 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Monument Picture (Optional)</label>
                         @if ($country->monument_picture_url)
-                            <div class="mb-2 d-flex align-items-center gap-2">
-                                <img src="{{ $country->monument_picture_url }}" class="rounded shadow-sm"
+                            <div class="mb-2 d-flex align-items-center gap-2" id="currentMonumentBox">
+                                <img src="{{ $country->monument_picture_url }}" class="rounded shadow-sm border"
                                     style="width: 70px; height: 48px; object-fit: cover;">
                                 <span class="text-muted fs-12">Current image</span>
                             </div>
                         @endif
-                        <input type="file" name="monument_picture" class="form-control" accept="image/*">
+                        <div id="monumentPreviewContainer" class="mb-2 d-none align-items-center gap-2">
+                            <img id="monumentPreview" src="" alt="Monument Preview" class="rounded border shadow-sm" style="width: 70px; height: 48px; object-fit: cover;">
+                            <span class="text-muted fs-12">New monument preview</span>
+                        </div>
+                        <input type="file" name="monument_picture" id="monument_picture_input" class="form-control" accept="image/*">
                         <small class="text-muted fs-11">Leave empty to keep existing. JPG, PNG, WEBP. Max 5MB.</small>
                     </div>
 
@@ -431,6 +435,28 @@
                         reader.readAsDataURL(file);
                     } else {
                         updateFlagFromCode();
+                    }
+                });
+            }
+
+            // Monument Picture Preview
+            const monumentInput = document.getElementById("monument_picture_input");
+            const monumentPreview = document.getElementById("monumentPreview");
+            const monumentContainer = document.getElementById("monumentPreviewContainer");
+            if (monumentInput) {
+                monumentInput.addEventListener("change", function(e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            monumentPreview.src = evt.target.result;
+                            monumentContainer.classList.remove("d-none");
+                            monumentContainer.classList.add("d-flex");
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        monumentContainer.classList.add("d-none");
+                        monumentContainer.classList.remove("d-flex");
                     }
                 });
             }
