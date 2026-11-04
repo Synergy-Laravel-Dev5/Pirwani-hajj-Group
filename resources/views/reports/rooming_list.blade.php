@@ -3,7 +3,6 @@
 
 @section('content')
 <style>
-    /* Official Manifest Table Styling matching PDF */
     .manifest-table {
         border-collapse: collapse;
         width: 100%;
@@ -230,16 +229,16 @@
                             <i class="mdi mdi-view-grid-outline me-1"></i> Room Cards View
                         </a>
                     </div>
-                    <button type="button" class="btn btn-primary btn-sm fw-bold text-white shadow-sm" id="btnHeaderAssignSelected" title="Assign room to selected pilgrims">
-                        <i class="mdi mdi-door-open me-1"></i> Assign Room (<span id="headerSelectedCountBadge">0</span>)
+                    <button type="button" class="btn btn-primary btn-sm fw-bold text-white shadow-sm btn-assign-selected-action" id="btnHeaderAssignSelected" title="Assign room to selected pilgrims">
+                        <i class="mdi mdi-door-open me-1"></i> Assign Room (<span class="selected-count-badge" id="headerSelectedCountBadge">0</span>)
                     </button>
-                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" id="btnHeaderAssignByHajiId" title="Assign room by typing Haji ID / HB Number">
+                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm btn-assign-haji-action" id="btnHeaderAssignByHajiId" data-bs-toggle="modal" data-bs-target="#assignRoomModal" title="Assign room by typing Haji ID / HB Number">
                         <i class="mdi mdi-card-account-details-outline me-1"></i> Assign by Haji ID
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="btnHeaderDeselectAll" title="Clear selection">
+                    <button type="button" class="btn btn-outline-secondary btn-sm d-none btn-deselect-action" id="btnHeaderDeselectAll" title="Clear selection">
                         <i class="mdi mdi-close me-1"></i> Deselect
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btnHeaderBulkUnassign" title="Unassign selected pilgrims from room">
+                    <button type="button" class="btn btn-outline-danger btn-sm d-none btn-bulk-unassign-action" id="btnHeaderBulkUnassign" title="Unassign selected pilgrims from room">
                         <i class="mdi mdi-close-circle-outline me-1"></i> Unassign
                     </button>
                     <a href="{{ route('report.rooming-list.export-excel', request()->query()) }}" 
@@ -753,11 +752,25 @@
                         </div>
                     </div>
                     <div class="card-header bg-white border-bottom py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="fw-bold text-dark fs-14">
                                 <i class="mdi mdi-table-eye text-primary me-1"></i>Manifest Columns
                             </span>
                             <span class="badge bg-light text-muted border">Customizable View</span>
+
+                            {{-- Direct Room Assignment Buttons on Manifest Table Header --}}
+                            <button type="button" class="btn btn-primary btn-sm fw-bold text-white shadow-sm btn-assign-selected-action ms-sm-2" id="btnManifestAssignSelected" title="Assign room to selected pilgrims">
+                                <i class="mdi mdi-door-open me-1"></i> Assign Room (<span class="selected-count-badge" id="manifestSelectedCountBadge">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm btn-assign-haji-action" id="btnManifestAssignByHajiId" data-bs-toggle="modal" data-bs-target="#assignRoomModal" title="Assign room by typing Haji ID / HB Number">
+                                <i class="mdi mdi-card-account-details-outline me-1"></i> Assign by Haji ID
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm d-none btn-deselect-action" id="btnManifestDeselectAll" title="Clear selection">
+                                <i class="mdi mdi-close me-1"></i> Deselect
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm d-none btn-bulk-unassign-action" id="btnManifestBulkUnassign" title="Unassign selected pilgrims from room">
+                                <i class="mdi mdi-close-circle-outline me-1"></i> Unassign
+                            </button>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             {{-- Columns Filter Dropdown --}}
@@ -1303,7 +1316,7 @@
 </div>
 
 {{-- Bulk Assign Room Modal --}}
-<div class="modal fade" id="assignRoomModal" tabindex="-1" aria-labelledby="assignRoomModalLabel" aria-hidden="true">
+<div class="modal fade" id="assignRoomModal" tabindex="-1" aria-labelledby="assignRoomModalLabel" aria-hidden="true" style="z-index: 1065;">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <form method="POST" action="{{ route('report.rooming-list.assign-room') }}" id="assignRoomForm">
@@ -1551,29 +1564,84 @@
         // ═══════════════════════════════════════
         const selectAllEl = document.getElementById('selectAllPilgrims');
         const pilgrimCheckboxes = document.querySelectorAll('.pilgrim-check');
-        const assignModalEl = document.getElementById('assignRoomModal');
-        const assignModal = assignModalEl ? new bootstrap.Modal(assignModalEl) : null;
+
+        // Robust Modal Opening Helper (Handles Bootstrap 5 instance, jQuery modal, and direct fallback)
+        function safeShowAssignModal() {
+            const modalEl = document.getElementById('assignRoomModal');
+            if (!modalEl) {
+                console.error('Modal element #assignRoomModal not found!');
+                return;
+            }
+
+            // 1. Try Bootstrap 5 getOrCreateInstance
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const inst = bootstrap.Modal.getOrCreateInstance(modalEl, {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    if (inst) {
+                        inst.show();
+                        return;
+                    }
+                }
+            } catch (e1) {
+                console.warn('Bootstrap 5 Modal show failed:', e1);
+            }
+
+            // 2. Try jQuery modal
+            try {
+                if (window.jQuery && typeof jQuery(modalEl).modal === 'function') {
+                    jQuery(modalEl).modal('show');
+                    return;
+                }
+            } catch (e2) {
+                console.warn('jQuery modal show failed:', e2);
+            }
+
+            // 3. Direct DOM fallback
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+            document.body.classList.add('modal-open');
+            if (!document.querySelector('.modal-backdrop')) {
+                const bd = document.createElement('div');
+                bd.className = 'modal-backdrop fade show';
+                document.body.appendChild(bd);
+            }
+        }
 
         function updateSelectionState() {
             const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
             const count = checked.length;
 
-            const badgeEl = document.getElementById('headerSelectedCountBadge');
-            const deselectBtn = document.getElementById('btnHeaderDeselectAll');
-            const unassignBtn = document.getElementById('btnHeaderBulkUnassign');
+            document.querySelectorAll('#headerSelectedCountBadge, #manifestSelectedCountBadge, .selected-count-badge').forEach(b => {
+                b.innerText = count;
+            });
 
-            if (badgeEl) badgeEl.innerText = count;
+            const deselectBtns = document.querySelectorAll('#btnHeaderDeselectAll, #btnManifestDeselectAll, .btn-deselect-action');
+            const unassignBtns = document.querySelectorAll('#btnHeaderBulkUnassign, #btnManifestBulkUnassign, .btn-bulk-unassign-action');
+            const assignBtns = document.querySelectorAll('#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action');
 
             if (count > 0) {
-                if (deselectBtn) deselectBtn.classList.remove('d-none');
-                if (unassignBtn) unassignBtn.classList.remove('d-none');
+                deselectBtns.forEach(btn => btn.classList.remove('d-none'));
+                unassignBtns.forEach(btn => btn.classList.remove('d-none'));
+                assignBtns.forEach(btn => {
+                    btn.setAttribute('data-bs-toggle', 'modal');
+                    btn.setAttribute('data-bs-target', '#assignRoomModal');
+                });
             } else {
-                if (deselectBtn) deselectBtn.classList.add('d-none');
-                if (unassignBtn) unassignBtn.classList.add('d-none');
+                deselectBtns.forEach(btn => btn.classList.add('d-none'));
+                unassignBtns.forEach(btn => btn.classList.add('d-none'));
+                assignBtns.forEach(btn => {
+                    btn.removeAttribute('data-bs-toggle');
+                    btn.removeAttribute('data-bs-target');
+                });
             }
 
             // Update row background
-            pilgrimCheckboxes.forEach(cb => {
+            document.querySelectorAll('.pilgrim-check').forEach(cb => {
                 const tr = cb.closest('tr');
                 if (tr) {
                     if (cb.checked) tr.classList.add('selected-pilgrim-row');
@@ -1581,30 +1649,14 @@
                 }
             });
 
-            if (selectAllEl) {
-                selectAllEl.checked = (count > 0 && count === pilgrimCheckboxes.length);
+            const saEl = document.getElementById('selectAllPilgrims');
+            if (saEl) {
+                const totalBoxes = document.querySelectorAll('.pilgrim-check').length;
+                saEl.checked = (count > 0 && count === totalBoxes);
             }
         }
 
-        if (selectAllEl) {
-            selectAllEl.addEventListener('change', function() {
-                const state = this.checked;
-                pilgrimCheckboxes.forEach(cb => cb.checked = state);
-                updateSelectionState();
-            });
-        }
-
-        pilgrimCheckboxes.forEach(cb => {
-            cb.addEventListener('change', updateSelectionState);
-        });
-
-        document.getElementById('btnHeaderDeselectAll')?.addEventListener('click', function() {
-            pilgrimCheckboxes.forEach(cb => cb.checked = false);
-            if (selectAllEl) selectAllEl.checked = false;
-            updateSelectionState();
-        });
-
-        document.getElementById('btnHeaderBulkUnassign')?.addEventListener('click', function() {
+        function executeBulkUnassign() {
             const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
             if (checked.length === 0) {
                 alert('Please select at least one pilgrim to unassign.');
@@ -1635,12 +1687,33 @@
                     document.getElementById('bulkUnassignForm')?.submit();
                 }
             }
+        }
+
+        function executeDeselectAll() {
+            document.querySelectorAll('.pilgrim-check').forEach(cb => cb.checked = false);
+            const sa = document.getElementById('selectAllPilgrims');
+            if (sa) sa.checked = false;
+            updateSelectionState();
+        }
+
+        if (selectAllEl) {
+            selectAllEl.addEventListener('change', function() {
+                const state = this.checked;
+                document.querySelectorAll('.pilgrim-check').forEach(cb => cb.checked = state);
+                updateSelectionState();
+            });
+        }
+
+        document.querySelectorAll('.pilgrim-check').forEach(cb => {
+            cb.addEventListener('change', updateSelectionState);
         });
 
-        document.getElementById('btnDeselectAll')?.addEventListener('click', function() {
-            pilgrimCheckboxes.forEach(cb => cb.checked = false);
-            if (selectAllEl) selectAllEl.checked = false;
-            updateSelectionState();
+        document.querySelectorAll('#btnHeaderDeselectAll, #btnManifestDeselectAll, .btn-deselect-action, #btnDeselectAll').forEach(btn => {
+            btn.addEventListener('click', executeDeselectAll);
+        });
+
+        document.querySelectorAll('#btnHeaderBulkUnassign, #btnManifestBulkUnassign, .btn-bulk-unassign-action').forEach(btn => {
+            btn.addEventListener('click', executeBulkUnassign);
         });
 
         // ═══════════════════════════════════════
@@ -1696,316 +1769,373 @@
 
         // Reusable Helper to Populate and Open Assign Modal for Pilgrims
         function populateAndOpenAssignModal(checkboxesList, fallbackBtn = null) {
-            const hiddenInputs = document.getElementById('hiddenPersonInputs');
-            const pillsContainer = document.getElementById('selectedPilgrimsPills');
-            const modalCount = document.getElementById('modalSelectedCount');
-            const modalTypesSummary = document.getElementById('modalTypesSummary');
-            const hInp = document.getElementById('assignModalHajiIds');
-            const roomTypeSelect = document.getElementById('assignModalRoomType');
-            const locSelect = document.getElementById('assignModalLocation');
-            const hSelect = document.getElementById('assignModalHotelSelect');
-            const hInput = document.getElementById('assignModalHotelInput');
-            const genderSelect = document.getElementById('assignModalGender');
+            try {
+                const hiddenInputs = document.getElementById('hiddenPersonInputs');
+                const pillsContainer = document.getElementById('selectedPilgrimsPills');
+                const modalCount = document.getElementById('modalSelectedCount');
+                const modalTypesSummary = document.getElementById('modalTypesSummary');
+                const hInp = document.getElementById('assignModalHajiIds');
+                const roomTypeSelect = document.getElementById('assignModalRoomType');
+                const locSelect = document.getElementById('assignModalLocation');
+                const hSelect = document.getElementById('assignModalHotelSelect');
+                const hInput = document.getElementById('assignModalHotelInput');
+                const genderSelect = document.getElementById('assignModalGender');
 
-            if (hiddenInputs) hiddenInputs.innerHTML = '';
-            if (pillsContainer) pillsContainer.innerHTML = '';
+                if (hiddenInputs) hiddenInputs.innerHTML = '';
+                if (pillsContainer) pillsContainer.innerHTML = '';
 
-            const hajiIds = [];
-            let femaleCount = 0;
-            let maleCount = 0;
-            const bookedTypes = {};
-            let prefilledHotel = '';
-            let prefilledLocation = '';
-            let prefilledType = '';
+                const hajiIds = [];
+                let femaleCount = 0;
+                let maleCount = 0;
+                const bookedTypes = {};
+                let prefilledHotel = '';
+                let prefilledLocation = '';
+                let prefilledType = '';
 
-            const seenPids = new Set();
-            checkboxesList.forEach(cb => {
-                const pid = cb.value;
-                if (!pid || seenPids.has(pid)) return;
-                seenPids.add(pid);
+                const seenPids = new Set();
+                (checkboxesList || []).forEach(cb => {
+                    const pid = cb.value;
+                    if (!pid || seenPids.has(pid)) return;
+                    seenPids.add(pid);
 
-                const name = cb.getAttribute('data-name') || '';
-                const haji = cb.getAttribute('data-haji') || '';
-                const hb = cb.getAttribute('data-hb') || '';
-                const gender = cb.getAttribute('data-gender') || 'Male';
-                const bType = cb.getAttribute('data-booked-type') || 'Quad';
-                const hotel = cb.getAttribute('data-hotel') || '';
-                const loc = cb.getAttribute('data-location') || '';
+                    const name = cb.getAttribute('data-name') || '';
+                    const haji = cb.getAttribute('data-haji') || '';
+                    const hb = cb.getAttribute('data-hb') || '';
+                    const gender = cb.getAttribute('data-gender') || 'Male';
+                    const bType = cb.getAttribute('data-booked-type') || 'Quad';
+                    const hotel = cb.getAttribute('data-hotel') || '';
+                    const loc = cb.getAttribute('data-location') || '';
 
-                if (haji) hajiIds.push(haji);
-                if (hotel && !prefilledHotel && hotel !== 'Pending Room Allocation' && hotel !== 'Unspecified Hotel') {
+                    if (haji) hajiIds.push(haji);
+                    if (hotel && !prefilledHotel && hotel !== 'Pending Room Allocation' && hotel !== 'Unspecified Hotel') {
+                        prefilledHotel = hotel;
+                    }
+                    if (loc && !prefilledLocation && loc !== 'unassigned') {
+                        prefilledLocation = loc;
+                    }
+                    if (bType && !prefilledType) prefilledType = bType;
+
+                    if (gender.toLowerCase() === 'female') femaleCount++;
+                    else maleCount++;
+
+                    bookedTypes[bType] = (bookedTypes[bType] || 0) + 1;
+
+                    if (hiddenInputs) {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'person_ids[]';
+                        inp.value = pid;
+                        hiddenInputs.appendChild(inp);
+                    }
+
+                    if (pillsContainer) {
+                        const pill = document.createElement('span');
+                        pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
+                        pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji || '—'})</strong> <small class="opacity-75">[${hb || bType}]</small>`;
+                        pillsContainer.appendChild(pill);
+                    }
+                });
+
+                if (fallbackBtn && seenPids.size === 0) {
+                    const pid = fallbackBtn.getAttribute('data-id');
+                    const haji = fallbackBtn.getAttribute('data-haji') || '';
+                    const name = fallbackBtn.getAttribute('data-name') || '';
+                    const hb = fallbackBtn.getAttribute('data-hb') || '';
+                    const hotel = fallbackBtn.getAttribute('data-hotel') || '';
+                    const location = fallbackBtn.getAttribute('data-location') || 'makkah';
+                    const type = fallbackBtn.getAttribute('data-type') || 'Quad';
+                    const gender = fallbackBtn.getAttribute('data-gender') || 'Any';
+
+                    if (haji) hajiIds.push(haji);
                     prefilledHotel = hotel;
-                }
-                if (loc && !prefilledLocation && loc !== 'unassigned') {
-                    prefilledLocation = loc;
-                }
-                if (bType && !prefilledType) prefilledType = bType;
+                    prefilledLocation = location;
+                    prefilledType = type;
+                    if (gender.toLowerCase() === 'female') femaleCount++;
+                    else maleCount++;
 
-                if (gender.toLowerCase() === 'female') femaleCount++;
-                else maleCount++;
+                    if (hiddenInputs && pid) {
+                        const inp = document.createElement('input');
+                        inp.type = 'hidden';
+                        inp.name = 'person_ids[]';
+                        inp.value = pid;
+                        hiddenInputs.appendChild(inp);
+                    }
 
-                bookedTypes[bType] = (bookedTypes[bType] || 0) + 1;
-
-                if (hiddenInputs) {
-                    const inp = document.createElement('input');
-                    inp.type = 'hidden';
-                    inp.name = 'person_ids[]';
-                    inp.value = pid;
-                    hiddenInputs.appendChild(inp);
-                }
-
-                if (pillsContainer) {
-                    const pill = document.createElement('span');
-                    pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
-                    pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji || '—'})</strong> <small class="opacity-75">[${hb || bType}]</small>`;
-                    pillsContainer.appendChild(pill);
-                }
-            });
-
-            if (fallbackBtn && seenPids.size === 0) {
-                const pid = fallbackBtn.getAttribute('data-id');
-                const haji = fallbackBtn.getAttribute('data-haji') || '';
-                const name = fallbackBtn.getAttribute('data-name') || '';
-                const hb = fallbackBtn.getAttribute('data-hb') || '';
-                const hotel = fallbackBtn.getAttribute('data-hotel') || '';
-                const location = fallbackBtn.getAttribute('data-location') || 'makkah';
-                const type = fallbackBtn.getAttribute('data-type') || 'Quad';
-                const gender = fallbackBtn.getAttribute('data-gender') || 'Any';
-
-                if (haji) hajiIds.push(haji);
-                prefilledHotel = hotel;
-                prefilledLocation = location;
-                prefilledType = type;
-                if (gender.toLowerCase() === 'female') femaleCount++;
-                else maleCount++;
-
-                if (hiddenInputs) {
-                    const inp = document.createElement('input');
-                    inp.type = 'hidden';
-                    inp.name = 'person_ids[]';
-                    inp.value = pid;
-                    hiddenInputs.appendChild(inp);
+                    if (pillsContainer) {
+                        const pill = document.createElement('span');
+                        pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
+                        pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji})</strong> <small class="opacity-75">[${hb}]</small>`;
+                        pillsContainer.appendChild(pill);
+                    }
                 }
 
-                if (pillsContainer) {
-                    const pill = document.createElement('span');
-                    pill.className = `badge ${gender.toLowerCase() === 'female' ? 'bg-danger text-white' : 'bg-primary text-white'} p-1 px-2 me-1 mb-1 shadow-sm`;
-                    pill.innerHTML = `<i class="mdi ${gender.toLowerCase() === 'female' ? 'mdi-account-female' : 'mdi-account'} me-1"></i>${name} <strong>(${haji})</strong> <small class="opacity-75">[${hb}]</small>`;
-                    pillsContainer.appendChild(pill);
+                const totalSelected = seenPids.size || (fallbackBtn ? 1 : 0);
+                if (modalCount) modalCount.innerText = totalSelected;
+
+                // Populate Haji IDs in text box (e.g. PW27001, PW27002)
+                if (hInp) hInp.value = hajiIds.join(', ');
+
+                // Types summary
+                if (modalTypesSummary) {
+                    const typeArr = Object.entries(bookedTypes).map(([k, v]) => `${v} ${k}`);
+                    modalTypesSummary.innerText = typeArr.length ? ('Booked: ' + typeArr.join(', ')) : (hajiIds.join(', '));
                 }
-            }
 
-            const totalSelected = seenPids.size || (fallbackBtn ? 1 : 0);
-            if (modalCount) modalCount.innerText = totalSelected;
+                // Location
+                if (locSelect) {
+                    const curFilter = "{{ strtolower(trim(is_array($locationFilter ?? null) ? ($locationFilter[0] ?? 'makkah') : ($locationFilter ?? 'makkah')) ?: 'makkah') }}";
+                    locSelect.value = (prefilledLocation && prefilledLocation !== 'unassigned') ? prefilledLocation.toLowerCase() : ((curFilter && curFilter !== 'all') ? curFilter : 'makkah');
+                }
 
-            // Populate Haji IDs in text box (e.g. PW27001, PW27002)
-            if (hInp) hInp.value = hajiIds.join(', ');
-
-            // Types summary
-            if (modalTypesSummary) {
-                const typeArr = Object.entries(bookedTypes).map(([k, v]) => `${v} ${k}`);
-                modalTypesSummary.innerText = typeArr.length ? ('Booked: ' + typeArr.join(', ')) : (hajiIds.join(', '));
-            }
-
-            // Location
-            if (locSelect) {
-                const curFilter = "{{ strtolower(trim($locationFilter ?? 'makkah')) }}";
-                locSelect.value = (prefilledLocation && prefilledLocation !== 'unassigned') ? prefilledLocation.toLowerCase() : ((curFilter && curFilter !== 'all') ? curFilter : 'makkah');
-            }
-
-            // Hotel
-            const activeLoc = locSelect ? locSelect.value.toLowerCase() : 'makkah';
-            if (!prefilledHotel || prefilledHotel === 'Pending Room Allocation' || prefilledHotel === 'Unspecified Hotel') {
-                if (activeLoc === 'azizia') {
-                    prefilledHotel = 'BUILDING';
-                } else if (activeLoc === 'mina') {
-                    prefilledHotel = 'CAMP';
-                } else if (hSelect && hSelect.options.length > 1) {
-                    let matchedH = false;
+                // Hotel
+                const activeLoc = locSelect ? locSelect.value.toLowerCase() : 'makkah';
+                if (!prefilledHotel || prefilledHotel === 'Pending Room Allocation' || prefilledHotel === 'Unspecified Hotel') {
+                    if (activeLoc === 'azizia') {
+                        prefilledHotel = 'BUILDING';
+                    } else if (activeLoc === 'mina') {
+                        prefilledHotel = 'CAMP';
+                    } else if (hSelect && hSelect.options.length > 1) {
+                        let matchedH = false;
+                        for (let opt of hSelect.options) {
+                            const optStage = (opt.getAttribute('data-stage') || '').toLowerCase();
+                            if (opt.value && (optStage === activeLoc || opt.text.toLowerCase().includes(activeLoc))) {
+                                prefilledHotel = opt.value;
+                                matchedH = true;
+                                break;
+                            }
+                        }
+                        if (!matchedH) prefilledHotel = hSelect.options[1].value;
+                    }
+                }
+                if (hInput) hInput.value = prefilledHotel;
+                if (hSelect && prefilledHotel) {
                     for (let opt of hSelect.options) {
-                        const optStage = (opt.getAttribute('data-stage') || '').toLowerCase();
-                        if (opt.value && (optStage === activeLoc || opt.text.toLowerCase().includes(activeLoc))) {
-                            prefilledHotel = opt.value;
-                            matchedH = true;
+                        if (opt.value && opt.value.toLowerCase() === prefilledHotel.toLowerCase()) {
+                            hSelect.value = opt.value;
                             break;
                         }
                     }
-                    if (!matchedH) prefilledHotel = hSelect.options[1].value;
                 }
-            }
-            if (hInput) hInput.value = prefilledHotel;
-            if (hSelect && prefilledHotel) {
-                for (let opt of hSelect.options) {
-                    if (opt.value && opt.value.toLowerCase() === prefilledHotel.toLowerCase()) {
-                        hSelect.value = opt.value;
-                        break;
+
+                // Smart suggest room type based on count or booked type
+                if (roomTypeSelect) {
+                    const distinctTypes = Object.keys(bookedTypes);
+                    if (distinctTypes.length === 1) {
+                        const onlyType = distinctTypes[0].toLowerCase();
+                        if (onlyType.includes('double')) roomTypeSelect.value = 'Double';
+                        else if (onlyType.includes('triple')) roomTypeSelect.value = 'Triple';
+                        else if (onlyType.includes('quad')) roomTypeSelect.value = 'Quad';
+                        else if (onlyType.includes('quint')) roomTypeSelect.value = 'Quint';
+                        else if (onlyType.includes('six') || onlyType.includes('sharing')) roomTypeSelect.value = 'Six';
+                        else if (onlyType.includes('single')) roomTypeSelect.value = 'Single';
+                    } else if (prefilledType) {
+                        const pt = prefilledType.toLowerCase();
+                        if (pt.includes('double')) roomTypeSelect.value = 'Double';
+                        else if (pt.includes('triple')) roomTypeSelect.value = 'Triple';
+                        else if (pt.includes('quad')) roomTypeSelect.value = 'Quad';
+                        else if (pt.includes('quint')) roomTypeSelect.value = 'Quint';
+                        else if (pt.includes('six') || pt.includes('sharing')) roomTypeSelect.value = 'Six';
+                        else if (pt.includes('single')) roomTypeSelect.value = 'Single';
+                    } else {
+                        if (totalSelected === 1) roomTypeSelect.value = 'Single';
+                        else if (totalSelected === 2) roomTypeSelect.value = 'Double';
+                        else if (totalSelected === 3) roomTypeSelect.value = 'Triple';
+                        else if (totalSelected === 4) roomTypeSelect.value = 'Quad';
+                        else if (totalSelected === 5) roomTypeSelect.value = 'Quint';
+                        else if (totalSelected >= 6) roomTypeSelect.value = 'Six';
                     }
                 }
-            }
 
-            // Smart suggest room type based on count or booked type
-            if (roomTypeSelect) {
-                const distinctTypes = Object.keys(bookedTypes);
-                if (distinctTypes.length === 1) {
-                    const onlyType = distinctTypes[0].toLowerCase();
-                    if (onlyType.includes('double')) roomTypeSelect.value = 'Double';
-                    else if (onlyType.includes('triple')) roomTypeSelect.value = 'Triple';
-                    else if (onlyType.includes('quad')) roomTypeSelect.value = 'Quad';
-                    else if (onlyType.includes('quint')) roomTypeSelect.value = 'Quint';
-                    else if (onlyType.includes('six') || onlyType.includes('sharing')) roomTypeSelect.value = 'Six';
-                    else if (onlyType.includes('single')) roomTypeSelect.value = 'Single';
-                } else if (prefilledType) {
-                    const pt = prefilledType.toLowerCase();
-                    if (pt.includes('double')) roomTypeSelect.value = 'Double';
-                    else if (pt.includes('triple')) roomTypeSelect.value = 'Triple';
-                    else if (pt.includes('quad')) roomTypeSelect.value = 'Quad';
-                    else if (pt.includes('quint')) roomTypeSelect.value = 'Quint';
-                    else if (pt.includes('six') || pt.includes('sharing')) roomTypeSelect.value = 'Six';
-                    else if (pt.includes('single')) roomTypeSelect.value = 'Single';
-                } else {
-                    if (totalSelected === 1) roomTypeSelect.value = 'Single';
-                    else if (totalSelected === 2) roomTypeSelect.value = 'Double';
-                    else if (totalSelected === 3) roomTypeSelect.value = 'Triple';
-                    else if (totalSelected === 4) roomTypeSelect.value = 'Quad';
-                    else if (totalSelected === 5) roomTypeSelect.value = 'Quint';
-                    else if (totalSelected >= 6) roomTypeSelect.value = 'Six';
+                // Smart suggest gender
+                if (genderSelect) {
+                    if (femaleCount > 0 && maleCount === 0) genderSelect.value = 'Female';
+                    else if (maleCount > 0 && femaleCount === 0) genderSelect.value = 'Male';
+                    else if (maleCount > 0 && femaleCount > 0) genderSelect.value = 'Family';
                 }
+
+                // Reset Room Number to PENDING by default
+                const rInput = document.getElementById('assignModalRoomNumber');
+                const chkPending = document.getElementById('chkRoomPendingToggle');
+                const rHelp = document.getElementById('roomNumberHelpText');
+                if (chkPending) chkPending.checked = true;
+                if (rInput) {
+                    rInput.value = 'PENDING';
+                    rInput.disabled = false;
+                    rInput.required = false;
+                    rInput.placeholder = 'e.g. 101, 204 or leave as PENDING';
+                }
+                if (rHelp) rHelp.innerHTML = `✅ <strong>${totalSelected} pilgrim(s)</strong> (${hajiIds.join(', ')}) allocated (Room: PENDING). Type room number to allocate specific room.`;
+
+                const lookupStatus = document.getElementById('hajiLookupStatus');
+                const lookupResults = document.getElementById('liveLookupResults');
+                if (lookupStatus) lookupStatus.innerHTML = '';
+                if (lookupResults) {
+                    lookupResults.classList.add('d-none');
+                    lookupResults.innerHTML = '';
+                }
+            } catch(err) {
+                console.error('populateAndOpenAssignModal error:', err);
             }
 
-            // Smart suggest gender
-            if (genderSelect) {
-                if (femaleCount > 0 && maleCount === 0) genderSelect.value = 'Female';
-                else if (maleCount > 0 && femaleCount === 0) genderSelect.value = 'Male';
-                else if (maleCount > 0 && femaleCount > 0) genderSelect.value = 'Family';
-            }
-
-            // Reset Room Number to PENDING by default
-            const rInput = document.getElementById('assignModalRoomNumber');
-            const chkPending = document.getElementById('chkRoomPendingToggle');
-            const rHelp = document.getElementById('roomNumberHelpText');
-            if (chkPending) chkPending.checked = true;
-            if (rInput) {
-                rInput.value = 'PENDING';
-                rInput.disabled = false;
-                rInput.required = false;
-                rInput.placeholder = 'e.g. 101, 204 or leave as PENDING';
-            }
-            if (rHelp) rHelp.innerHTML = `✅ <strong>${totalSelected} pilgrim(s)</strong> (${hajiIds.join(', ')}) allocated (Room: PENDING). Type room number to allocate specific room.`;
-
-            const lookupStatus = document.getElementById('hajiLookupStatus');
-            const lookupResults = document.getElementById('liveLookupResults');
-            if (lookupStatus) lookupStatus.innerHTML = '';
-            if (lookupResults) {
-                lookupResults.classList.add('d-none');
-                lookupResults.innerHTML = '';
-            }
-
-            if (assignModal) {
-                assignModal.show();
-                setTimeout(() => {
-                    const rInput = document.getElementById('assignModalRoomNumber');
-                    if (rInput) rInput.focus();
-                }, 350);
-            }
+            safeShowAssignModal();
+            setTimeout(() => {
+                const rInput = document.getElementById('assignModalRoomNumber');
+                if (rInput) rInput.focus();
+            }, 350);
         }
-
-        // Header Button 1: Assign Room (from selected checkboxes)
-        document.getElementById('btnHeaderAssignSelected')?.addEventListener('click', function() {
-            const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
-            if (checked.length === 0) {
-                alert('Please select at least one pilgrim checkbox first, or click "Assign by Haji ID".');
-                return;
-            }
-            populateAndOpenAssignModal(checked);
-        });
 
         // Header Button 2: Assign by Haji ID
         function openAssignByHajiIdModal() {
-            const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
-            if (checked.length > 0) {
-                populateAndOpenAssignModal(checked);
-                setTimeout(() => {
-                    const hInp = document.getElementById('assignModalHajiIds');
-                    if (hInp) {
-                        const hajiIds = checked.map(cb => cb.getAttribute('data-haji-id') || cb.getAttribute('data-haji')).filter(Boolean);
-                        if (hajiIds.length > 0) hInp.value = hajiIds.join(', ');
-                        hInp.focus();
+            try {
+                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
+                if (checked.length > 0) {
+                    populateAndOpenAssignModal(checked);
+                    setTimeout(() => {
+                        const hInp = document.getElementById('assignModalHajiIds');
+                        if (hInp) {
+                            const hajiIds = checked.map(cb => cb.getAttribute('data-haji-id') || cb.getAttribute('data-haji')).filter(Boolean);
+                            if (hajiIds.length > 0) hInp.value = hajiIds.join(', ');
+                            hInp.focus();
+                        }
+                    }, 350);
+                    return;
+                }
+
+                const hiddenInputs = document.getElementById('hiddenPersonInputs');
+                const pillsContainer = document.getElementById('selectedPilgrimsPills');
+                const modalCount = document.getElementById('modalSelectedCount');
+                const modalTypesSummary = document.getElementById('modalTypesSummary');
+
+                if (hiddenInputs) hiddenInputs.innerHTML = '';
+                if (pillsContainer) pillsContainer.innerHTML = '<span class="text-muted small">Enter Haji ID(s) or name below to find and assign pilgrims</span>';
+                if (modalCount) modalCount.innerText = '0';
+                if (modalTypesSummary) modalTypesSummary.innerText = 'Assign by Haji ID';
+
+                const hInp = document.getElementById('assignModalHajiIds');
+                if (hInp) hInp.value = '';
+
+                const rInput = document.getElementById('assignModalRoomNumber');
+                const chkPending = document.getElementById('chkRoomPendingToggle');
+                const rHelp = document.getElementById('roomNumberHelpText');
+                if (chkPending) chkPending.checked = true;
+                if (rInput) {
+                    rInput.value = 'PENDING';
+                    rInput.disabled = false;
+                    rInput.required = false;
+                    rInput.placeholder = 'e.g. 101, 204 or leave as PENDING';
+                }
+                if (rHelp) rHelp.innerHTML = 'Type Haji ID(s) above, then type room number or leave as PENDING.';
+
+                // Pre-select location based on current filter
+                const locSelect = document.getElementById('assignModalLocation');
+                const curFilter = "{{ strtolower(trim(is_array($locationFilter ?? null) ? ($locationFilter[0] ?? 'makkah') : ($locationFilter ?? 'makkah')) ?: 'makkah') }}";
+                if (locSelect) {
+                    locSelect.value = (curFilter && curFilter !== 'all') ? curFilter : 'makkah';
+                }
+
+                // Pre-select registered hotel matching active location
+                const hSelect = document.getElementById('assignModalHotelSelect');
+                const hInput = document.getElementById('assignModalHotelInput');
+                const activeStage = locSelect ? locSelect.value : 'makkah';
+                if (hSelect && hInput) {
+                    let foundOption = false;
+                    for (let i = 0; i < hSelect.options.length; i++) {
+                        const opt = hSelect.options[i];
+                        if (opt.value && opt.text.toLowerCase().includes(activeStage)) {
+                            hSelect.selectedIndex = i;
+                            hInput.value = opt.value;
+                            foundOption = true;
+                            break;
+                        }
                     }
-                }, 350);
-                return;
-            }
-
-            const hiddenInputs = document.getElementById('hiddenPersonInputs');
-            const pillsContainer = document.getElementById('selectedPilgrimsPills');
-            const modalCount = document.getElementById('modalSelectedCount');
-            const modalTypesSummary = document.getElementById('modalTypesSummary');
-
-            if (hiddenInputs) hiddenInputs.innerHTML = '';
-            if (pillsContainer) pillsContainer.innerHTML = '<span class="text-muted small">Enter Haji ID(s) or name below to find and assign pilgrims</span>';
-            if (modalCount) modalCount.innerText = '0';
-            if (modalTypesSummary) modalTypesSummary.innerText = 'Assign by Haji ID';
-
-            const hInp = document.getElementById('assignModalHajiIds');
-            if (hInp) hInp.value = '';
-
-            const rInput = document.getElementById('assignModalRoomNumber');
-            const chkPending = document.getElementById('chkRoomPendingToggle');
-            const rHelp = document.getElementById('roomNumberHelpText');
-            if (chkPending) chkPending.checked = true;
-            if (rInput) {
-                rInput.value = 'PENDING';
-                rInput.disabled = false;
-                rInput.required = false;
-                rInput.placeholder = 'e.g. 101, 204 or leave as PENDING';
-            }
-            if (rHelp) rHelp.innerHTML = 'Type Haji ID(s) above, then type room number or leave as PENDING.';
-
-            // Pre-select location based on current filter
-            const locSelect = document.getElementById('assignModalLocation');
-            const curFilter = "{{ strtolower(trim($locationFilter ?? 'makkah')) }}";
-            if (locSelect) {
-                locSelect.value = (curFilter && curFilter !== 'all') ? curFilter : 'makkah';
-            }
-
-            // Pre-select registered hotel matching active location
-            const hSelect = document.getElementById('assignModalHotelSelect');
-            const hInput = document.getElementById('assignModalHotelInput');
-            const activeStage = locSelect ? locSelect.value : 'makkah';
-            if (hSelect && hInput) {
-                let foundOption = false;
-                for (let i = 0; i < hSelect.options.length; i++) {
-                    const opt = hSelect.options[i];
-                    if (opt.value && opt.text.toLowerCase().includes(activeStage)) {
-                        hSelect.selectedIndex = i;
-                        hInput.value = opt.value;
-                        foundOption = true;
-                        break;
+                    if (!foundOption && hSelect.options.length > 1) {
+                        hSelect.selectedIndex = 1;
+                        hInput.value = hSelect.value;
                     }
                 }
-                if (!foundOption && hSelect.options.length > 1) {
-                    hSelect.selectedIndex = 1;
-                    hInput.value = hSelect.value;
+
+                const lookupStatus = document.getElementById('hajiLookupStatus');
+                const lookupResults = document.getElementById('liveLookupResults');
+                if (lookupStatus) lookupStatus.innerHTML = '';
+                if (lookupResults) {
+                    lookupResults.classList.add('d-none');
+                    lookupResults.innerHTML = '';
                 }
+            } catch(err) {
+                console.error('openAssignByHajiIdModal error:', err);
             }
 
-            const lookupStatus = document.getElementById('hajiLookupStatus');
-            const lookupResults = document.getElementById('liveLookupResults');
-            if (lookupStatus) lookupStatus.innerHTML = '';
-            if (lookupResults) {
-                lookupResults.classList.add('d-none');
-                lookupResults.innerHTML = '';
-            }
-
-            if (assignModal) {
-                assignModal.show();
-                setTimeout(() => {
-                    if (hInp) hInp.focus();
-                }, 350);
-            }
+            safeShowAssignModal();
+            setTimeout(() => {
+                const hInp = document.getElementById('assignModalHajiIds');
+                if (hInp) hInp.focus();
+            }, 350);
         }
 
-        document.getElementById('btnOpenAssignByHajiId')?.addEventListener('click', openAssignByHajiIdModal);
-        document.getElementById('btnHeaderAssignByHajiId')?.addEventListener('click', openAssignByHajiIdModal);
+        // Direct bindings for Assign Room
+        document.querySelectorAll('#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
+                if (checked.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one pilgrim checkbox first, or click "Assign by Haji ID".');
+                    return;
+                }
+                populateAndOpenAssignModal(checked);
+            });
+        });
+
+        // Direct bindings for Assign by Haji ID
+        document.querySelectorAll('#btnHeaderAssignByHajiId, #btnManifestAssignByHajiId, .btn-assign-haji-action, #btnOpenAssignByHajiId').forEach(btn => {
+            btn.addEventListener('click', openAssignByHajiIdModal);
+        });
+
+        // Global Fallback Delegated Listeners (jQuery)
+        if (window.jQuery) {
+            $(document).on('click', '#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action', function(e) {
+                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
+                if (checked.length === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one pilgrim checkbox first, or click "Assign by Haji ID".');
+                    return;
+                }
+                populateAndOpenAssignModal(checked);
+            });
+
+            $(document).on('click', '#btnHeaderAssignByHajiId, #btnManifestAssignByHajiId, .btn-assign-haji-action, #btnOpenAssignByHajiId', function(e) {
+                openAssignByHajiIdModal();
+            });
+
+            $(document).on('click', '#btnHeaderDeselectAll, #btnManifestDeselectAll, .btn-deselect-action, #btnDeselectAll', function(e) {
+                e.preventDefault();
+                executeDeselectAll();
+            });
+
+            $(document).on('click', '#btnHeaderBulkUnassign, #btnManifestBulkUnassign, .btn-bulk-unassign-action', function(e) {
+                e.preventDefault();
+                executeBulkUnassign();
+            });
+
+            $(document).on('change', '.pilgrim-check', updateSelectionState);
+            $(document).on('change', '#selectAllPilgrims', function() {
+                const state = this.checked;
+                document.querySelectorAll('.pilgrim-check').forEach(cb => cb.checked = state);
+                updateSelectionState();
+            });
+
+            // Dismiss modal fallback support
+            $(document).on('click', '#assignRoomModal [data-bs-dismiss="modal"]', function() {
+                const modalEl = document.getElementById('assignRoomModal');
+                if (modalEl) {
+                    modalEl.classList.remove('show');
+                    modalEl.style.display = 'none';
+                    modalEl.setAttribute('aria-hidden', 'true');
+                    modalEl.removeAttribute('aria-modal');
+                }
+                document.body.classList.remove('modal-open');
+                document.querySelectorAll('.modal-backdrop').forEach(bd => bd.remove());
+            });
+        }
 
         // Direct "Assign by Haji ID" Button on Pending Room Group / Row / Card
         document.querySelectorAll('.btn-quick-assign-room').forEach(btn => {
