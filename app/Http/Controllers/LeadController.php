@@ -7,11 +7,15 @@ use App\Models\Company;
 use App\Models\Package;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class LeadController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('lead_view');
         $leads = Lead::with(['company', 'user'])
             ->latest()
             ->get();
@@ -20,6 +24,7 @@ class LeadController extends Controller
 
     public function create()
     {
+        $this->authorize('lead_create');
         $companies = Company::all();
         $packages = Package::all();
         $users = User::all();
@@ -28,6 +33,7 @@ class LeadController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('lead_create');
 
         $data = $request->validate([
             'contact_person' => 'nullable|string|max:255',
@@ -51,6 +57,7 @@ class LeadController extends Controller
 
     public function show($id)
     {
+        $this->authorize('lead_show');
         $lead = Lead::with(['company', 'package', 'user', 'followUps'])->findOrFail($id);
 
         return view('lead.show', compact('lead'));
@@ -59,6 +66,7 @@ class LeadController extends Controller
 
     public function edit(Lead $lead)
     {
+        $this->authorize('lead_edit');
         $packages = Package::all();
         $companies = Company::all();
         $users = User::all();
@@ -75,6 +83,7 @@ class LeadController extends Controller
 
     public function update(Request $request, Lead $lead)
     {
+        $this->authorize('lead_edit');
         $data = $request->validate([
             'contact_person' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
@@ -94,6 +103,7 @@ class LeadController extends Controller
     }
     public function destroy(Lead $lead)
     {
+        $this->authorize('lead_trash');
         $lead->delete();
         return redirect()
             ->route('lead.index')

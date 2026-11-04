@@ -9,11 +9,15 @@ use App\Models\Package;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class FlightReportController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('flight_report_view');
         $data = $this->getFilteredFlightData($request);
 
         return view('reports.flight', $data);
@@ -21,6 +25,7 @@ class FlightReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $this->authorize('flight_report_export');
         $data = $this->getFilteredFlightData($request);
 
         $visibleCols = null;
@@ -49,6 +54,7 @@ class FlightReportController extends Controller
 
     public function exportExcel(Request $request)
     {
+        $this->authorize('flight_report_export');
         @set_time_limit(180);
         @ini_set('memory_limit', '512M');
 

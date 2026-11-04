@@ -107,6 +107,7 @@
                                     </span>
                                 </td>
                                 <td class="text-end pe-3">
+                                    @can('visa_country_restore')
                                     <form action="{{ route('mobile-ops.visa-countries.restore', $c->id) }}" method="POST"
                                         onsubmit="return confirm('Restore this visa country and all its categories?');">
                                         @csrf
@@ -114,6 +115,7 @@
                                             <i class="mdi mdi-restore me-1"></i> Restore
                                         </button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                         @empty

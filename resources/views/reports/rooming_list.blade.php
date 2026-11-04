@@ -232,7 +232,7 @@
                     <button type="button" class="btn btn-primary btn-sm fw-bold text-white shadow-sm btn-assign-selected-action" id="btnHeaderAssignSelected" title="Assign room to selected pilgrims">
                         <i class="mdi mdi-door-open me-1"></i> Assign Room (<span class="selected-count-badge" id="headerSelectedCountBadge">0</span>)
                     </button>
-                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm btn-assign-haji-action" id="btnHeaderAssignByHajiId" data-bs-toggle="modal" data-bs-target="#assignRoomModal" title="Assign room by typing Haji ID / HB Number">
+                    <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm btn-assign-haji-action" id="btnHeaderAssignByHajiId" title="Assign room by typing Haji ID / HB Number">
                         <i class="mdi mdi-card-account-details-outline me-1"></i> Assign by Haji ID
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm d-none btn-deselect-action" id="btnHeaderDeselectAll" title="Clear selection">
@@ -682,24 +682,25 @@
                     {{-- Location / Stage Quick Switch Pills --}}
                     <div class="d-flex flex-wrap align-items-center gap-1 bg-white p-1 rounded border shadow-sm">
                         <span class="text-muted small fw-bold px-2"><i class="mdi mdi-map-marker text-danger"></i> Stage:</span>
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['location' => 'all'])) }}" 
-                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ (empty($locationFilter) || $locationFilter === 'all') ? 'btn-dark fw-bold' : 'btn-outline-secondary' }}">
+                        <a href="{{ route('report.rooming-list', array_merge(request()->except(['hotel_name', 'hotel']), ['location' => 'all'])) }}" 
+                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ (empty($locationFilter) || $locationFilter === 'all') ? 'btn-dark fw-bold shadow-sm' : 'btn-outline-secondary' }}">
                            All
                         </a>
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['location' => 'makkah'])) }}" 
-                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'makkah' ? 'btn-success fw-bold' : 'btn-outline-secondary' }}">
+                        <a href="{{ route('report.rooming-list', array_merge(request()->except(['hotel_name', 'hotel']), ['location' => 'makkah'])) }}" 
+                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'makkah' ? 'btn-success fw-bold shadow-sm' : 'btn-outline-secondary' }}">
                            🕋 Makkah
                         </a>
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['location' => 'madinah'])) }}" 
-                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'madinah' ? 'btn-info text-white fw-bold' : 'btn-outline-secondary' }}">
+                        <a href="{{ route('report.rooming-list', array_merge(request()->except(['hotel_name', 'hotel']), ['location' => 'madinah'])) }}" 
+                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'madinah' ? 'btn-info text-white fw-bold shadow-sm' : 'btn-outline-secondary' }}">
                            🕌 Madinah
                         </a>
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['location' => 'azizia'])) }}" 
-                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'azizia' ? 'btn-warning text-dark fw-bold' : 'btn-outline-secondary' }}">
+                        <a href="{{ route('report.rooming-list', array_merge(request()->except(['hotel_name', 'hotel']), ['location' => 'azizia'])) }}" 
+                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'azizia' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-outline-secondary' }}">
                            🏢 Azizia
                         </a>
-                        <a href="{{ route('report.rooming-list', array_merge(request()->query(), ['location' => 'mina'])) }}" 
-                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'mina' ? 'btn-secondary text-white fw-bold' : 'btn-outline-secondary' }}">
+                        <a href="{{ route('report.rooming-list', array_merge(request()->except(['hotel_name', 'hotel']), ['location' => 'mina'])) }}" 
+                           class="btn btn-xs py-1 px-2.5 rounded-pill {{ $locationFilter === 'mina' ? 'btn-dark text-white fw-bold shadow-sm' : 'btn-outline-secondary' }}"
+                           style="{{ $locationFilter === 'mina' ? 'background: #0f172a; border-color: #0f172a;' : '' }}">
                            ⛺ Mina
                         </a>
                     </div>
@@ -762,7 +763,7 @@
                             <button type="button" class="btn btn-primary btn-sm fw-bold text-white shadow-sm btn-assign-selected-action ms-sm-2" id="btnManifestAssignSelected" title="Assign room to selected pilgrims">
                                 <i class="mdi mdi-door-open me-1"></i> Assign Room (<span class="selected-count-badge" id="manifestSelectedCountBadge">0</span>)
                             </button>
-                            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm btn-assign-haji-action" id="btnManifestAssignByHajiId" data-bs-toggle="modal" data-bs-target="#assignRoomModal" title="Assign room by typing Haji ID / HB Number">
+                            <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm btn-assign-haji-action" id="btnManifestAssignByHajiId" title="Assign room by typing Haji ID / HB Number">
                                 <i class="mdi mdi-card-account-details-outline me-1"></i> Assign by Haji ID
                             </button>
                             <button type="button" class="btn btn-outline-secondary btn-sm d-none btn-deselect-action" id="btnManifestDeselectAll" title="Clear selection">
@@ -793,6 +794,10 @@
                                     <label class="column-filter-item">
                                         <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="sr" checked>
                                         <span>S.No (SR)</span>
+                                    </label>
+                                    <label class="column-filter-item">
+                                        <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="assign" checked>
+                                        <span>Assign Action</span>
                                     </label>
                                     <label class="column-filter-item">
                                         <input type="checkbox" class="col-toggle-checkbox form-check-input mt-0" data-col="picture" checked>
@@ -879,6 +884,7 @@
                                             <input type="checkbox" id="selectAllPilgrims" class="form-check-input" title="Select / Deselect All">
                                         </th>
                                         <th style="width: 45px;" class="col-sr">SR</th>
+                                        <th style="width: 85px;" class="col-assign no-print text-center">ASSIGN</th>
                                         <th style="width: 80px;" class="col-picture">PICTURE</th>
                                         <th style="width: 95px;" class="col-hajj-id">HAJJ ID</th>
                                         <th style="width: 90px;" class="col-hb">HB</th>
@@ -947,6 +953,7 @@
                                             <tr class="room-divider-row">
                                                 <td class="text-center no-print">—</td>
                                                 <td class="text-center text-muted fw-bold col-sr">{{ $globalSr++ }}</td>
+                                                <td class="text-center text-muted col-assign no-print">—</td>
                                                 <td class="text-center text-muted col-picture">—</td>
                                                 <td class="text-center text-muted col-hajj-id">—</td>
                                                 <td class="text-center text-muted col-hb">—</td>
@@ -973,11 +980,14 @@
                                             </tr>
                                         @else
                                             @foreach($occupants as $oIdx => $occ)
-                                                <tr class="{{ $loop->first ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}">
+                                                <tr class="{{ $loop->first ? 'room-divider-row' : '' }} {{ $isPending ? 'bg-warning-subtle' : '' }}" 
+                                                    id="row-pilgrim-{{ $occ['person_id'] }}-{{ $occ['allocation_id'] ?? 'pending' }}"
+                                                    data-room-key="{{ $roomKey }}">
                                                     <td class="text-center no-print">
                                                         @if(!empty($occ['real_person_id']))
                                                             <input type="checkbox" class="form-check-input pilgrim-check" 
                                                                    value="{{ $occ['real_person_id'] }}"
+                                                                   data-room-key="{{ $roomKey }}"
                                                                    data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
                                                                    data-hotel="{{ $room['hotel_name'] ?? '' }}"
                                                                    data-room="{{ $room['room_number'] ?? '' }}"
@@ -995,6 +1005,56 @@
                                                         @endif
                                                     </td>
                                                     <td class="text-center fw-bold col-sr">{{ $globalSr++ }}</td>
+                                                    <td class="text-center no-print col-assign align-middle" style="white-space: nowrap;">
+                                                        @if(!empty($occ['real_person_id']))
+                                                            @if($isPending)
+                                                                <button type="button" 
+                                                                        class="btn btn-primary btn-xs fw-bold btn-individual-assign py-1 px-2.5 shadow-sm text-nowrap"
+                                                                        data-id="{{ $occ['real_person_id'] }}"
+                                                                        data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                        data-haji="{{ $occ['hajj_id'] ?? '' }}"
+                                                                        data-hb="{{ $occ['hb_number'] ?? '' }}"
+                                                                        data-name="{{ $occ['name'] }}"
+                                                                        data-hotel="{{ $occ['hotel_name'] ?? ($occ['booked_hotel_name'] ?? '') }}"
+                                                                        data-location="{{ $occ['location'] ?? ($room['location'] ?? 'makkah') }}"
+                                                                        data-type="{{ (!empty($occ['booked_room_type']) && !in_array(strtolower($occ['booked_room_type']), ['pending allocation', 'pending'])) ? $occ['booked_room_type'] : ($occ['room_type'] ?? 'Quad') }}"
+                                                                        data-gender="{{ $occ['gender'] ?? 'Any' }}"
+                                                                        title="Assign room to {{ $occ['name'] }} ({{ $occ['hajj_id'] ?? 'Haji' }})">
+                                                                    <i class="mdi mdi-door-open me-0.5"></i> Assign
+                                                                </button>
+                                                            @else
+                                                                <div class="d-inline-flex gap-1 align-items-center">
+                                                                    <button type="button" 
+                                                                            class="btn btn-outline-primary btn-xs fw-bold btn-individual-assign py-1 px-1.5 shadow-sm text-nowrap"
+                                                                            data-id="{{ $occ['real_person_id'] }}"
+                                                                            data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                            data-haji="{{ $occ['hajj_id'] ?? '' }}"
+                                                                            data-hb="{{ $occ['hb_number'] ?? '' }}"
+                                                                            data-name="{{ $occ['name'] }}"
+                                                                            data-hotel="{{ $occ['hotel_name'] ?? ($occ['booked_hotel_name'] ?? '') }}"
+                                                                            data-location="{{ $occ['location'] ?? ($room['location'] ?? 'makkah') }}"
+                                                                            data-type="{{ (!empty($occ['booked_room_type']) && !in_array(strtolower($occ['booked_room_type']), ['pending allocation', 'pending'])) ? $occ['booked_room_type'] : ($occ['room_type'] ?? 'Quad') }}"
+                                                                            data-gender="{{ $occ['gender'] ?? 'Any' }}"
+                                                                            title="Change / Reassign Room for {{ $occ['name'] }}">
+                                                                        <i class="mdi mdi-pencil me-0.5"></i> Edit
+                                                                    </button>
+                                                                    <button type="button" 
+                                                                            class="btn btn-outline-danger btn-xs py-1 px-1.5 btn-single-unassign text-nowrap"
+                                                                            data-id="{{ $occ['real_person_id'] }}"
+                                                                            data-allocation-id="{{ $occ['allocation_id'] ?? '' }}"
+                                                                            data-hotel="{{ $room['hotel_name'] ?? '' }}"
+                                                                            data-room="{{ $room['room_number'] ?? '' }}"
+                                                                            data-location="{{ $room['location'] ?? '' }}"
+                                                                            data-name="{{ $occ['name'] }}"
+                                                                            title="Unassign from Room">
+                                                                        <i class="mdi mdi-close"></i>
+                                                                    </button>
+                                                                </div>
+                                                            @endif
+                                                        @else
+                                                            <span class="text-muted" style="font-size: 10px;">—</span>
+                                                        @endif
+                                                    </td>
                                                     <td class="text-center p-1 col-picture">
                                                         @if(!empty($occ['photo']) && file_exists(public_path($occ['photo'])))
                                                             <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo">
@@ -1019,29 +1079,90 @@
                                                                 <i class="mdi mdi-close-circle-outline me-0.5"></i>Without Ticket
                                                             </span>
                                                         @endif
-                                                        @if(!empty($occ['stage_assignments']) && count($occ['stage_assignments']) > 0)
-                                                            <div class="d-flex flex-wrap gap-1 mt-1 no-print">
-                                                                @if(isset($occ['stage_assignments']['makkah']))
+                                                        @if($activeLocKey === 'mina')
+                                                            @php
+                                                                $minaRoom = $occ['stage_assignments']['mina']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                $hasMinaRoom = !empty($minaRoom) && !in_array(strtoupper(trim($minaRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                            @endphp
+                                                            @if($hasMinaRoom)
+                                                                <div class="d-flex flex-wrap gap-1 mt-1 no-print">
+                                                                    <span class="badge bg-dark text-white border fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Mina / Arafat Camp">
+                                                                        ⛺ Mina: {{ $occ['stage_assignments']['mina']['hotel_name'] ?? ($occ['hotel_name'] ?: 'CAMP') }} ({{ $minaRoom }})
+                                                                    </span>
+                                                                </div>
+                                                            @endif
+                                                        @elseif($activeLocKey === 'makkah')
+                                                            @php
+                                                                $makkahRoom = $occ['stage_assignments']['makkah']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                $hasMakkahRoom = !empty($makkahRoom) && !in_array(strtoupper(trim($makkahRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                            @endphp
+                                                            @if($hasMakkahRoom)
+                                                                <div class="d-flex flex-wrap gap-1 mt-1 no-print">
                                                                     <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Makkah Hotel Room">
-                                                                        🕋 Makkah: {{ $occ['stage_assignments']['makkah']['hotel_name'] }} ({{ $occ['stage_assignments']['makkah']['room_number'] ?: 'Pending' }})
+                                                                        🕋 Makkah: {{ $occ['stage_assignments']['makkah']['hotel_name'] ?? ($occ['hotel_name'] ?: 'Makkah Hotel') }} ({{ $makkahRoom }})
                                                                     </span>
-                                                                @endif
-                                                                @if(isset($occ['stage_assignments']['azizia']))
-                                                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Azizia Building Room">
-                                                                        🏢 Azizia: {{ $occ['stage_assignments']['azizia']['hotel_name'] }} ({{ $occ['stage_assignments']['azizia']['room_number'] ?: 'Pending' }})
-                                                                    </span>
-                                                                @endif
-                                                                @if(isset($occ['stage_assignments']['mina']))
-                                                                    <span class="badge bg-secondary-subtle text-dark border fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Mina / Arafat Camp">
-                                                                        ⛺ Mina: {{ $occ['stage_assignments']['mina']['hotel_name'] }} ({{ $occ['stage_assignments']['mina']['room_number'] ?: 'Pending' }})
-                                                                    </span>
-                                                                @endif
-                                                                @if(isset($occ['stage_assignments']['madinah']))
+                                                                </div>
+                                                            @endif
+                                                        @elseif($activeLocKey === 'madinah')
+                                                            @php
+                                                                $madinahRoom = $occ['stage_assignments']['madinah']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                $hasMadinahRoom = !empty($madinahRoom) && !in_array(strtoupper(trim($madinahRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                            @endphp
+                                                            @if($hasMadinahRoom)
+                                                                <div class="d-flex flex-wrap gap-1 mt-1 no-print">
                                                                     <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Madinah Hotel Room">
-                                                                        🕌 Madinah: {{ $occ['stage_assignments']['madinah']['hotel_name'] }} ({{ $occ['stage_assignments']['madinah']['room_number'] ?: 'Pending' }})
+                                                                        🕌 Madinah: {{ $occ['stage_assignments']['madinah']['hotel_name'] ?? ($occ['hotel_name'] ?: 'Madinah Hotel') }} ({{ $madinahRoom }})
                                                                     </span>
-                                                                @endif
-                                                            </div>
+                                                                </div>
+                                                            @endif
+                                                        @elseif($activeLocKey === 'azizia')
+                                                            @php
+                                                                $aziziaRoom = $occ['stage_assignments']['azizia']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                $hasAziziaRoom = !empty($aziziaRoom) && !in_array(strtoupper(trim($aziziaRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                            @endphp
+                                                            @if($hasAziziaRoom)
+                                                                <div class="d-flex flex-wrap gap-1 mt-1 no-print">
+                                                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Azizia Building Room">
+                                                                        🏢 Azizia: {{ $occ['stage_assignments']['azizia']['hotel_name'] ?? ($occ['hotel_name'] ?: 'Azizia Building') }} ({{ $aziziaRoom }})
+                                                                    </span>
+                                                                </div>
+                                                            @endif
+                                                        @else
+                                                            @php
+                                                                $assignedStages = [];
+                                                                if (!empty($occ['stage_assignments'])) {
+                                                                    foreach ($occ['stage_assignments'] as $sk => $sa) {
+                                                                        $rNum = trim((string)($sa['room_number'] ?? ''));
+                                                                        if (!empty($rNum) && !in_array(strtoupper($rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
+                                                                            $assignedStages[$sk] = $sa;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            @if(count($assignedStages) > 0)
+                                                                <div class="d-flex flex-wrap gap-1 mt-1 no-print">
+                                                                    @if(isset($assignedStages['makkah']))
+                                                                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Makkah Hotel Room">
+                                                                            🕋 Makkah: {{ $assignedStages['makkah']['hotel_name'] }} ({{ $assignedStages['makkah']['room_number'] }})
+                                                                        </span>
+                                                                    @endif
+                                                                    @if(isset($assignedStages['azizia']))
+                                                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Azizia Building Room">
+                                                                            🏢 Azizia: {{ $assignedStages['azizia']['hotel_name'] }} ({{ $assignedStages['azizia']['room_number'] }})
+                                                                        </span>
+                                                                    @endif
+                                                                    @if(isset($assignedStages['mina']))
+                                                                        <span class="badge bg-secondary-subtle text-dark border fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Mina / Arafat Camp">
+                                                                            ⛺ Mina: {{ $assignedStages['mina']['hotel_name'] }} ({{ $assignedStages['mina']['room_number'] }})
+                                                                        </span>
+                                                                    @endif
+                                                                    @if(isset($assignedStages['madinah']))
+                                                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold py-0 px-1.5" style="font-size: 9px;" title="Madinah Hotel Room">
+                                                                            🕌 Madinah: {{ $assignedStages['madinah']['hotel_name'] }} ({{ $assignedStages['madinah']['room_number'] }})
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
                                                         @endif
                                                     </td>
                                                     <td style="text-align: left; padding-left: 10px;" class="col-given-name col-hidden fw-semibold text-muted text-uppercase">
@@ -1237,29 +1358,90 @@
                                                                     <i class="mdi mdi-close-circle-outline me-0.5"></i>Without Ticket
                                                                 </span>
                                                             @endif
-                                                            @if(!empty($occ['stage_assignments']) && count($occ['stage_assignments']) > 0)
-                                                                <div class="d-flex flex-wrap gap-1 mt-1 no-print">
-                                                                    @if(isset($occ['stage_assignments']['makkah']))
+                                                            @if($activeLocKey === 'mina')
+                                                                @php
+                                                                    $minaRoom = $occ['stage_assignments']['mina']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                    $hasMinaRoom = !empty($minaRoom) && !in_array(strtoupper(trim($minaRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                                @endphp
+                                                                @if($hasMinaRoom)
+                                                                    <div class="d-flex flex-wrap gap-1 mt-1 no-print">
+                                                                        <span class="badge bg-dark text-white border fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Mina / Arafat Camp">
+                                                                            ⛺ Mina: {{ $occ['stage_assignments']['mina']['hotel_name'] ?? ($occ['hotel_name'] ?: 'CAMP') }} ({{ $minaRoom }})
+                                                                        </span>
+                                                                    </div>
+                                                                @endif
+                                                            @elseif($activeLocKey === 'makkah')
+                                                                @php
+                                                                    $makkahRoom = $occ['stage_assignments']['makkah']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                    $hasMakkahRoom = !empty($makkahRoom) && !in_array(strtoupper(trim($makkahRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                                @endphp
+                                                                @if($hasMakkahRoom)
+                                                                    <div class="d-flex flex-wrap gap-1 mt-1 no-print">
                                                                         <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Makkah Hotel Room">
-                                                                            🕋 Makkah: {{ $occ['stage_assignments']['makkah']['hotel_name'] }} ({{ $occ['stage_assignments']['makkah']['room_number'] ?: 'Pending' }})
+                                                                            🕋 Makkah: {{ $occ['stage_assignments']['makkah']['hotel_name'] ?? ($occ['hotel_name'] ?: 'Makkah Hotel') }} ({{ $makkahRoom }})
                                                                         </span>
-                                                                    @endif
-                                                                    @if(isset($occ['stage_assignments']['azizia']))
-                                                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Azizia Building Room">
-                                                                            🏢 Azizia: {{ $occ['stage_assignments']['azizia']['hotel_name'] }} ({{ $occ['stage_assignments']['azizia']['room_number'] ?: 'Pending' }})
-                                                                        </span>
-                                                                    @endif
-                                                                    @if(isset($occ['stage_assignments']['mina']))
-                                                                        <span class="badge bg-secondary-subtle text-dark border fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Mina / Arafat Camp">
-                                                                            ⛺ Mina: {{ $occ['stage_assignments']['mina']['hotel_name'] }} ({{ $occ['stage_assignments']['mina']['room_number'] ?: 'Pending' }})
-                                                                        </span>
-                                                                    @endif
-                                                                    @if(isset($occ['stage_assignments']['madinah']))
+                                                                    </div>
+                                                                @endif
+                                                            @elseif($activeLocKey === 'madinah')
+                                                                @php
+                                                                    $madinahRoom = $occ['stage_assignments']['madinah']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                    $hasMadinahRoom = !empty($madinahRoom) && !in_array(strtoupper(trim($madinahRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                                @endphp
+                                                                @if($hasMadinahRoom)
+                                                                    <div class="d-flex flex-wrap gap-1 mt-1 no-print">
                                                                         <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Madinah Hotel Room">
-                                                                            🕌 Madinah: {{ $occ['stage_assignments']['madinah']['hotel_name'] }} ({{ $occ['stage_assignments']['madinah']['room_number'] ?: 'Pending' }})
+                                                                            🕌 Madinah: {{ $occ['stage_assignments']['madinah']['hotel_name'] ?? ($occ['hotel_name'] ?: 'Madinah Hotel') }} ({{ $madinahRoom }})
                                                                         </span>
-                                                                    @endif
-                                                                </div>
+                                                                    </div>
+                                                                @endif
+                                                            @elseif($activeLocKey === 'azizia')
+                                                                @php
+                                                                    $aziziaRoom = $occ['stage_assignments']['azizia']['room_number'] ?? ($occ['room_number'] ?? null);
+                                                                    $hasAziziaRoom = !empty($aziziaRoom) && !in_array(strtoupper(trim($aziziaRoom)), ['PENDING', 'UNASSIGNED', '—', '-']);
+                                                                @endphp
+                                                                @if($hasAziziaRoom)
+                                                                    <div class="d-flex flex-wrap gap-1 mt-1 no-print">
+                                                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Azizia Building Room">
+                                                                            🏢 Azizia: {{ $occ['stage_assignments']['azizia']['hotel_name'] ?? ($occ['hotel_name'] ?: 'Azizia Building') }} ({{ $aziziaRoom }})
+                                                                        </span>
+                                                                    </div>
+                                                                @endif
+                                                            @else
+                                                                @php
+                                                                    $assignedStages = [];
+                                                                    if (!empty($occ['stage_assignments'])) {
+                                                                        foreach ($occ['stage_assignments'] as $sk => $sa) {
+                                                                            $rNum = trim((string)($sa['room_number'] ?? ''));
+                                                                            if (!empty($rNum) && !in_array(strtoupper($rNum), ['PENDING', 'UNASSIGNED', '—', '-'])) {
+                                                                                $assignedStages[$sk] = $sa;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                @if(count($assignedStages) > 0)
+                                                                    <div class="d-flex flex-wrap gap-1 mt-1 no-print">
+                                                                        @if(isset($assignedStages['makkah']))
+                                                                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Makkah Hotel Room">
+                                                                                🕋 Makkah: {{ $assignedStages['makkah']['hotel_name'] }} ({{ $assignedStages['makkah']['room_number'] }})
+                                                                            </span>
+                                                                        @endif
+                                                                        @if(isset($assignedStages['azizia']))
+                                                                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Azizia Building Room">
+                                                                                🏢 Azizia: {{ $assignedStages['azizia']['hotel_name'] }} ({{ $assignedStages['azizia']['room_number'] }})
+                                                                            </span>
+                                                                        @endif
+                                                                        @if(isset($assignedStages['mina']))
+                                                                            <span class="badge bg-secondary-subtle text-dark border fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Mina / Arafat Camp">
+                                                                                ⛺ Mina: {{ $assignedStages['mina']['hotel_name'] }} ({{ $assignedStages['mina']['room_number'] }})
+                                                                            </span>
+                                                                        @endif
+                                                                        @if(isset($assignedStages['madinah']))
+                                                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold py-0 px-1" style="font-size: 8.5px;" title="Madinah Hotel Room">
+                                                                                🕌 Madinah: {{ $assignedStages['madinah']['hotel_name'] }} ({{ $assignedStages['madinah']['room_number'] }})
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                @endif
                                                             @endif
                                                             @if(!$isPending && !empty($occ['real_person_id']))
                                                                 <button type="button" class="btn btn-xs btn-outline-danger py-0 px-1 btn-single-unassign no-print ms-1"
@@ -1566,20 +1748,31 @@
         const pilgrimCheckboxes = document.querySelectorAll('.pilgrim-check');
 
         // Robust Modal Opening Helper (Handles Bootstrap 5 instance, jQuery modal, and direct fallback)
+        let isAssignModalOpening = false;
         function safeShowAssignModal() {
+            if (isAssignModalOpening) return;
+            isAssignModalOpening = true;
+            setTimeout(() => { isAssignModalOpening = false; }, 400);
+
             const modalEl = document.getElementById('assignRoomModal');
             if (!modalEl) {
                 console.error('Modal element #assignRoomModal not found!');
                 return;
             }
 
+            // Clean up any stray orphan backdrops
+            document.querySelectorAll('.modal-backdrop:not(.show)').forEach(b => b.remove());
+
             // 1. Try Bootstrap 5 getOrCreateInstance
             try {
                 if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    const inst = bootstrap.Modal.getOrCreateInstance(modalEl, {
-                        backdrop: true,
-                        keyboard: true
-                    });
+                    let inst = bootstrap.Modal.getInstance(modalEl);
+                    if (!inst) {
+                        inst = new bootstrap.Modal(modalEl, {
+                            backdrop: true,
+                            keyboard: true
+                        });
+                    }
                     if (inst) {
                         inst.show();
                         return;
@@ -1612,6 +1805,33 @@
             }
         }
 
+        function safeHideAssignModal() {
+            const modalEl = document.getElementById('assignRoomModal');
+            if (!modalEl) return;
+
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) {
+                        inst.hide();
+                    }
+                }
+            } catch(e) {}
+
+            try {
+                if (window.jQuery && typeof jQuery(modalEl).modal === 'function') {
+                    jQuery(modalEl).modal('hide');
+                }
+            } catch(e) {}
+
+            modalEl.classList.remove('show');
+            modalEl.style.display = 'none';
+            modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.removeAttribute('aria-modal');
+            document.body.classList.remove('modal-open');
+            document.querySelectorAll('.modal-backdrop').forEach(bd => bd.remove());
+        }
+
         function updateSelectionState() {
             const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
             const count = checked.length;
@@ -1622,22 +1842,13 @@
 
             const deselectBtns = document.querySelectorAll('#btnHeaderDeselectAll, #btnManifestDeselectAll, .btn-deselect-action');
             const unassignBtns = document.querySelectorAll('#btnHeaderBulkUnassign, #btnManifestBulkUnassign, .btn-bulk-unassign-action');
-            const assignBtns = document.querySelectorAll('#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action');
 
             if (count > 0) {
                 deselectBtns.forEach(btn => btn.classList.remove('d-none'));
                 unassignBtns.forEach(btn => btn.classList.remove('d-none'));
-                assignBtns.forEach(btn => {
-                    btn.setAttribute('data-bs-toggle', 'modal');
-                    btn.setAttribute('data-bs-target', '#assignRoomModal');
-                });
             } else {
                 deselectBtns.forEach(btn => btn.classList.add('d-none'));
                 unassignBtns.forEach(btn => btn.classList.add('d-none'));
-                assignBtns.forEach(btn => {
-                    btn.removeAttribute('data-bs-toggle');
-                    btn.removeAttribute('data-bs-target');
-                });
             }
 
             // Update row background
@@ -2072,78 +2283,183 @@
             }, 350);
         }
 
-        // Direct bindings for Assign Room
-        document.querySelectorAll('#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
-                if (checked.length === 0) {
-                    e.preventDefault();
-                    alert('Please select at least one pilgrim checkbox first, or click "Assign by Haji ID".');
-                    return;
-                }
-                populateAndOpenAssignModal(checked);
-            });
-        });
-
-        // Direct bindings for Assign by Haji ID
-        document.querySelectorAll('#btnHeaderAssignByHajiId, #btnManifestAssignByHajiId, .btn-assign-haji-action, #btnOpenAssignByHajiId').forEach(btn => {
-            btn.addEventListener('click', openAssignByHajiIdModal);
-        });
-
-        // Global Fallback Delegated Listeners (jQuery)
-        if (window.jQuery) {
-            $(document).on('click', '#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action', function(e) {
-                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
-                if (checked.length === 0) {
-                    e.preventDefault();
-                    alert('Please select at least one pilgrim checkbox first, or click "Assign by Haji ID".');
-                    return;
-                }
-                populateAndOpenAssignModal(checked);
-            });
-
-            $(document).on('click', '#btnHeaderAssignByHajiId, #btnManifestAssignByHajiId, .btn-assign-haji-action, #btnOpenAssignByHajiId', function(e) {
+        // Unified Action: Assign Room (Selected Pilgrims or switch to Haji ID if 0 checked)
+        function handleAssignRoomAction(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
+            if (checked.length === 0) {
+                // Smoothly open modal in "Assign by Haji ID" mode when 0 checkboxes are checked
                 openAssignByHajiIdModal();
-            });
+                return;
+            }
+            populateAndOpenAssignModal(checked);
+        }
 
-            $(document).on('click', '#btnHeaderDeselectAll, #btnManifestDeselectAll, .btn-deselect-action, #btnDeselectAll', function(e) {
+        // Unified Action: Assign by Haji ID
+        function handleAssignByHajiIdAction(e) {
+            if (e) {
                 e.preventDefault();
+                e.stopPropagation();
+            }
+            openAssignByHajiIdModal();
+        }
+
+        // Delegated listener on document for clean single-point execution without duplicate event firing
+        document.addEventListener('click', function(e) {
+            const assignSelectedBtn = e.target.closest('#btnHeaderAssignSelected, #btnManifestAssignSelected, .btn-assign-selected-action');
+            if (assignSelectedBtn) {
+                handleAssignRoomAction(e);
+                return;
+            }
+
+            const assignHajiBtn = e.target.closest('#btnHeaderAssignByHajiId, #btnManifestAssignByHajiId, .btn-assign-haji-action, #btnOpenAssignByHajiId, .btn-quick-assign-room');
+            if (assignHajiBtn) {
+                handleAssignByHajiIdAction(e);
+                return;
+            }
+
+            const individualAssignBtn = e.target.closest('.btn-individual-assign');
+            if (individualAssignBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const pid = individualAssignBtn.getAttribute('data-id');
+                const clickedCb = document.querySelector(`.pilgrim-check[value="${pid}"]`);
+                const clickedRow = individualAssignBtn.closest('tr');
+                const roomKey = clickedRow ? clickedRow.getAttribute('data-room-key') : null;
+
+                // Check all currently selected checkboxes
+                let checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
+
+                if (checked.length > 0) {
+                    // Case 1: User has selected multiple checkboxes (e.g. Adnan & Mehreen to put in same room)
+                    if (clickedCb && !clickedCb.checked) {
+                        clickedCb.checked = true;
+                        checked.push(clickedCb);
+                    }
+                } else {
+                    // Case 2: No checkboxes were selected beforehand, user clicked Assign on a row
+                    // If this row is part of a multi-pax pending group (e.g. Double/Triple/Quad pending room):
+                    if (roomKey) {
+                        const siblingCbs = Array.from(document.querySelectorAll(`tr[data-room-key="${roomKey}"] .pilgrim-check`));
+                        if (siblingCbs.length > 1) {
+                            // Automatically select all roommates in this pending group together!
+                            siblingCbs.forEach(cb => cb.checked = true);
+                            checked = siblingCbs;
+                        } else if (clickedCb) {
+                            clickedCb.checked = true;
+                            checked = [clickedCb];
+                        }
+                    } else if (clickedCb) {
+                        clickedCb.checked = true;
+                        checked = [clickedCb];
+                    }
+                }
+
+                updateSelectionState();
+                populateAndOpenAssignModal(checked, individualAssignBtn);
+                return;
+            }
+
+            const singleUnassignBtn = e.target.closest('.btn-single-unassign');
+            if (singleUnassignBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const pid = singleUnassignBtn.getAttribute('data-id');
+                const allocId = singleUnassignBtn.getAttribute('data-allocation-id');
+                const hotelName = singleUnassignBtn.getAttribute('data-hotel');
+                const roomNo = singleUnassignBtn.getAttribute('data-room');
+                const location = singleUnassignBtn.getAttribute('data-location');
+                const name = singleUnassignBtn.getAttribute('data-name');
+                if (confirm(`Are you sure you want to unassign "${name}" from this room?`)) {
+                    const unassignInputs = document.getElementById('unassignHiddenInputs');
+                    if (unassignInputs) {
+                        unassignInputs.innerHTML = '';
+                        if (allocId) {
+                            const inpA = document.createElement('input');
+                            inpA.type = 'hidden';
+                            inpA.name = 'allocation_ids[]';
+                            inpA.value = allocId;
+                            unassignInputs.appendChild(inpA);
+                        }
+                        if (pid) {
+                            const inp = document.createElement('input');
+                            inp.type = 'hidden';
+                            inp.name = 'person_ids[]';
+                            inp.value = pid;
+                            unassignInputs.appendChild(inp);
+                        }
+                        if (hotelName) {
+                            const inpH = document.createElement('input');
+                            inpH.type = 'hidden';
+                            inpH.name = 'hotel_name';
+                            inpH.value = hotelName;
+                            unassignInputs.appendChild(inpH);
+                        }
+                        if (roomNo) {
+                            const inpR = document.createElement('input');
+                            inpR.type = 'hidden';
+                            inpR.name = 'room_number';
+                            inpR.value = roomNo;
+                            unassignInputs.appendChild(inpR);
+                        }
+                        if (location) {
+                            const inpL = document.createElement('input');
+                            inpL.type = 'hidden';
+                            inpL.name = 'location';
+                            inpL.value = location;
+                            unassignInputs.appendChild(inpL);
+                        }
+                        document.getElementById('bulkUnassignForm')?.submit();
+                    }
+                }
+                return;
+            }
+
+            const deselectBtn = e.target.closest('#btnHeaderDeselectAll, #btnManifestDeselectAll, .btn-deselect-action, #btnDeselectAll');
+            if (deselectBtn) {
+                e.preventDefault();
+                e.stopPropagation();
                 executeDeselectAll();
-            });
+                return;
+            }
 
-            $(document).on('click', '#btnHeaderBulkUnassign, #btnManifestBulkUnassign, .btn-bulk-unassign-action', function(e) {
+            const bulkUnassignBtn = e.target.closest('#btnHeaderBulkUnassign, #btnManifestBulkUnassign, .btn-bulk-unassign-action');
+            if (bulkUnassignBtn) {
                 e.preventDefault();
+                e.stopPropagation();
                 executeBulkUnassign();
-            });
+                return;
+            }
 
-            $(document).on('change', '.pilgrim-check', updateSelectionState);
-            $(document).on('change', '#selectAllPilgrims', function() {
-                const state = this.checked;
+            const modalDismissBtn = e.target.closest('#assignRoomModal [data-bs-dismiss="modal"]');
+            if (modalDismissBtn) {
+                e.preventDefault();
+                safeHideAssignModal();
+                return;
+            }
+        });
+
+        // Ensure checkbox change listeners work reliably
+        document.addEventListener('change', function(e) {
+            if (e.target.matches('.pilgrim-check')) {
+                updateSelectionState();
+            } else if (e.target.id === 'selectAllPilgrims') {
+                const state = e.target.checked;
                 document.querySelectorAll('.pilgrim-check').forEach(cb => cb.checked = state);
                 updateSelectionState();
-            });
+            }
+        });
 
-            // Dismiss modal fallback support
-            $(document).on('click', '#assignRoomModal [data-bs-dismiss="modal"]', function() {
-                const modalEl = document.getElementById('assignRoomModal');
-                if (modalEl) {
-                    modalEl.classList.remove('show');
-                    modalEl.style.display = 'none';
-                    modalEl.setAttribute('aria-hidden', 'true');
-                    modalEl.removeAttribute('aria-modal');
-                }
+        const assignModalEl = document.getElementById('assignRoomModal');
+        if (assignModalEl) {
+            assignModalEl.addEventListener('hidden.bs.modal', function() {
                 document.body.classList.remove('modal-open');
                 document.querySelectorAll('.modal-backdrop').forEach(bd => bd.remove());
             });
         }
-
-        // Direct "Assign by Haji ID" Button on Pending Room Group / Row / Card
-        document.querySelectorAll('.btn-quick-assign-room').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                openAssignByHajiIdModal();
-            });
-        });
 
         // Direct Assign Button on Pending Room Table Row
         document.querySelectorAll('.btn-quick-assign-group').forEach(btn => {
@@ -2178,29 +2494,7 @@
             });
         });
 
-        // Individual Pilgrim Direct "Assign Room" Button
-        document.querySelectorAll('.btn-individual-assign').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const pid = this.getAttribute('data-id');
-                const checked = Array.from(document.querySelectorAll('.pilgrim-check:checked'));
-
-                // If some checkboxes are already checked:
-                // Check if current row's checkbox is among them; if not, include it!
-                const currentCb = document.querySelector(`.pilgrim-check[value="${pid}"]`);
-                if (currentCb && !currentCb.checked) {
-                    currentCb.checked = true;
-                    checked.push(currentCb);
-                    updateSelectionState();
-                }
-
-                if (checked.length > 0) {
-                    populateAndOpenAssignModal(checked, this);
-                } else {
-                    populateAndOpenAssignModal([], this);
-                }
-            });
-        });
+        // Individual Pilgrim Direct "Assign Room" Button is handled via unified delegated document listener
 
         // Toggle Room Pending Checkbox in Modal
         const chkRoomPending = document.getElementById('chkRoomPendingToggle');
@@ -2497,58 +2791,7 @@
             }
         });
 
-        // Single Pilgrim Unassign Button
-        document.querySelectorAll('.btn-single-unassign').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const pid = this.getAttribute('data-id');
-                const allocId = this.getAttribute('data-allocation-id');
-                const hotelName = this.getAttribute('data-hotel');
-                const roomNo = this.getAttribute('data-room');
-                const location = this.getAttribute('data-location');
-                const name = this.getAttribute('data-name');
-                if (confirm(`Are you sure you want to unassign "${name}" from this room and move back to Pending Room Allocation?`)) {
-                    const unassignInputs = document.getElementById('unassignHiddenInputs');
-                    unassignInputs.innerHTML = '';
-                    if (allocId) {
-                        const inpA = document.createElement('input');
-                        inpA.type = 'hidden';
-                        inpA.name = 'allocation_ids[]';
-                        inpA.value = allocId;
-                        unassignInputs.appendChild(inpA);
-                    }
-                    if (pid) {
-                        const inp = document.createElement('input');
-                        inp.type = 'hidden';
-                        inp.name = 'person_ids[]';
-                        inp.value = pid;
-                        unassignInputs.appendChild(inp);
-                    }
-                    if (hotelName) {
-                        const inpH = document.createElement('input');
-                        inpH.type = 'hidden';
-                        inpH.name = 'hotel_name';
-                        inpH.value = hotelName;
-                        unassignInputs.appendChild(inpH);
-                    }
-                    if (roomNo) {
-                        const inpR = document.createElement('input');
-                        inpR.type = 'hidden';
-                        inpR.name = 'room_number';
-                        inpR.value = roomNo;
-                        unassignInputs.appendChild(inpR);
-                    }
-                    if (location) {
-                        const inpL = document.createElement('input');
-                        inpL.type = 'hidden';
-                        inpL.name = 'location';
-                        inpL.value = location;
-                        unassignInputs.appendChild(inpL);
-                    }
-                    document.getElementById('bulkUnassignForm').submit();
-                }
-            });
-        });
+        // Single Pilgrim Unassign Button is handled via unified delegated document listener
 
         // Unassign Entire Room Button
         document.querySelectorAll('.btn-unassign-room-all').forEach(btn => {
@@ -2798,11 +3041,12 @@
         // DYNAMIC COLUMN VISIBILITY CONTROLLER
         // ==========================================
         const colCheckboxes = document.querySelectorAll('.col-toggle-checkbox');
-        const defaultVisibleCols = ['sr', 'picture', 'hajj-id', 'hb', 'name', 'passport', 'room-typ', 'room-no', 'gender'];
-        const storageKey = 'rooming_manifest_columns_pref_v5';
+        const defaultVisibleCols = ['sr', 'assign', 'picture', 'hajj-id', 'hb', 'name', 'passport', 'room-typ', 'room-no', 'gender'];
+        const storageKey = 'rooming_manifest_columns_pref_v6';
 
         // Purge any corrupted old storage keys
         try {
+            localStorage.removeItem('rooming_manifest_columns_pref_v5');
             localStorage.removeItem('rooming_manifest_columns_pref_v4');
             localStorage.removeItem('rooming_manifest_columns_pref_v3');
         } catch(e) {}

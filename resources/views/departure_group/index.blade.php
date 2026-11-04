@@ -32,9 +32,11 @@
                             <!-- HEADER -->
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Departure Groups Listing</h5>
+                                @can('departure_group_create')
                                 <a href="{{ route('departure-group.create') }}" class="btn btn-primary btn-sm d-flex gap-1 align-items-center">
                                     <i class="mdi mdi-plus"></i> Add Departure Group
                                 </a>
+                                @endcan
                             </div>
 
                             <!-- BODY -->
@@ -103,12 +105,17 @@
                                                     </td>
                                                     <td>
                                                         <div class="d-flex gap-1">
+                                                            @can('departure_group_show')
                                                             <a href="{{ route('departure-group.show', $group->id) }}" class="btn btn-sm btn-outline-primary" title="View VIP Sheet">
                                                                 <i class="mdi mdi-eye"></i>
                                                             </a>
+                                                            @endcan
+                                                            @can('departure_group_edit')
                                                             <a href="{{ route('departure-group.edit', $group->id) }}" class="btn btn-sm btn-outline-success" title="Edit Group">
                                                                 <i class="mdi mdi-pencil"></i>
                                                             </a>
+                                                            @endcan
+                                                            @can('departure_group_trash')
                                                             <form action="{{ route('departure-group.delete', $group->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this Departure Group?');">
                                                                 @csrf
                                                                 @method('DELETE')
@@ -116,6 +123,7 @@
                                                                     <i class="mdi mdi-delete"></i>
                                                                 </button>
                                                             </form>
+                                                            @endcan
                                                         </div>
                                                     </td>
                                                 </tr>

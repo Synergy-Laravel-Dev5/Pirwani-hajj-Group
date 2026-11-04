@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ExpenseController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('expense_view');
         $expenses = Expense::withCount('transactions')
             ->withSum('transactions as total_amount', 'amount')
             ->latest()
@@ -21,11 +25,13 @@ class ExpenseController extends Controller
 
     public function create()
     {
+        $this->authorize('expense_create');
         return view('expense.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('expense_create');
         $request->validate([
             'name' => 'required|string|max:255|unique:expenses,name',
         ]);
@@ -40,12 +46,14 @@ class ExpenseController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('expense_edit');
         $expense = Expense::findOrFail($id);
         return view('expense.edit', compact('expense'));
     }
 
     public function update(Request $request, $id)
     {
+        $this->authorize('expense_edit');
         $expense = Expense::findOrFail($id);
 
         $request->validate([
@@ -63,6 +71,7 @@ class ExpenseController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('expense_trash');
         $expense     = Expense::findOrFail($id);
         $expenseName = $expense->name;
 
@@ -76,12 +85,14 @@ class ExpenseController extends Controller
 
     public function trash()
     {
+        $this->authorize('expense_trash_view');
         $expenses = Expense::onlyTrashed()->latest()->get();
         return view('expense.trash', compact('expenses'));
     }
 
     public function restore($id)
     {
+        $this->authorize('expense_restore');
         $expense = Expense::onlyTrashed()->findOrFail($id);
         $expenseName = $expense->name;
 

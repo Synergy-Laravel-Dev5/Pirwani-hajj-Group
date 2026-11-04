@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -200,6 +200,7 @@
                     <ul id="side-menu" class="mt-2">
                         <li class="menu-title text-muted text-uppercase fs-11 px-3 py-2">Mobile Ops Modules</li>
 
+                        @can('mobile_ops_dashboard_view')
                         <li
                             class="menu-item {{ request()->routeIs('mobile-ops.dashboard') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.dashboard') }}"
@@ -208,7 +209,9 @@
                                 <span>Dashboard</span>
                             </a>
                         </li>
+                        @endcan
 
+                        @canany(['umrah_package_view', 'domestic_package_view', 'international_package_view'])
                         @php
                             $isPackageActive =
                                 request()->routeIs('mobile-ops.umrah-packages.*') ||
@@ -225,6 +228,7 @@
                             </a>
                             <div class="collapse {{ $isPackageActive ? 'show' : '' }}" id="sidebarMobilePackages">
                                 <ul class="nav-second-level list-unstyled ps-4 py-1">
+                                    @can('umrah_package_view')
                                     <li class="py-1">
                                         <a href="{{ route('mobile-ops.umrah-packages.index') }}"
                                             class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.umrah-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
@@ -232,6 +236,8 @@
                                             <span>Umrah Packages</span>
                                         </a>
                                     </li>
+                                    @endcan
+                                    @can('domestic_package_view')
                                     <li class="py-1">
                                         <a href="{{ route('mobile-ops.domestic-packages.index') }}"
                                             class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.domestic-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
@@ -239,6 +245,8 @@
                                             <span>Domestic Packages</span>
                                         </a>
                                     </li>
+                                    @endcan
+                                    @can('international_package_view')
                                     <li class="py-1">
                                         <a href="{{ route('mobile-ops.international-packages.index') }}"
                                             class="py-1 px-2 d-flex align-items-center gap-2 {{ request()->routeIs('mobile-ops.international-packages.*') ? 'text-primary fw-bold' : 'text-muted' }}">
@@ -246,10 +254,13 @@
                                             <span>International Packages</span>
                                         </a>
                                     </li>
+                                    @endcan
                                 </ul>
                             </div>
                         </li>
+                        @endcanany
 
+                        @can('mobile_ops_inquiry_view')
                         <li class="menu-item {{ request()->routeIs('mobile-ops.inquiries.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.inquiries.index') }}"
                                 class="menu-link py-2 px-3 d-flex align-items-center justify-content-between">
@@ -266,6 +277,9 @@
                                 @endif
                             </a>
                         </li>
+                        @endcan
+
+                        @can('gallery_view')
                         <li
                             class="menu-item {{ request()->routeIs('mobile-ops.gallery.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.gallery.index') }}"
@@ -274,6 +288,9 @@
                                 <span>Ziarat Management</span>
                             </a>
                         </li>
+                        @endcan
+
+                        @can('book_view')
                         <li class="menu-item {{ request()->routeIs('mobile-ops.books.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.books.index') }}"
                                 class="menu-link py-2 px-3 d-flex align-items-center gap-2">
@@ -281,6 +298,9 @@
                                 <span>Hajj Books</span>
                             </a>
                         </li>
+                        @endcan
+
+                        @can('guideline_view')
                         <li
                             class="menu-item {{ request()->routeIs('mobile-ops.guidelines.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.guidelines.index') }}"
@@ -289,6 +309,9 @@
                                 <span>Hujjaj Guidelines</span>
                             </a>
                         </li>
+                        @endcan
+
+                        @can('video_view')
                         <li class="menu-item {{ request()->routeIs('mobile-ops.videos.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.videos.index') }}"
                                 class="menu-link py-2 px-3 d-flex align-items-center gap-2">
@@ -296,6 +319,9 @@
                                 <span>Video Tutorials</span>
                             </a>
                         </li>
+                        @endcan
+
+                        @can('visa_country_view')
                         <li
                             class="menu-item {{ request()->routeIs('mobile-ops.visa-countries.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.visa-countries.index') }}"
@@ -304,6 +330,9 @@
                                 <span>Visa Countries</span>
                             </a>
                         </li>
+                        @endcan
+
+                        @can('visa_inquiry_view')
                         <li
                             class="menu-item {{ request()->routeIs('mobile-ops.visa-inquiries.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.visa-inquiries.index') }}"
@@ -312,6 +341,7 @@
                                 <span>Visa Inquiries</span>
                             </a>
                         </li>
+                        @endcan
                     </ul>
                 </div>
                 <div class="clearfix"></div>

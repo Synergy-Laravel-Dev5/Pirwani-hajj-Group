@@ -7,9 +7,11 @@ use App\Models\Package;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class HajjApplicationController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Public Open Link Form for Clients.
      */
@@ -94,6 +96,7 @@ class HajjApplicationController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('hajj_application_view');
         $query = HajjApplication::with('package')->latest();
 
         if ($request->filled('search')) {
@@ -128,6 +131,7 @@ class HajjApplicationController extends Controller
      */
     public function show($id)
     {
+        $this->authorize('hajj_application_show');
         $application = HajjApplication::with('package')->findOrFail($id);
 
         return view('hajj_application.show', compact('application'));
@@ -138,6 +142,7 @@ class HajjApplicationController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        $this->authorize('hajj_application_edit');
         $request->validate([
             'status' => 'required|in:pending,approved,rejected',
         ]);
@@ -208,6 +213,7 @@ class HajjApplicationController extends Controller
      */
     public function destroy($id)
     {
+        $this->authorize('hajj_application_trash');
         $application = HajjApplication::findOrFail($id);
         $application->delete();
 

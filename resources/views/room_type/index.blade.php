@@ -12,12 +12,16 @@
                         <p class="text-muted small mb-0">Manage accommodation room types (Single, Double, Triple, Quad, Sharing, Suites, etc.)</p>
                     </div>
                     <div class="d-flex gap-2">
+                        @can('room_type_create')
                         <a href="{{ route('room-type.create') }}" class="btn btn-primary btn-sm">
                             <i class="mdi mdi-plus-circle me-1"></i> Add Room Type
                         </a>
+                        @endcan
+                        @can('room_type_trash_view')
                         <a href="{{ route('room-type.trash') }}" class="btn btn-danger btn-sm">
                             <i class="mdi mdi-delete-outline me-1"></i> Trash <span class="badge bg-white text-danger ms-1">{{ $trashCount }}</span>
                         </a>
+                        @endcan
                     </div>
                 </div>
 
@@ -75,10 +79,13 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-1">
+                                                    @can('room_type_edit')
                                                     <a href="{{ route('room-type.edit', $rt->id) }}"
                                                         class="btn btn-sm btn-outline-success" title="Edit">
                                                         <i class="mdi mdi-pencil"></i>
                                                     </a>
+                                                    @endcan
+                                                    @can('room_type_trash')
                                                     <form action="{{ route('room-type.delete', $rt->id) }}" method="POST"
                                                         onsubmit="return confirm('Move this room type to trash?')">
                                                         @csrf @method('DELETE')
@@ -86,6 +93,7 @@
                                                             <i class="mdi mdi-delete"></i>
                                                         </button>
                                                     </form>
+                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

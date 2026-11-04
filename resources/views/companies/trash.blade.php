@@ -41,13 +41,13 @@
                                             <td>{{ $company->established_on ? \Carbon\Carbon::parse($company->established_on)->format('d-M-Y') : 'N/A' }}</td>
                                             <td class="text-center">
                                                 <div class="d-inline-flex gap-2">
-                                                    {{-- @can('company_restore') --}}
+                                                    @can('company_restore')
                                                     <a href="{{ route('company.restore', $company->id) }}"
                                                         class="btn btn-outline-success btn-sm d-flex align-items-center justify-content-center"
                                                         onclick="return confirm('Are you sure you want to restore this Company?');">
                                                         <i data-feather="rotate-ccw" style="width:16px; height:16px;"></i>
                                                     </a>
-                                                    {{-- @endcan --}}
+                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

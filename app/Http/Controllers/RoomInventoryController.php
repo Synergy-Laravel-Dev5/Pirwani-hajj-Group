@@ -10,11 +10,15 @@ use App\Models\BookingHotel;
 use App\Models\HotelSaleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RoomInventoryController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('room_inventory_view');
         $hotelId = $request->get('hotel_id');
         $city = $request->get('city');
         $roomType = $request->get('room_type');
@@ -140,6 +144,7 @@ class RoomInventoryController extends Controller
 
     public function create()
     {
+        $this->authorize('room_inventory_create');
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
@@ -155,6 +160,7 @@ class RoomInventoryController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('room_inventory_create');
         DB::beginTransaction();
         try {
             $createdCount = 0;
@@ -352,6 +358,7 @@ class RoomInventoryController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('room_inventory_edit');
         $inventory = RoomInventory::findOrFail($id);
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
@@ -368,6 +375,7 @@ class RoomInventoryController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('room_inventory_edit');
         $inventory = RoomInventory::findOrFail($id);
 
         $request->validate([
@@ -427,6 +435,7 @@ class RoomInventoryController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('room_inventory_trash');
         $inventory = RoomInventory::findOrFail($id);
         $inventory->delete();
 

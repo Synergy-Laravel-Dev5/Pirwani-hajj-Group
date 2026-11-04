@@ -13,11 +13,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class BookingController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('booking_view');
         $package = session('dashboard_package', 'hajj');
         $year    = (int) session('dashboard_year', Carbon::now()->year);
 
@@ -36,6 +40,7 @@ class BookingController extends Controller
 
     public function create()
     {
+        $this->authorize('booking_create');
         $clients   = Client::where('status', 'active')->get();
         $companies = Company::all();
         $years     = [date('Y'), date('Y') + 1, date('Y') + 2];
@@ -63,6 +68,8 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('booking_create');
+
         // Sanitize package_type to lowercase before validation
         if ($request->has('package_type')) {
             $request->merge(['package_type' => strtolower(trim((string)$request->package_type)) ?: 'hajj']);
@@ -312,12 +319,14 @@ class BookingController extends Controller
 
     public function show($id)
     {
+        $this->authorize('booking_view');
         $booking = Booking::with(['client', 'company', 'package', 'persons', 'hotels', 'transports', 'visas'])->findOrFail($id);
         return view('booking.show', compact('booking'));
     }
 
     public function edit($id)
     {
+        $this->authorize('booking_edit');
         $booking   = Booking::with(['package', 'persons', 'hotels', 'transports', 'visas'])->findOrFail($id);
         $clients   = Client::where('status', 'active')->get();
         $companies = Company::all();
@@ -353,6 +362,7 @@ class BookingController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('booking_edit');
         $booking = Booking::findOrFail($id);
 
         // Sanitize package_type to lowercase before validation
@@ -627,6 +637,7 @@ class BookingController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('booking_trash');
         $booking = Booking::with(['client', 'company'])->findOrFail($id);
 
         logUserActivity(
@@ -643,12 +654,14 @@ class BookingController extends Controller
 
     public function trash()
     {
+        $this->authorize('booking_trash_view');
         $bookings = Booking::onlyTrashed()->with(['client', 'company'])->latest()->get();
         return view('booking.trash', compact('bookings'));
     }
 
     public function restore($id)
     {
+        $this->authorize('booking_restore');
         $booking = Booking::onlyTrashed()->with(['client', 'company'])->findOrFail($id);
         $booking->restore();
 
@@ -686,6 +699,7 @@ class BookingController extends Controller
 
     public function voucher(Booking $booking)
     {
+        $this->authorize('booking_show');
         $booking->load([
             'client',
             'company.addresses',

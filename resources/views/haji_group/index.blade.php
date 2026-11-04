@@ -33,6 +33,7 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
+                    @can('haji_group_create')
                     @if(($groupType ?? 'all') === 'flight')
                         <a href="{{ route('haji-group.create', ['type' => 'flight']) }}" class="btn btn-info btn-sm">
                             <i class="mdi mdi-airplane me-1"></i> + Create Flight Group
@@ -54,6 +55,7 @@
                             <i class="mdi mdi-plus-circle me-1"></i> + Create New Group
                         </a>
                     @endif
+                    @endcan
                 </div>
             </div>
 
@@ -238,12 +240,17 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
+                                                @can('haji_group_show')
                                                 <a href="{{ route('haji-group.show', $g->id) }}" class="btn btn-outline-info" title="View & Allocate">
                                                     <i class="mdi mdi-eye"></i> View
                                                 </a>
+                                                @endcan
+                                                @can('haji_group_edit')
                                                 <a href="{{ route('haji-group.edit', $g->id) }}" class="btn btn-outline-primary" title="Edit Group">
                                                     <i class="mdi mdi-pencil"></i>
                                                 </a>
+                                                @endcan
+                                                @can('haji_group_trash')
                                                 <form action="{{ route('haji-group.delete', $g->id) }}" method="POST"
                                                     onsubmit="return confirm('Are you sure you want to delete this group?');" style="display:inline-block;">
                                                     @csrf
@@ -252,6 +259,7 @@
                                                         <i class="mdi mdi-trash-can-outline"></i>
                                                     </button>
                                                 </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

@@ -7,9 +7,11 @@ use App\Models\BookingPerson;
 use App\Models\Package;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PersonReportController extends Controller
 {
+    use AuthorizesRequests;
     private function getFilteredPersons(Request $request)
     {
         $search     = $request->get('search');
@@ -161,6 +163,7 @@ class PersonReportController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('person_report_view');
         $data = $this->getFilteredPersons($request);
 
         return view('reports.person', $data);
@@ -168,6 +171,7 @@ class PersonReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $this->authorize('person_report_export');
         $data = $this->getFilteredPersons($request);
 
         $visibleCols = null;
@@ -195,6 +199,7 @@ class PersonReportController extends Controller
 
     public function exportExcel(Request $request)
     {
+        $this->authorize('person_report_export');
         @set_time_limit(180);
         @ini_set('memory_limit', '512M');
 

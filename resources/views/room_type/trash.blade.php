@@ -53,11 +53,13 @@
                                             <td class="text-center">{{ $rt->capacity }} Pax</td>
                                             <td>{{ $rt->deleted_at ? $rt->deleted_at->format('d M Y, h:i A') : '—' }}</td>
                                             <td class="text-center">
+                                                @can('room_type_restore')
                                                 <a href="{{ route('room-type.restore', $rt->id) }}"
                                                     class="btn btn-sm btn-success" title="Restore"
                                                     onclick="return confirm('Restore this room type?')">
                                                     <i class="mdi mdi-restore me-1"></i> Restore
                                                 </a>
+                                                @endcan
                                             </td>
                                         </tr>
                                     @empty

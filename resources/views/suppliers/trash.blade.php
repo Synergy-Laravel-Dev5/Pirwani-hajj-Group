@@ -68,9 +68,11 @@
                                         <td>{{ $sup->phone ?: $sup->mobile }}</td>
                                         <td class="text-muted">{{ $sup->deleted_at->format('d M Y, h:i A') }}</td>
                                         <td class="text-end">
+                                            @can('supplier_restore')
                                             <a href="{{ route('supplier.restore', $sup->id) }}" class="btn btn-outline-success btn-sm">
                                                 <i class="mdi mdi-restore me-1"></i> Restore
                                             </a>
+                                            @endcan
                                             <form action="{{ route('supplier.force-delete', $sup->id) }}" method="POST" class="d-inline"
                                                   onsubmit="return confirm('Permanently delete supplier \'{{ $sup->name }}\'? This action cannot be undone.');">
                                                 @csrf

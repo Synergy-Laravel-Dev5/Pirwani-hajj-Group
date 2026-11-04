@@ -8,11 +8,15 @@ use App\Models\Company;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TransactionController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('client_Transactions_view');
         $package = session('dashboard_package', 'hajj');
         $year    = (int) session('dashboard_year', Carbon::now()->year);
 
@@ -74,6 +78,7 @@ class TransactionController extends Controller
 
     public function create()
     {
+        $this->authorize('client_Transactions_create');
         $clients   = Client::where('status', 'active')->get();
         $companies = Company::orderBy('company_name')->get();
         $bookings  = Booking::with(['client', 'company'])->latest()->get();
@@ -82,6 +87,7 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('client_Transactions_create');
         $request->validate([
             'booking_for'      => 'required|in:client,company',
             'client_id'        => 'required_if:booking_for,client|nullable|exists:clients,id',
@@ -141,12 +147,14 @@ class TransactionController extends Controller
 
     public function show($id)
     {
+        $this->authorize('client_Transactions_show');
         $transaction = Transaction::with(['client', 'company', 'booking'])->findOrFail($id);
         return view('transaction.show', compact('transaction'));
     }
 
     public function edit($id)
     {
+        $this->authorize('client_Transactions_edit');
         $transaction = Transaction::findOrFail($id);
         $clients     = Client::where('status', 'active')->get();
         $companies   = Company::orderBy('company_name')->get();
@@ -156,6 +164,7 @@ class TransactionController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('client_Transactions_edit');
         $transaction = Transaction::findOrFail($id);
 
         $request->validate([
@@ -225,6 +234,7 @@ class TransactionController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('client_Transactions_trash');
         $transaction = Transaction::findOrFail($id);
         $bookingId   = $transaction->booking_id;
 
@@ -242,12 +252,14 @@ class TransactionController extends Controller
 
     public function trash()
     {
+        $this->authorize('client_Transactions_trash_view');
         $transactions = Transaction::onlyTrashed()->with(['client', 'company', 'booking'])->latest()->get();
         return view('transaction.trash', compact('transactions'));
     }
 
     public function restore($id)
     {
+        $this->authorize('client_Transactions_restore');
         $transaction = Transaction::onlyTrashed()->findOrFail($id);
         $transaction->restore();
 
@@ -263,12 +275,14 @@ class TransactionController extends Controller
 
     public function ledgerFilter()
     {
+        $this->authorize('Ledger_Filter_view');
         $clients = Client::all();
         return view('transaction.ledger-filter', compact('clients'));
     }
 
     public function ledgerView(Request $request)
     {
+        $this->authorize('Ledger_Filter_view');
         $request->validate([
             'client_id' => 'required',
         ]);
@@ -345,6 +359,7 @@ class TransactionController extends Controller
 
     public function invoiceFilter(Request $request)
     {
+        $this->authorize('client_Transactions_view');
         $clients = Client::where('status', 'active')->get();
 
         $transactions = collect();
@@ -360,12 +375,14 @@ class TransactionController extends Controller
 
     public function companyLedgerFilter()
     {
+        $this->authorize('company_ledger_filter_view');
         $companies = Company::orderBy('company_name')->get();
         return view('transaction.company-ledger-filter', compact('companies'));
     }
 
     public function companyLedgerView(Request $request)
     {
+        $this->authorize('company_ledger_filter_view');
         $request->validate([
             'company_id' => 'required|exists:companies,id',
         ]);
@@ -411,6 +428,7 @@ class TransactionController extends Controller
 
     public function invoice($id)
     {
+        $this->authorize('client_Transactions_show');
         $transaction = Transaction::with([
             'client',
             'company',

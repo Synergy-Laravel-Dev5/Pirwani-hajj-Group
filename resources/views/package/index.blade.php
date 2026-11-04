@@ -64,12 +64,12 @@
                                                             <i class="mdi mdi-pencil"></i>
                                                         </a>
                                                     @endcan
-                                                    {{-- @can('package_view') --}}
+                                                    @can('package_show')
                                                         <a href="{{ route('package.show', $package->id) }}"
                                                             class="btn btn-sm btn-outline-primary" title="View">
                                                             <i class="mdi mdi-eye"></i>
                                                         </a>
-                                                    {{-- @endcan --}}
+                                                    @endcan
                                                     @can('package_trash')
                                                         <form action="{{ route('package.delete', $package->id) }}"
                                                             method="POST" onsubmit="return confirm('Move to trash?')">

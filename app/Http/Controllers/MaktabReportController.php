@@ -10,11 +10,15 @@ use App\Models\Package;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class MaktabReportController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('maktab_report_view');
         $data = $this->getFilteredMaktabStays($request);
 
         return view('reports.maktab', $data);
@@ -22,6 +26,7 @@ class MaktabReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $this->authorize('maktab_report_export');
         $data = $this->getFilteredMaktabStays($request);
 
         $visibleCols = null;
@@ -50,6 +55,7 @@ class MaktabReportController extends Controller
 
     public function exportExcel(Request $request)
     {
+        $this->authorize('maktab_report_export');
         @set_time_limit(180);
         @ini_set('memory_limit', '512M');
 

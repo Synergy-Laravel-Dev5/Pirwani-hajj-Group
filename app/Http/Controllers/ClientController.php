@@ -7,11 +7,15 @@ use App\Models\Package;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ClientController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('client_view');
         $package = session('dashboard_package', 'hajj');
         $year    = (int) session('dashboard_year', Carbon::now()->year);
 
@@ -34,12 +38,14 @@ class ClientController extends Controller
 
     public function create()
     {
+        $this->authorize('client_create');
         $packages = Package::all();
         return view('client.create', compact('packages'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('client_create');
         $request->validate([
             'name'            => 'required|string|max:255',
             'type'            => 'required|in:client,vendor,customer',
@@ -75,6 +81,7 @@ class ClientController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('client_edit');
         $client = Client::findOrFail($id);
         $packages = Package::all();
         return view('client.edit', compact('client', 'packages'));
@@ -82,6 +89,7 @@ class ClientController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('client_edit');
         $client = Client::findOrFail($id);
 
         $request->validate([
@@ -119,6 +127,7 @@ class ClientController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('client_trash');
         $client = Client::findOrFail($id);
 
         logUserActivity('Client Deleted', 'Name: ' . $client->name . ' | Type: ' . $client->type, $client->id, 'Client');
@@ -130,12 +139,14 @@ class ClientController extends Controller
 
     public function trash()
     {
+        $this->authorize('client_trash_view');
         $clients = Client::onlyTrashed()->latest()->get();
         return view('client.trash', compact('clients'));
     }
 
     public function restore($id)
     {
+        $this->authorize('client_restore');
         $client = Client::onlyTrashed()->findOrFail($id);
         $client->restore();
 

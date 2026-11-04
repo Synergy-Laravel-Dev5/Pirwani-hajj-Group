@@ -68,10 +68,22 @@
                                         @endphp
 
                                         @foreach ($groupedPermissions as $module => $perms)
-                                            <div class="col-12 mt-3">
-                                                <h5 class="text-primary text-uppercase">
+                                            @php
+                                                $groupSlug = \Illuminate\Support\Str::slug($module ?: 'other');
+                                            @endphp
+                                            <div class="col-12 mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                <h5 class="text-primary text-uppercase mb-0">
                                                     {{ ucfirst(str_replace('_', ' ', $module)) }}
                                                 </h5>
+                                                <div class="form-check mb-0">
+                                                    <input type="checkbox"
+                                                        class="form-check-input group-check-all"
+                                                        id="group-check-{{ $groupSlug }}"
+                                                        data-group="{{ $groupSlug }}">
+                                                    <label class="form-check-label text-muted fs-12 fw-semibold" for="group-check-{{ $groupSlug }}">
+                                                        Select Group
+                                                    </label>
+                                                </div>
                                             </div>
 
                                             <div class="col-12 mb-2">
@@ -82,8 +94,10 @@
 
                                                             <div class="form-check">
                                                                 <input type="checkbox"
-                                                                    class="form-check-input permission-checkbox"
-                                                                    name="permissions[]" value="{{ $permission->id }}"
+                                                                    class="form-check-input permission-checkbox group-{{ $groupSlug }}"
+                                                                    name="permissions[]"
+                                                                    value="{{ $permission->id }}"
+                                                                    data-group="{{ $groupSlug }}"
                                                                     {{ $role->permissions->contains('id', $permission->id) ? 'checked' : '' }}>
 
                                                                 <label class="form-check-label">
@@ -128,21 +142,47 @@
         document.addEventListener('DOMContentLoaded', function() {
             const checkAll = document.getElementById('checkAll');
             const checkboxes = document.querySelectorAll('.permission-checkbox');
+            const groupCheckboxes = document.querySelectorAll('.group-check-all');
 
-            checkAll.addEventListener('change', function() {
-                checkboxes.forEach(cb => cb.checked = checkAll.checked);
-            });
-
-            function updateCheckAll() {
+            function updateAllState() {
                 const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                checkAll.checked = allChecked;
+                const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+                if (checkAll) {
+                    checkAll.checked = allChecked;
+                    checkAll.indeterminate = !allChecked && someChecked;
+                }
+
+                groupCheckboxes.forEach(grp => {
+                    const slug = grp.getAttribute('data-group');
+                    const grpItems = document.querySelectorAll('.group-' + slug);
+                    const grpAllChecked = Array.from(grpItems).every(cb => cb.checked);
+                    const grpSomeChecked = Array.from(grpItems).some(cb => cb.checked);
+                    grp.checked = grpAllChecked;
+                    grp.indeterminate = !grpAllChecked && grpSomeChecked;
+                });
             }
 
-            checkboxes.forEach(cb => {
-                cb.addEventListener('change', updateCheckAll);
+            if (checkAll) {
+                checkAll.addEventListener('change', function() {
+                    checkboxes.forEach(cb => cb.checked = checkAll.checked);
+                    groupCheckboxes.forEach(grp => grp.checked = checkAll.checked);
+                });
+            }
+
+            groupCheckboxes.forEach(grp => {
+                grp.addEventListener('change', function() {
+                    const slug = this.getAttribute('data-group');
+                    const grpItems = document.querySelectorAll('.group-' + slug);
+                    grpItems.forEach(cb => cb.checked = grp.checked);
+                    updateAllState();
+                });
             });
 
-            updateCheckAll();
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateAllState);
+            });
+
+            updateAllState();
         });
     </script>
 

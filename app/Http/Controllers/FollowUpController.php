@@ -6,11 +6,15 @@ use App\Models\FollowUp;
 use App\Models\Lead;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class FollowUpController extends Controller
 {
+    use AuthorizesRequests;
+
     public function store(Request $request, $leadId)
     {
+        $this->authorize('lead_followup');
         $lead = Lead::findOrFail($leadId);
 
         $data = $request->validate([
@@ -32,6 +36,7 @@ class FollowUpController extends Controller
 
     public function take(Request $request, $id)
     {
+        $this->authorize('lead_followup');
         $followUp = FollowUp::findOrFail($id);
 
         $data = $request->validate([

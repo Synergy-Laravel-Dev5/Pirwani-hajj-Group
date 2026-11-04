@@ -10,11 +10,15 @@ use App\Models\Package;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class HotelPersonReportController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('hotel_person_report_view');
         $data = $this->getFilteredData($request);
 
         return view('reports.hotel_person', $data);
@@ -22,6 +26,7 @@ class HotelPersonReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $this->authorize('hotel_person_report_export');
         $data = $this->getFilteredData($request);
 
         $visibleCols = null;
@@ -51,6 +56,7 @@ class HotelPersonReportController extends Controller
 
     public function exportExcel(Request $request)
     {
+        $this->authorize('hotel_person_report_export');
         @set_time_limit(180);
         @ini_set('memory_limit', '512M');
 

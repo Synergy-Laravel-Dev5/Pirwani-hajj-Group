@@ -17,12 +17,16 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
+                    @can('room_inventory_view')
                     <a href="{{ route('room-inventory.index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="mdi mdi-warehouse me-1"></i> Room & Bed Stock
                     </a>
+                    @endcan
+                    @can('hotel_sale_create')
                     <a href="{{ route('hotel-sales.create') }}" class="btn btn-primary btn-sm">
                         <i class="mdi mdi-plus-circle me-1"></i> + Create Hotel Sale Invoice
                     </a>
+                    @endcan
                 </div>
             </div>
 
@@ -250,12 +254,17 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
+                                                @can('hotel_sale_show')
                                                 <a href="{{ route('hotel-sales.show', $sale->id) }}" class="btn btn-primary btn-sm" title="View & Print Voucher">
                                                     <i class="mdi mdi-printer"></i>
                                                 </a>
+                                                @endcan
+                                                @can('hotel_sale_edit')
                                                 <a href="{{ route('hotel-sales.edit', $sale->id) }}" class="btn btn-outline-secondary btn-sm" title="Edit">
                                                     <i class="mdi mdi-pencil"></i>
                                                 </a>
+                                                @endcan
+                                                @can('hotel_sale_trash')
                                                 <form action="{{ route('hotel-sales.delete', $sale->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this reservation invoice?');">
                                                     @csrf
                                                     @method('DELETE')
@@ -263,6 +272,7 @@
                                                         <i class="mdi mdi-trash-can-outline"></i>
                                                     </button>
                                                 </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

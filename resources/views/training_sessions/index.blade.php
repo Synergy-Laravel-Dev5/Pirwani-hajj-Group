@@ -10,9 +10,11 @@
                 <div class="py-3 d-flex align-items-center justify-content-between">
                     <h4 class="fs-18 fw-semibold m-0">Training Sessions</h4>
                     <div class="d-flex gap-2">
+                        @can('training_session_create')
                         <a href="{{ route('training-session.create') }}" class="btn btn-primary btn-sm">
                             + Add Training Session
                         </a>
+                        @endcan
                     </div>
                 </div>
 
@@ -56,10 +58,13 @@
                                             <td>{{ \Illuminate\Support\Str::limit($session->description, 50) ?? '-' }}</td>
                                             <td>
                                                 <div class="d-flex gap-1">
+                                                    @can('training_session_edit')
                                                     <a href="{{ route('training-session.edit', $session->id) }}"
                                                         class="btn btn-sm btn-outline-success" title="Edit">
                                                         <i class="mdi mdi-pencil"></i>
                                                     </a>
+                                                    @endcan
+                                                    @can('training_session_trash')
                                                     <form action="{{ route('training-session.delete', $session->id) }}"
                                                         method="POST" onsubmit="return confirm('Are you sure you want to delete this training session?')">
                                                         @csrf
@@ -68,6 +73,7 @@
                                                             <i class="mdi mdi-delete"></i>
                                                         </button>
                                                     </form>
+                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>
