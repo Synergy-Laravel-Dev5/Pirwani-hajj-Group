@@ -11,13 +11,15 @@
             @php
                 $trashTotal = \App\Models\TutorialVideo::onlyTrashed()->count();
             @endphp
-            <a href="{{ route('mobile-ops.videos.trash') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1">
+            <a href="{{ route('mobile-ops.videos.trash') }}"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1">
                 <i class="mdi mdi-trash-can-outline"></i> View Trash
                 @if ($trashTotal > 0)
                     <span class="badge bg-danger text-white rounded-pill ms-1">{{ $trashTotal }}</span>
                 @endif
             </a>
-            <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createVideoModal">
+            <button class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal"
+                data-bs-target="#createVideoModal">
                 <i class="mdi mdi-plus me-1"></i> Add New Video
             </button>
         </div>
@@ -57,16 +59,16 @@
 
     <!-- Videos Table -->
     <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-        <div class="card-body p-0">
+        <div class="card-body">
             <div class="table-responsive">
-                <table class="table  align-middle mb-0">
+                <table id="videos-datatable" class="table table-bordered dt-responsive nowrap align-middle mb-0 w-100">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3" style="width: 80px;">Thumbnail</th>
                             <th>Title</th>
-                            <th>Type</th>
+                            {{-- <th>Type</th> --}}
                             <th>Preview / Source</th>
-                            <th>Description</th>
+                            {{-- <th>Description</th> --}}
                             <th>Status</th>
                             <th class="text-end pe-3">Action</th>
                         </tr>
@@ -88,7 +90,7 @@
                                     @endif
                                 </td>
                                 <td class="fw-bold text-dark">{{ $video->title }}</td>
-                                <td>
+                                {{-- <td>
                                     @if ($video->video_type === 'file')
                                         <span
                                             class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-11">Uploaded
@@ -98,16 +100,16 @@
                                             class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fs-11">Online
                                             Link</span>
                                     @endif
-                                </td>
+                                </td> --}}
                                 <td>
                                     <a href="{{ $video->play_url }}" target="_blank"
                                         class="btn btn-xs btn-outline-secondary">
                                         <i class="mdi mdi-play me-1"></i> Watch Video
                                     </a>
                                 </td>
-                                <td class="text-muted fs-13" style="max-width: 200px;">
-                                    {{ $video->description ? \Illuminate\Support\Str::limit($video->description, 45) : '—' }}
-                                </td>
+                                {{-- <td class="text-muted fs-13" style="">
+                                    {{ $video->description ? \Illuminate\Support\Str::limit($video->description, 50) : '—' }}
+                                </td> --}}
                                 <td>
                                     @if ($video->is_active)
                                         <span
@@ -230,18 +232,10 @@
                                 </div>
                             </div>
                         @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">No video tutorials added yet.</td>
-                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            @if ($videos->hasPages())
-                <div class="p-3 border-top">
-                    {{ $videos->links('pagination::bootstrap-5') }}
-                </div>
-            @endif
         </div>
     </div>
 
@@ -348,3 +342,35 @@
         }
     </script>
 @endsection
+
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            $('#videos-datatable').DataTable({
+                paging: true,
+                info: true,
+                searching: false,
+                lengthChange: true,
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "All"]
+                ],
+                pageLength: 10,
+                responsive: true,
+                order: [],
+                columnDefs: [{
+                    orderable: false,
+                    targets: [0, 3, 6]
+                }],
+                language: {
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
+                }
+            });
+        });
+    </script>
+@endpush

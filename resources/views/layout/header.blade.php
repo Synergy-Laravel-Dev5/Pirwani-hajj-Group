@@ -22,13 +22,16 @@
                 </ul>
 
                 <ul class="list-unstyled topnav-menu mb-0 d-flex align-items-center gap-2">
-                    @canany(['mobile_ops_dashboard_view', 'umrah_package_view', 'domestic_package_view', 'international_package_view', 'mobile_ops_inquiry_view', 'gallery_view', 'book_view', 'guideline_view', 'video_view', 'visa_country_view', 'visa_inquiry_view'])
                     <li class="d-none d-lg-block">
                         <div class="position-relative">
-                            <a href="{{ route('mobile-ops.dashboard') }}"
+                            {{-- <a href="{{ route('mobile-ops.dashboard') }}"
                                 class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 me-3"
                                 style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
                                 <span>📱</span>
+                                <span>Mobile App Portal</span>
+                            </a> --}}
+                            <a href="{{ route('mobile-ops.dashboard') }}" class="mobile-ops-btn">
+                                {{-- <span></span> --}}
                                 <span>Mobile App Portal</span>
                             </a>
                         </div>
@@ -62,6 +65,12 @@
 
                             <div class="dropdown-divider my-1"></div>
 
+                            <a href="{{ route('welcome') }}"
+                                class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
+                                <i class="mdi mdi-apps fs-16 text-warning"></i>
+                                <span>Switch Portal / Module</span>
+                            </a>
+
                             <a href="{{ route('change.password') }}"
                                 class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
                                 <i class="mdi mdi-lock-reset fs-16 text-primary"></i>
@@ -88,7 +97,8 @@
         <div class="h-100" data-simplebar>
             <div id="sidebar-menu">
                 <div class="logo-box text-center">
-                    <a class="logo logo-dark" href="{{ route('dashboard') }}">
+                    <a class="logo logo-dark"
+                        href="{{ session('active_module') === 'hotel_sale' ? route('hotel-sales.index') : route('dashboard') }}">
                         <span class="logo-lg">
                             <img src="{{ asset('assets/images/PIRWANI PNG FILE.png') }}?v={{ time() }}"
                                 alt="Pirwani Hajj Group" class="sidebar-logo-full"
@@ -109,7 +119,6 @@
                             <span>Dashboard</span>
                         </a>
                     </li>
-                    @canany(['role_view', 'user_view', 'user_activity_view'])
                     <li>
                         <a href="#sidebarUserManagement" data-bs-toggle="collapse">
                             <i data-feather="users"></i>
@@ -117,38 +126,36 @@
                             <span class="menu-arrow"></span>
                         </a>
 
-                        <div class="collapse" id="sidebarUserManagement">
-                            <ul class="nav-second-level">
+                            <div class="collapse" id="sidebarUserManagement">
+                                <ul class="nav-second-level">
 
-                                @can('role_view')
-                                    <li>
-                                        <a class="tp-link" href="{{ route('role.index') }}">
-                                            Role
-                                        </a>
-                                    </li>
-                                @endcan
+                                    @can('role_view')
+                                        <li>
+                                            <a class="tp-link" href="{{ route('role.index') }}">
+                                                Role
+                                            </a>
+                                        </li>
+                                    @endcan
 
-                                @can('user_view')
-                                    <li>
-                                        <a class="tp-link" href="{{ route('user.index') }}">
-                                            User
-                                        </a>
-                                    </li>
-                                @endcan
-                                @can('user_activity_view')
-                                    <li>
-                                        <a class="tp-link" href="{{ route('user_activity.index') }}">
-                                            User Activity
-                                        </a>
-                                    </li>
-                                @endcan
+                                    @can('user_view')
+                                        <li>
+                                            <a class="tp-link" href="{{ route('user.index') }}">
+                                                User
+                                            </a>
+                                        </li>
+                                    @endcan
+                                    @can('user_activity_view')
+                                        <li>
+                                            <a class="tp-link" href="{{ route('user_activity.index') }}">
+                                                User Activity
+                                            </a>
+                                        </li>
+                                    @endcan
 
                             </ul>
                         </div>
                     </li>
-                    @endcanany
 
-                    @canany(['lead_view', 'lead_create'])
                     <li>
                         <a href="#sidebarLeadManagement" data-bs-toggle="collapse">
                             <i data-feather="user-plus"></i>
@@ -157,24 +164,23 @@
                         </a>
                         <div class="collapse" id="sidebarLeadManagement">
                             <ul class="nav-second-level">
-                                @can('lead_view')
+                                {{-- @can('lead_view') --}}
                                 <li>
                                     <a class="tp-link" href="{{ route('lead.index') }}">
                                         All Leads
                                     </a>
                                 </li>
-                                @endcan
-                                @can('lead_create')
-                                <li>
-                                    <a class="tp-link" href="{{ route('lead.create') }}">
-                                        Add Lead
-                                    </a>
-                                </li>
-                                @endcan
+                                {{-- @endcan --}}
+                                {{-- @can('lead_create')
+                                    <li>
+                                        <a class="tp-link" href="{{ route('lead.create') }}">
+                                            Add Lead
+                                        </a>
+                                    </li>
+                                @endcan --}}
                             </ul>
                         </div>
                     </li>
-                    @endcanany
 
                     @can('client_view')
                         <li>
@@ -184,23 +190,18 @@
                             </a>
                         </li>
                     @endcan
-                    @can('company_view')
                     <li>
                         <a href="{{ route('company.index') }}">
                             <i data-feather="briefcase"></i>
                             <span>Companies</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('supplier_view')
                     <li>
                         <a href="{{ route('supplier.index') }}">
                             <i data-feather="truck"></i>
                             <span>Suppliers / Vendors</span>
                         </a>
                     </li>
-                    @endcan
-                    @canany(['package_view', 'hotel_view', 'room_type_view', 'flight_view', 'route_view', 'travel_route_view', 'train_view', 'vehicle_view', 'training_session_view'])
                     <li>
                         <a href="#sidebarPackageManagement" data-bs-toggle="collapse">
                             <i data-feather="package"></i>
@@ -209,13 +210,11 @@
                         </a>
                         <div class="collapse" id="sidebarPackageManagement">
                             <ul class="nav-second-level">
-                                @can('package_view')
                                 <li>
                                     <a class="tp-link" href="{{ route('package.index') }}">
                                         Packages
                                     </a>
                                 </li>
-                                @endcan
                                 @can('hotel_view')
                                     <li>
                                         <a class="tp-link" href="{{ route('hotel.index') }}">
@@ -223,13 +222,11 @@
                                         </a>
                                     </li>
                                 @endcan
-                                @can('room_type_view')
                                 <li>
                                     <a class="tp-link" href="{{ route('room-type.index') }}">
                                         Room Types
                                     </a>
                                 </li>
-                                @endcan
 
                                 @can('flight_view')
                                     <li>
@@ -266,17 +263,14 @@
                                         </a>
                                     </li>
                                 @endcan
-                                @can('training_session_view')
                                 <li>
                                     <a class="tp-link" href="{{ route('training-session.index') }}">
                                         Training Sessions
                                     </a>
                                 </li>
-                                @endcan
                             </ul>
                         </div>
                     </li>
-                    @endcanany
                     @can('booking_view')
                         <li>
                             <a href="{{ route('booking.index') }}">
@@ -285,110 +279,84 @@
                             </a>
                         </li>
                     @endcan
-                    @can('person_report_view')
                     <li>
                         <a href="{{ route('report.person') }}">
                             <i data-feather="user-check"></i>
                             <span>Person Report</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('flight_report_view')
                     <li>
                         <a href="{{ route('report.flight') }}">
                             <i data-feather="navigation"></i>
                             <span>Flight Report</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('haji_group_view')
                     <li>
                         <a href="{{ route('haji-group.index') }}">
                             <i data-feather="users"></i>
                             <span>Haji Pilgrim Groups</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('room_inventory_view')
                     <li>
                         <a href="{{ route('room-inventory.index') }}">
                             <i data-feather="home"></i>
                             <span>Rooming List & Stock</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('hotel_sale_view')
                     <li>
                         <a href="{{ route('hotel-sales.index') }}">
                             <i data-feather="file-text"></i>
                             <span>Hotel Sale Invoices</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('rooming_list_report_view')
                     <li>
                         <a href="{{ route('report.rooming-list') }}">
                             <i data-feather="grid"></i>
                             <span>Room Allocation Report</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('bus_assignment_view')
                     <li>
                         <a href="{{ route('transport.bus-assignment') }}">
                             <i data-feather="truck"></i>
                             <span>Bus Assignment & Manifest</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('check_in_report_view')
                     <li>
                         <a href="{{ route('report.check-in') }}">
                             <i data-feather="check-square"></i>
                             <span>Check-In Report</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('hotel_person_report_view')
                     <li>
                         <a href="{{ route('report.hotel-person') }}">
                             <i data-feather="home"></i>
                             <span>Hotel Person Report</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('maktab_report_view')
                     <li>
                         <a href="{{ route('report.maktab') }}">
                             <i data-feather="layers"></i>
                             <span>Maktab - report</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('arrival_group_view')
                     <li>
                         <a href="{{ route('arrival-group.index') }}">
                             <i data-feather="arrow-down-left"></i>
                             <span>Arrival Groups</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('departure_group_view')
                     <li>
                         <a href="{{ route('departure-group.index') }}">
                             <i data-feather="arrow-up-right"></i>
                             <span>Departure Groups</span>
                         </a>
                     </li>
-                    @endcan
-                    @can('hajj_application_view')
                     <li>
                         <a href="{{ route('hajj-application.index') }}">
                             <i data-feather="file-text"></i>
                             <span>Hajj Applications</span>
                         </a>
                     </li>
-                    @endcan
                     @can('expense_view')
                         <li>
                             <a href="{{ route('expense.index') }}">
@@ -422,23 +390,19 @@
                             </a>
                         </li>
                     @endcan
-                    @can('expense_filter_view')
                     <li>
                         <a href="{{ route('expense.transaction.report.filter') }}">
                             <i data-feather="filter"></i>
                             <span>Expense Filter</span>
                         </a>
                     </li>
-                    @endcan
 
-                    @can('company_ledger_filter_view')
                     <li>
                         <a href="{{ route('transaction.company-ledger.filter') }}">
                             <i data-feather="filter"></i>
                             <span>Company Filter</span>
                         </a>
                     </li>
-                    @endcan
                 </ul>
             </div>
             <div class="clearfix"></div>

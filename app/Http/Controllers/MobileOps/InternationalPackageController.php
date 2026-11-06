@@ -168,11 +168,17 @@ class InternationalPackageController extends Controller
      */
     public function store(Request $request)
     {
+        $isPriceOnRequest = $request->boolean('is_price_on_request');
+
+        $priceRule = $isPriceOnRequest ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0';
+
         $request->validate([
             'package_title'           => 'required|string|max:255',
             'subtitle'                => 'nullable|string|max:255',
+            'sightseeing_summary'     => 'nullable|string|max:255',
             'package_code'            => 'nullable|string|max:50',
             'status'                  => 'required|in:active,inactive,draft',
+            'is_price_on_request'     => 'nullable|boolean',
             'is_group_package'        => 'nullable|boolean',
             'visa_status'             => 'required|in:included,excluded',
             'is_dual_country'         => 'nullable|boolean',
@@ -182,19 +188,22 @@ class InternationalPackageController extends Controller
             'destination_country'     => 'required|string|max:100',
             'additional_destinations' => 'nullable|array',
             'stay_nights'             => 'nullable|integer|min:0',
+            'duration_nights'         => 'nullable|integer|min:0',
             'primary_hotel'           => 'nullable|string|max:255',
             'hotel_star_rating'       => 'nullable|string|max:100',
             'meal_plan'               => 'nullable|string|max:100',
             'ground_transfer_fleet'   => 'nullable|string|max:255',
-            'price_per_person'        => 'nullable|numeric|min:0',
-            'price_sharing'           => 'nullable|numeric|min:0',
-            'price_quad'              => 'nullable|numeric|min:0',
-            'price_triple'            => 'nullable|numeric|min:0',
-            'price_double'            => 'nullable|numeric|min:0',
+            'price_per_person'        => $priceRule,
+            'price_sharing'           => $priceRule,
+            'price_quad'              => $priceRule,
+            'price_triple'            => $priceRule,
+            'price_double'            => $priceRule,
             'valid_from'              => 'nullable|date',
             'valid_until'             => 'nullable|date',
             'package_image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'inclusions'              => 'nullable|array',
+            'package_excludes'        => 'nullable|array',
+            'itinerary_days'          => 'nullable|array',
             'hotel_amenities'         => 'nullable|array',
         ]);
 
@@ -206,6 +215,57 @@ class InternationalPackageController extends Controller
 
             $inclusionsList = array_values(array_filter((array) $request->input('inclusions', []), fn($item) => filled(trim($item))));
             $amenitiesList  = array_values(array_filter((array) $request->input('hotel_amenities', []), fn($item) => filled(trim($item))));
+
+            // Process exclusions repeater: [{title, description}]
+            $excludesList = [];
+            if ($request->has('package_excludes') && is_array($request->package_excludes)) {
+                foreach ($request->package_excludes as $exc) {
+                    if (is_array($exc)) {
+                        $title = trim($exc['title'] ?? '');
+                        $desc  = trim($exc['description'] ?? '');
+                        if ($title !== '' || $desc !== '') {
+                            $excludesList[] = [
+                                'title'       => $title,
+                                'description' => $desc,
+                            ];
+                        }
+                    } elseif (is_string($exc) && trim($exc) !== '') {
+                        $excludesList[] = [
+                            'title'       => trim($exc),
+                            'description' => '',
+                        ];
+                    }
+                }
+            }
+
+            // Process itinerary days repeater: [{day_number, title, description, highlights}]
+            $itineraryList = [];
+            if ($request->has('itinerary_days') && is_array($request->itinerary_days)) {
+                $dayCounter = 1;
+                foreach ($request->itinerary_days as $itin) {
+                    if (!is_array($itin)) continue;
+                    $title = trim($itin['title'] ?? '');
+                    $desc  = trim($itin['description'] ?? '');
+                    $rawHighlights = $itin['highlights'] ?? [];
+
+                    $highlights = [];
+                    if (is_array($rawHighlights)) {
+                        $highlights = array_values(array_filter(array_map('trim', $rawHighlights)));
+                    } elseif (is_string($rawHighlights) && trim($rawHighlights) !== '') {
+                        $highlights = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n|,/', $rawHighlights))));
+                    }
+
+                    if ($title !== '' || $desc !== '' || !empty($highlights)) {
+                        $itineraryList[] = [
+                            'day_number'  => !empty($itin['day_number']) ? (int) $itin['day_number'] : $dayCounter,
+                            'title'       => $title,
+                            'description' => $desc,
+                            'highlights'  => $highlights,
+                        ];
+                        $dayCounter++;
+                    }
+                }
+            }
 
             // Dynamic destinations list for Dual Country / Multi-Country Package
             $additionalDestinations = [];
@@ -226,15 +286,18 @@ class InternationalPackageController extends Controller
             }
 
             $isDualOrMulti = (bool) $request->is_dual_country || (bool) $request->is_multi_city;
+            $nights = $request->stay_nights ? (int) $request->stay_nights : ($request->duration_nights ? (int) $request->duration_nights : null);
 
             $package = Package::create([
                 'package_type'            => 'international',
                 'package_title'           => $request->package_title,
                 'name'                    => $request->package_title,
                 'subtitle'                => $request->subtitle,
+                'sightseeing_summary'     => $request->sightseeing_summary,
                 'package_code'            => $request->package_code,
                 'code'                    => $request->package_code,
                 'status'                  => $request->status ?? 'active',
+                'is_price_on_request'     => $isPriceOnRequest,
                 'is_group_package'        => (bool) $request->is_group_package,
                 'visa_status'             => $request->visa_status ?? 'included',
                 'is_dual_country'         => $isDualOrMulti,
@@ -243,20 +306,24 @@ class InternationalPackageController extends Controller
                 'destination_city'        => $request->destination_city,
                 'destination_country'     => $request->destination_country,
                 'additional_destinations' => $additionalDestinations,
-                'stay_nights'             => $request->stay_nights ? (int) $request->stay_nights : null,
-                'days'                    => $request->stay_nights ? ((int) $request->stay_nights + 1) : null,
+                'stay_nights'             => $nights,
+                'duration_nights'         => $request->duration_nights ? (int) $request->duration_nights : $nights,
+                'days'                    => $nights ? ($nights + 1) : null,
                 'primary_hotel'           => $request->primary_hotel,
                 'hotel_star_rating'       => $request->hotel_star_rating,
                 'meal_plan'               => $request->meal_plan,
                 'ground_transfer_fleet'   => $request->ground_transfer_fleet,
                 'valid_from'              => $request->valid_from,
                 'valid_until'             => $request->valid_until,
-                'price_per_person'        => (float) ($request->price_per_person ?? 0),
-                'price_sharing'           => (float) ($request->price_sharing ?? 0),
-                'price_quad'              => (float) ($request->price_quad ?? 0),
-                'price_triple'            => (float) ($request->price_triple ?? 0),
-                'price_double'            => (float) ($request->price_double ?? 0),
+                'price_per_person'        => $isPriceOnRequest ? (float) ($request->price_per_person ?? 0) : (float) ($request->price_per_person ?? 0),
+                'price_sharing'           => $isPriceOnRequest ? (float) ($request->price_sharing ?? 0) : (float) ($request->price_sharing ?? 0),
+                'price_quad'              => $isPriceOnRequest ? (float) ($request->price_quad ?? 0) : (float) ($request->price_quad ?? 0),
+                'price_triple'            => $isPriceOnRequest ? (float) ($request->price_triple ?? 0) : (float) ($request->price_triple ?? 0),
+                'price_double'            => $isPriceOnRequest ? (float) ($request->price_double ?? 0) : (float) ($request->price_double ?? 0),
                 'inclusions'              => !empty($inclusionsList) ? json_encode($inclusionsList) : null,
+                'package_excludes_list'   => $excludesList,
+                'exclusions'              => !empty($excludesList) ? implode("\n", array_map(fn($e) => $e['title'] . ($e['description'] ? ' - ' . $e['description'] : ''), $excludesList)) : null,
+                'itinerary_days'          => $itineraryList,
                 'hotel_amenities'         => $amenitiesList,
                 'key_features'            => $request->key_features,
                 'requirements_text'       => $request->requirements_text,
@@ -381,6 +448,20 @@ class InternationalPackageController extends Controller
             }
         }
 
+        $excludesList = [];
+        if (!empty($package->package_excludes_list)) {
+            $excludesList = is_array($package->package_excludes_list)
+                ? $package->package_excludes_list
+                : (json_decode($package->package_excludes_list, true) ?? []);
+        }
+
+        $itineraryDays = [];
+        if (!empty($package->itinerary_days)) {
+            $itineraryDays = is_array($package->itinerary_days)
+                ? $package->itinerary_days
+                : (json_decode($package->itinerary_days, true) ?? []);
+        }
+
         $hotelAmenitiesList = is_array($package->hotel_amenities) ? $package->hotel_amenities : [];
 
         return view('mobile-ops.international-packages.edit', compact(
@@ -398,6 +479,8 @@ class InternationalPackageController extends Controller
             'terms',
             'transport',
             'inclusionsList',
+            'excludesList',
+            'itineraryDays',
             'hotelAmenitiesList'
         ));
     }
@@ -409,11 +492,16 @@ class InternationalPackageController extends Controller
     {
         $package = Package::where('package_type', 'international')->findOrFail($id);
 
+        $isPriceOnRequest = $request->boolean('is_price_on_request');
+        $priceRule = $isPriceOnRequest ? 'nullable|numeric|min:0' : 'nullable|numeric|min:0';
+
         $request->validate([
             'package_title'           => 'required|string|max:255',
             'subtitle'                => 'nullable|string|max:255',
+            'sightseeing_summary'     => 'nullable|string|max:255',
             'package_code'            => 'nullable|string|max:50',
             'status'                  => 'required|in:active,inactive,draft',
+            'is_price_on_request'     => 'nullable|boolean',
             'is_group_package'        => 'nullable|boolean',
             'visa_status'             => 'required|in:included,excluded',
             'is_dual_country'         => 'nullable|boolean',
@@ -423,19 +511,22 @@ class InternationalPackageController extends Controller
             'destination_country'     => 'required|string|max:100',
             'additional_destinations' => 'nullable|array',
             'stay_nights'             => 'nullable|integer|min:0',
+            'duration_nights'         => 'nullable|integer|min:0',
             'primary_hotel'           => 'nullable|string|max:255',
             'hotel_star_rating'       => 'nullable|string|max:100',
             'meal_plan'               => 'nullable|string|max:100',
             'ground_transfer_fleet'   => 'nullable|string|max:255',
-            'price_per_person'        => 'nullable|numeric|min:0',
-            'price_sharing'           => 'nullable|numeric|min:0',
-            'price_quad'              => 'nullable|numeric|min:0',
-            'price_triple'            => 'nullable|numeric|min:0',
-            'price_double'            => 'nullable|numeric|min:0',
+            'price_per_person'        => $priceRule,
+            'price_sharing'           => $priceRule,
+            'price_quad'              => $priceRule,
+            'price_triple'            => $priceRule,
+            'price_double'            => $priceRule,
             'valid_from'              => 'nullable|date',
             'valid_until'             => 'nullable|date',
             'package_image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'inclusions'              => 'nullable|array',
+            'package_excludes'        => 'nullable|array',
+            'itinerary_days'          => 'nullable|array',
             'hotel_amenities'         => 'nullable|array',
         ]);
 
@@ -451,6 +542,57 @@ class InternationalPackageController extends Controller
 
             $inclusionsList = array_values(array_filter((array) $request->input('inclusions', []), fn($item) => filled(trim($item))));
             $amenitiesList  = array_values(array_filter((array) $request->input('hotel_amenities', []), fn($item) => filled(trim($item))));
+
+            // Process exclusions repeater: [{title, description}]
+            $excludesList = [];
+            if ($request->has('package_excludes') && is_array($request->package_excludes)) {
+                foreach ($request->package_excludes as $exc) {
+                    if (is_array($exc)) {
+                        $title = trim($exc['title'] ?? '');
+                        $desc  = trim($exc['description'] ?? '');
+                        if ($title !== '' || $desc !== '') {
+                            $excludesList[] = [
+                                'title'       => $title,
+                                'description' => $desc,
+                            ];
+                        }
+                    } elseif (is_string($exc) && trim($exc) !== '') {
+                        $excludesList[] = [
+                            'title'       => trim($exc),
+                            'description' => '',
+                        ];
+                    }
+                }
+            }
+
+            // Process itinerary days repeater: [{day_number, title, description, highlights}]
+            $itineraryList = [];
+            if ($request->has('itinerary_days') && is_array($request->itinerary_days)) {
+                $dayCounter = 1;
+                foreach ($request->itinerary_days as $itin) {
+                    if (!is_array($itin)) continue;
+                    $title = trim($itin['title'] ?? '');
+                    $desc  = trim($itin['description'] ?? '');
+                    $rawHighlights = $itin['highlights'] ?? [];
+
+                    $highlights = [];
+                    if (is_array($rawHighlights)) {
+                        $highlights = array_values(array_filter(array_map('trim', $rawHighlights)));
+                    } elseif (is_string($rawHighlights) && trim($rawHighlights) !== '') {
+                        $highlights = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n|,/', $rawHighlights))));
+                    }
+
+                    if ($title !== '' || $desc !== '' || !empty($highlights)) {
+                        $itineraryList[] = [
+                            'day_number'  => !empty($itin['day_number']) ? (int) $itin['day_number'] : $dayCounter,
+                            'title'       => $title,
+                            'description' => $desc,
+                            'highlights'  => $highlights,
+                        ];
+                        $dayCounter++;
+                    }
+                }
+            }
 
             $additionalDestinations = [];
             if ($request->has('additional_destinations') && is_array($request->additional_destinations)) {
@@ -470,14 +612,17 @@ class InternationalPackageController extends Controller
             }
 
             $isDualOrMulti = (bool) $request->is_dual_country || (bool) $request->is_multi_city;
+            $nights = $request->stay_nights ? (int) $request->stay_nights : ($request->duration_nights ? (int) $request->duration_nights : null);
 
             $package->update([
                 'package_title'           => $request->package_title,
                 'name'                    => $request->package_title,
                 'subtitle'                => $request->subtitle,
+                'sightseeing_summary'     => $request->sightseeing_summary,
                 'package_code'            => $request->package_code,
                 'code'                    => $request->package_code,
                 'status'                  => $request->status ?? 'active',
+                'is_price_on_request'     => $isPriceOnRequest,
                 'is_group_package'        => (bool) $request->is_group_package,
                 'visa_status'             => $request->visa_status ?? 'included',
                 'is_dual_country'         => $isDualOrMulti,
@@ -486,8 +631,9 @@ class InternationalPackageController extends Controller
                 'destination_city'        => $request->destination_city,
                 'destination_country'     => $request->destination_country,
                 'additional_destinations' => $additionalDestinations,
-                'stay_nights'             => $request->stay_nights ? (int) $request->stay_nights : null,
-                'days'                    => $request->stay_nights ? ((int) $request->stay_nights + 1) : null,
+                'stay_nights'             => $nights,
+                'duration_nights'         => $request->duration_nights ? (int) $request->duration_nights : $nights,
+                'days'                    => $nights ? ($nights + 1) : null,
                 'primary_hotel'           => $request->primary_hotel,
                 'hotel_star_rating'       => $request->hotel_star_rating,
                 'meal_plan'               => $request->meal_plan,
@@ -500,6 +646,9 @@ class InternationalPackageController extends Controller
                 'price_triple'            => (float) ($request->price_triple ?? 0),
                 'price_double'            => (float) ($request->price_double ?? 0),
                 'inclusions'              => !empty($inclusionsList) ? json_encode($inclusionsList) : null,
+                'package_excludes_list'   => $excludesList,
+                'exclusions'              => !empty($excludesList) ? implode("\n", array_map(fn($e) => $e['title'] . ($e['description'] ? ' - ' . $e['description'] : ''), $excludesList)) : null,
+                'itinerary_days'          => $itineraryList,
                 'hotel_amenities'         => $amenitiesList,
                 'key_features'            => $request->key_features,
                 'requirements_text'       => $request->requirements_text,

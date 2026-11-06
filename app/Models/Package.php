@@ -139,9 +139,19 @@ class Package extends Model
         'hotel_amenities',
         'description_notes',
         'banner_image',
+        // Brochure Schema Additions
+        'is_price_on_request',
+        'package_excludes_list',
+        'itinerary_days',
+        'duration_nights',
+        'sightseeing_summary',
     ];
 
     protected $casts = [
+        'is_price_on_request'      => 'boolean',
+        'package_excludes_list'    => 'array',
+        'itinerary_days'           => 'array',
+        'duration_nights'          => 'integer',
         'makkah_a'                 => 'array',
         'makkah_b'                 => 'array',
         'madinah_a'                => 'array',

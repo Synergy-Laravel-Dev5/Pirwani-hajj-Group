@@ -23,7 +23,8 @@ class AuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->route('dashboard')
+            session()->forget('active_module');
+            return redirect()->route('welcome')
                 ->with('success', 'Login successful! Welcome back.');
         }
 
@@ -37,6 +38,7 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
+        session()->forget('active_module');
         return redirect()->route('login')
             ->with('success', 'You have been logged out successfully.');
     }

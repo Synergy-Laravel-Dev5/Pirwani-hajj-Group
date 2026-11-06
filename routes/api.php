@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CustomerAuthController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\TripController;
+use App\Http\Controllers\Api\QurbaniAnnouncementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/documents/{personId}', [DocumentController::class, 'upload']);
     Route::get('/documents/{personId}', [DocumentController::class, 'show']);
+
+    // Qurbani Announcements
+    Route::get('/qurbani/announcements', [QurbaniAnnouncementController::class, 'getMyAnnouncements']);
+    Route::post('/qurbani/mark-completed', [QurbaniAnnouncementController::class, 'markCompleted']);
 });
 
 Route::prefix('guest')->group(function () {
