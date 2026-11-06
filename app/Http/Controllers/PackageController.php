@@ -9,13 +9,17 @@ use App\Models\TrainingSession;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PackageController extends Controller
 {
+    use AuthorizesRequests;
+
     protected $itineraryImagePath = 'assets/images/packages/itinerary';
 
     public function index()
     {
+        $this->authorize('package_view');
         $packages = Package::latest()->paginate(20);
         $trashCount = Package::onlyTrashed()->count();
 
@@ -23,6 +27,7 @@ class PackageController extends Controller
     }
     public function create()
     {
+        $this->authorize('package_create');
         $package = new Package();
         $giveaways = Giveaway::all();
         $companies = Company::all();
@@ -35,6 +40,7 @@ class PackageController extends Controller
     }
     public function store(Request $request)
     {
+        $this->authorize('package_create');
         $data = $this->validated($request);
 
         $package = DB::transaction(function () use ($request, $data) {
@@ -50,6 +56,7 @@ class PackageController extends Controller
     }
     public function edit($id)
     {
+        $this->authorize('package_edit');
         $package = Package::with([
             'accommodations',
             'itinerary',
@@ -73,6 +80,7 @@ class PackageController extends Controller
     }
     public function show($id)
     {
+        $this->authorize('package_show');
         $package = Package::with([
             'company',
             'accommodations',
@@ -90,6 +98,7 @@ class PackageController extends Controller
     }
     public function update(Request $request, $id)
     {
+        $this->authorize('package_edit');
         $package = Package::findOrFail($id);
         $data = $this->validated($request);
 
@@ -109,18 +118,21 @@ class PackageController extends Controller
     }
     public function destroy($id)
     {
+        $this->authorize('package_trash');
         Package::findOrFail($id)->delete();
 
         return back()->with('success', 'Package moved to trash.');
     }
     public function trash()
     {
+        $this->authorize('package_trash_view');
         $packages = Package::onlyTrashed()->latest()->paginate(20);
 
         return view('package.trash', compact('packages'));
     }
     public function restore($id)
     {
+        $this->authorize('package_restore');
         Package::onlyTrashed()->findOrFail($id)->restore();
 
         return redirect()->route('package.trash')->with('success', 'Package restored successfully.');

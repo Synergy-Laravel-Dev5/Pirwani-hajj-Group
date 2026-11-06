@@ -8,11 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SupplierController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('supplier_view');
         $query = Supplier::query()->latest();
 
         if ($request->filled('search')) {
@@ -63,12 +67,14 @@ class SupplierController extends Controller
 
     public function create()
     {
+        $this->authorize('supplier_create');
         $nextCode = Supplier::generateSupplierCode();
         return view('suppliers.create', compact('nextCode'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('supplier_create');
         $request->validate([
             'name'                => 'required|string|max:255',
             'supplier_code'       => 'nullable|string|max:50|unique:suppliers,supplier_code',
@@ -125,6 +131,7 @@ class SupplierController extends Controller
 
     public function show($id)
     {
+        $this->authorize('supplier_show');
         $supplier = Supplier::with(['inventories.hotel', 'hotelSales'])->findOrFail($id);
 
         $totalAllotmentLines = $supplier->inventories->count();
@@ -145,12 +152,14 @@ class SupplierController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('supplier_edit');
         $supplier = Supplier::findOrFail($id);
         return view('suppliers.edit', compact('supplier'));
     }
 
     public function update(Request $request, $id)
     {
+        $this->authorize('supplier_edit');
         $supplier = Supplier::findOrFail($id);
 
         $request->validate([
@@ -193,6 +202,7 @@ class SupplierController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('supplier_trash');
         try {
             $supplier = Supplier::findOrFail($id);
             $name = $supplier->name;
@@ -210,6 +220,7 @@ class SupplierController extends Controller
 
     public function trash()
     {
+        $this->authorize('supplier_trash_view');
         $trashedSuppliers = Supplier::onlyTrashed()->latest()->paginate(20);
         $trashCount = Supplier::onlyTrashed()->count();
 
@@ -218,6 +229,7 @@ class SupplierController extends Controller
 
     public function restore($id)
     {
+        $this->authorize('supplier_restore');
         try {
             $supplier = Supplier::onlyTrashed()->findOrFail($id);
             $supplier->restore();

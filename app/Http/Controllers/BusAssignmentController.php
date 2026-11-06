@@ -13,9 +13,12 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class BusAssignmentController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Standard Hajj Routes / Sectors
      */
@@ -38,6 +41,7 @@ class BusAssignmentController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('bus_assignment_view');
         $sectors = self::getDefaultSectors();
 
         // Also merge any custom route sectors from database
@@ -148,6 +152,7 @@ class BusAssignmentController extends Controller
      */
     public function createBus(Request $request)
     {
+        $this->authorize('bus_assignment_create');
         $request->validate([
             'bus_name'     => 'required|string|max:150',
             'bus_capacity' => 'required|integer|min:1|max:100',
@@ -185,6 +190,7 @@ class BusAssignmentController extends Controller
      */
     public function assignBus(Request $request)
     {
+        $this->authorize('bus_assignment_assign');
         $request->validate([
             'bus_id'       => 'required|exists:haji_groups,id',
             'person_ids'   => 'required|array|min:1',
@@ -246,6 +252,7 @@ class BusAssignmentController extends Controller
      */
     public function unassignBus(Request $request)
     {
+        $this->authorize('bus_assignment_assign');
         $request->validate([
             'haji_group_person_ids' => 'required|array',
         ]);
@@ -275,6 +282,7 @@ class BusAssignmentController extends Controller
      */
     public function updateSeat(Request $request)
     {
+        $this->authorize('bus_assignment_assign');
         $request->validate([
             'haji_group_person_id' => 'required|exists:haji_group_persons,id',
             'seat_number'          => 'required|string|max:50',
@@ -295,6 +303,7 @@ class BusAssignmentController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        $this->authorize('bus_assignment_export');
         $busId = $request->get('bus_id');
         $bus = HajiGroup::with([
             'groupPersons.person.booking.package',
@@ -324,6 +333,7 @@ class BusAssignmentController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        $this->authorize('bus_assignment_export');
         $busId = $request->get('bus_id');
         $bus = HajiGroup::with([
             'groupPersons.person.booking.package',

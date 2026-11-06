@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\BookingPerson;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PilgrimPassController extends Controller
 {
+    use AuthorizesRequests;
     /**
      * Public Live Mobile E-Pass / Itinerary view.
      * Anyone scanning the QR code on the ID card will open this mobile pass.
@@ -81,6 +83,7 @@ class PilgrimPassController extends Controller
      */
     public function badge($id)
     {
+        $this->authorize('pilgrim_badge_view');
         $person = BookingPerson::with([
             'booking.client',
             'booking.company',
@@ -118,6 +121,7 @@ class PilgrimPassController extends Controller
      */
     public function bulkBadges($bookingId)
     {
+        $this->authorize('pilgrim_badge_view');
         $booking = Booking::with([
             'client',
             'company',

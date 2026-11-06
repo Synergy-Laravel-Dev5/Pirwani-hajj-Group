@@ -37,6 +37,7 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('user_create');
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
@@ -77,6 +78,7 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('user_edit');
         $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email,' . $id,
@@ -111,6 +113,7 @@ class UserController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('user_trash');
         try {
             $user = User::findOrFail($id);
             $user->delete();
@@ -139,6 +142,7 @@ class UserController extends Controller
 
     public function restore($id)
     {
+        $this->authorize('user_restore');
         try {
             $user = User::withTrashed()->findOrFail($id);
             $user->restore();

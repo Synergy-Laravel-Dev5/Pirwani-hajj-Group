@@ -17,18 +17,24 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
+                    @can('room_inventory_create')
                     <a href="{{ route('room-inventory.create') }}" class="btn btn-outline-info btn-sm">
                         <i class="mdi mdi-plus-box-multiple me-1"></i> + Stock Allotment
                     </a>
+                    @endcan
+                    @can('supplier_trash_view')
                     <a href="{{ route('supplier.trash') }}" class="btn btn-outline-danger btn-sm">
                         <i class="mdi mdi-delete-outline me-1"></i> Trash
                         @if($trashCount > 0)
                             <span class="badge bg-danger ms-1">{{ $trashCount }}</span>
                         @endif
                     </a>
+                    @endcan
+                    @can('supplier_create')
                     <a href="{{ route('supplier.create') }}" class="btn btn-primary btn-sm">
                         <i class="mdi mdi-plus-circle me-1"></i> + Add New Supplier
                     </a>
+                    @endcan
                 </div>
             </div>
 
@@ -255,12 +261,17 @@
                                         </td>
                                         <td class="text-end">
                                             <div class="btn-group btn-group-sm">
+                                                @can('supplier_show')
                                                 <a href="{{ route('supplier.show', $supplier->id) }}" class="btn btn-outline-info" title="View Details">
                                                     <i class="mdi mdi-eye"></i>
                                                 </a>
+                                                @endcan
+                                                @can('supplier_edit')
                                                 <a href="{{ route('supplier.edit', $supplier->id) }}" class="btn btn-outline-primary" title="Edit">
                                                     <i class="mdi mdi-pencil"></i>
                                                 </a>
+                                                @endcan
+                                                @can('supplier_trash')
                                                 <form action="{{ route('supplier.delete', $supplier->id) }}" method="POST" class="d-inline"
                                                       onsubmit="return confirm('Move supplier \'{{ $supplier->name }}\' to trash?');">
                                                     @csrf
@@ -269,6 +280,7 @@
                                                         <i class="mdi mdi-trash-can"></i>
                                                     </button>
                                                 </form>
+                                                @endcan
                                             </div>
                                         </td>
                                     </tr>

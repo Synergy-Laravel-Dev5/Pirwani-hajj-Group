@@ -172,11 +172,13 @@
                                                                 <i class="mdi mdi-file-document-outline"></i>
                                                             </a>
 
+                                                            @can('pilgrim_badge_view')
                                                             <a href="{{ route('pilgrim.bulk-badges', $booking->id) }}"
                                                                 target="_blank" class="btn btn-sm btn-outline-dark"
                                                                 title="Hajji ID Card">
                                                                 <i class="mdi mdi-badge-account-horizontal"></i>
                                                             </a>
+                                                            @endcan
 
 
                                                             <!-- DELETE -->

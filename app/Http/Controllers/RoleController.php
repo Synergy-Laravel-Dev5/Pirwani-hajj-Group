@@ -14,18 +14,21 @@ class RoleController extends Controller
 
     public function index()
     {
+        $this->authorize('role_view');
         $roles = Role::latest()->get();
         return view('role.index', compact('roles'));
     }
 
     public function create()
     {
+        $this->authorize('role_create');
         $permissions = Permission::all();
         return view('role.create', compact('permissions'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('role_create');
         $request->validate([
             'name' => 'required|unique:roles,name'
         ]);
@@ -42,6 +45,8 @@ class RoleController extends Controller
                 $role->syncPermissions($permissions);
             }
 
+            app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
             DB::commit();
 
             logUserActivity('Role Created', 'Role: ' . $role->name . ' | Permissions: ' . count($request->permissions ?? []), $role->id, 'Role');
@@ -55,6 +60,7 @@ class RoleController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('role_edit');
         $role            = Role::findOrFail($id);
         $permissions     = Permission::all();
         $rolePermissions = $role->permissions->pluck('id')->toArray();
@@ -64,6 +70,7 @@ class RoleController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('role_edit');
         $request->validate([
             'name' => 'required|unique:roles,name,' . $id
         ]);
@@ -84,6 +91,8 @@ class RoleController extends Controller
                 $role->syncPermissions([]);
             }
 
+            app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
             DB::commit();
 
             logUserActivity('Role Updated', 'Role: ' . $role->name . ' | Permissions: ' . count($request->permissions ?? []), $role->id, 'Role');
@@ -97,11 +106,14 @@ class RoleController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('role_trash');
         $role = Role::findOrFail($id);
 
         logUserActivity('Role Deleted', 'Role: ' . $role->name, $role->id, 'Role');
 
         $role->delete();
+
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
         return back()->with('success', 'Role Deleted');
     }

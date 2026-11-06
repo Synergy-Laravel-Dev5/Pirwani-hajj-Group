@@ -9,11 +9,15 @@ use App\Models\Flight;
 use App\Models\TravelGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ArrivalGroupController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('arrival_group_view');
         $query = TravelGroup::with(['airline', 'flight', 'persons.booking.company'])
             ->where('group_type', 'arrival');
 
@@ -39,6 +43,7 @@ class ArrivalGroupController extends Controller
 
     public function create()
     {
+        $this->authorize('arrival_group_create');
         $airlines = Airline::where('status', 'active')->orderBy('name')->get();
         $flights  = Flight::with('airline')->where('status', 'active')->latest()->get();
 
@@ -53,6 +58,7 @@ class ArrivalGroupController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('arrival_group_create');
         $request->validate([
             'group_name'     => 'required|string|max:200',
             'airline_id'     => 'nullable|exists:airlines,id',
@@ -102,6 +108,7 @@ class ArrivalGroupController extends Controller
 
     public function show($id)
     {
+        $this->authorize('arrival_group_show');
         $group = TravelGroup::with(['airline', 'flight', 'persons.booking.company', 'persons.booking.client'])
             ->where('group_type', 'arrival')
             ->findOrFail($id);
@@ -111,6 +118,7 @@ class ArrivalGroupController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('arrival_group_edit');
         $group = TravelGroup::with('persons')
             ->where('group_type', 'arrival')
             ->findOrFail($id);
@@ -129,6 +137,7 @@ class ArrivalGroupController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('arrival_group_edit');
         $group = TravelGroup::where('group_type', 'arrival')->findOrFail($id);
 
         $request->validate([
@@ -179,6 +188,7 @@ class ArrivalGroupController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('arrival_group_trash');
         $group = TravelGroup::where('group_type', 'arrival')->findOrFail($id);
         $group->delete();
 

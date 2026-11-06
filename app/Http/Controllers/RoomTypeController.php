@@ -7,11 +7,15 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RoomTypeController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('room_type_view');
         $roomTypes = RoomType::latest()->get();
         $trashCount = RoomType::onlyTrashed()->count();
 
@@ -20,11 +24,13 @@ class RoomTypeController extends Controller
 
     public function create()
     {
+        $this->authorize('room_type_create');
         return view('room_type.create');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('room_type_create');
         $request->validate([
             'name'        => 'required|string|max:150|unique:room_types,name',
             'code'        => 'nullable|string|max:100',
@@ -54,6 +60,7 @@ class RoomTypeController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('room_type_edit');
         $roomType = RoomType::findOrFail($id);
 
         return view('room_type.edit', compact('roomType'));
@@ -61,6 +68,7 @@ class RoomTypeController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('room_type_edit');
         $roomType = RoomType::findOrFail($id);
 
         $request->validate([
@@ -92,6 +100,7 @@ class RoomTypeController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('room_type_trash');
         try {
             $roomType = RoomType::findOrFail($id);
             $roomType->delete();
@@ -109,6 +118,7 @@ class RoomTypeController extends Controller
 
     public function trash()
     {
+        $this->authorize('room_type_trash_view');
         $roomTypes = RoomType::onlyTrashed()->latest()->get();
 
         return view('room_type.trash', compact('roomTypes'));
@@ -116,6 +126,7 @@ class RoomTypeController extends Controller
 
     public function restore($id)
     {
+        $this->authorize('room_type_restore');
         try {
             $roomType = RoomType::onlyTrashed()->findOrFail($id);
             $roomType->restore();

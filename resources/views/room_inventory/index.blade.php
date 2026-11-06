@@ -62,16 +62,16 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
+                    @can('hotel_sale_view')
                     <a href="{{ route('hotel-sales.index') }}" class="btn btn-outline-primary btn-sm">
                         <i class="mdi mdi-receipt me-1"></i> Hotel Sale Invoices
                     </a>
-                    {{-- <a href="{{ route('report.rooming-list') }}" class="btn btn-outline-info btn-sm">
-                        <i class="mdi mdi-bed-king me-1"></i> Room Allocation & Bed Report
-                    </a> --}}
-                    
+                    @endcan
+                    @can('room_inventory_create')
                     <a href="{{ route('room-inventory.create') }}" class="btn btn-primary btn-sm">
                         <i class="mdi mdi-plus-circle me-1"></i> + Add Room & Bed Stock Allotment
                     </a>
+                    @endcan
                 </div>
             </div>
 
@@ -530,9 +530,12 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm">
+                                                        @can('room_inventory_edit')
                                                         <a href="{{ route('room-inventory.edit', $inv->id) }}" class="btn btn-outline-primary" title="Edit Allotment">
                                                             <i class="mdi mdi-pencil"></i>
                                                         </a>
+                                                        @endcan
+                                                        @can('room_inventory_trash')
                                                         <form action="{{ route('room-inventory.delete', $inv->id) }}" method="POST"
                                                             onsubmit="return confirm('Are you sure you want to delete this room allotment?');" style="display:inline-block;">
                                                             @csrf
@@ -541,6 +544,7 @@
                                                                 <i class="mdi mdi-trash-can-outline"></i>
                                                             </button>
                                                         </form>
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>

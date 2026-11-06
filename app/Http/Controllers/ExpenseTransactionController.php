@@ -6,11 +6,15 @@ use App\Models\Expense;
 use Carbon\Carbon;
 use App\Models\ExpenseTransaction;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ExpenseTransactionController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('expense_transaction_view');
         $package = session('dashboard_package', 'hajj');
         $year    = (int) session('dashboard_year', Carbon::now()->year);
 
@@ -25,12 +29,14 @@ class ExpenseTransactionController extends Controller
 
     public function create()
     {
+        $this->authorize('expense_transaction_create');
         $expenses = Expense::all();
         return view('expense_transaction.create', compact('expenses'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('expense_transaction_create');
         $request->validate([
             'expense_id'    => 'required|exists:expenses,id',
             'hajj_umrah'    => 'required|in:hajj,umrah',
@@ -79,6 +85,7 @@ class ExpenseTransactionController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('expense_transaction_edit');
         $transaction = ExpenseTransaction::findOrFail($id);
         $expenses    = Expense::all();
 
@@ -87,6 +94,7 @@ class ExpenseTransactionController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('expense_transaction_edit');
         $transaction = ExpenseTransaction::findOrFail($id);
 
         $request->validate([
@@ -140,6 +148,7 @@ class ExpenseTransactionController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('expense_transaction_trash');
         $transaction = ExpenseTransaction::findOrFail($id);
 
         if ($transaction->proof && file_exists(public_path('assets/images/expense_proofs/' . $transaction->proof))) {
@@ -155,12 +164,14 @@ class ExpenseTransactionController extends Controller
 
     public function reportFilter()
     {
+        $this->authorize('expense_filter_view');
         $expenses = Expense::all();
         return view('expense_transaction.report_filter', compact('expenses'));
     }
 
     public function report(Request $request)
     {
+        $this->authorize('expense_filter_view');
         $request->validate([
             'hajj_umrah'   => 'required|in:hajj,umrah',
             'year'         => 'required|integer|digits:4|min:2000|max:2100',

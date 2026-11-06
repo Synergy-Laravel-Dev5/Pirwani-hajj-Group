@@ -11,11 +11,15 @@ use App\Models\Client;
 use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class HotelSaleController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('hotel_sale_view');
         $query = HotelSale::with(['supplier', 'company', 'client', 'items.hotel'])->latest();
 
         if ($request->filled('sale_for')) {
@@ -70,6 +74,7 @@ class HotelSaleController extends Controller
 
     public function create()
     {
+        $this->authorize('hotel_sale_create');
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
@@ -105,6 +110,7 @@ class HotelSaleController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('hotel_sale_create');
         $request->validate([
             'sale_for'      => 'required|in:company,supplier,client',
             'customer_name' => 'required|string|max:255',
@@ -209,12 +215,14 @@ class HotelSaleController extends Controller
 
     public function show($id)
     {
+        $this->authorize('hotel_sale_show');
         $sale = HotelSale::with(['items.hotel', 'company', 'client'])->findOrFail($id);
         return view('hotel_sales.show', compact('sale'));
     }
 
     public function edit($id)
     {
+        $this->authorize('hotel_sale_edit');
         $sale = HotelSale::with(['items', 'supplier', 'company', 'client'])->findOrFail($id);
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
@@ -227,6 +235,7 @@ class HotelSaleController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('hotel_sale_edit');
         $sale = HotelSale::findOrFail($id);
 
         $request->validate([
@@ -327,6 +336,7 @@ class HotelSaleController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('hotel_sale_trash');
         $sale = HotelSale::findOrFail($id);
         $sale->items()->delete();
         $sale->delete();

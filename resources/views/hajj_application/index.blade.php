@@ -111,6 +111,7 @@
                                                 @elseif($app->status == 'rejected')
                                                     <span class="badge bg-danger">Rejected</span>
                                                 @else
+                                                    @can('hajj_application_edit')
                                                     <div class="dropdown d-inline-block">
                                                         <button class="btn btn-xs btn-outline-warning dropdown-toggle py-0 px-2 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                             Pending
@@ -138,13 +139,19 @@
                                                             </li>
                                                         </ul>
                                                     </div>
+                                                    @else
+                                                    <span class="badge bg-warning">Pending</span>
+                                                    @endcan
                                                 @endif
                                             </td>
                                             <td>{{ $app->created_at->format('d M Y, h:i A') }}</td>
                                             <td class="text-center">
+                                                @can('hajj_application_show')
                                                 <a href="{{ route('hajj-application.show', $app->id) }}" class="btn btn-primary btn-sm px-2 py-1" title="View & Print Contract">
                                                     <i data-feather="eye"></i> View
                                                 </a>
+                                                @endcan
+                                                @can('hajj_application_trash')
                                                 <form action="{{ route('hajj-application.delete', $app->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this application?');">
                                                     @csrf
                                                     @method('DELETE')
@@ -152,6 +159,7 @@
                                                         <i data-feather="trash-2"></i>
                                                     </button>
                                                 </form>
+                                                @endcan
                                             </td>
                                         </tr>
                                     @empty

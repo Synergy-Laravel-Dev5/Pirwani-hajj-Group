@@ -14,11 +14,15 @@ use App\Models\Route as BusRoute;
 use App\Models\TravelRoute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class HajiGroupController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
+        $this->authorize('haji_group_view');
         $groupType = $request->get('type', 'all');
 
         $query = HajiGroup::with(['company', 'airline', 'flight', 'vehicle', 'hotel', 'route', 'travelRoute', 'persons']);
@@ -48,6 +52,7 @@ class HajiGroupController extends Controller
 
     public function create(Request $request)
     {
+        $this->authorize('haji_group_create');
         $groupType = $request->get('type', 'flight');
 
         $airlines = Airline::where('status', 'active')->orderBy('name')->get();
@@ -68,6 +73,7 @@ class HajiGroupController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('haji_group_create');
         $request->validate([
             'group_name'   => 'required|string|max:200',
             'person_ids'   => 'nullable|array',
@@ -130,6 +136,7 @@ class HajiGroupController extends Controller
 
     public function show($id)
     {
+        $this->authorize('haji_group_show');
         $group = HajiGroup::with([
             'company',
             'airline',
@@ -150,6 +157,7 @@ class HajiGroupController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('haji_group_edit');
         $group = HajiGroup::with('groupPersons')->findOrFail($id);
 
         $airlines = Airline::where('status', 'active')->orderBy('name')->get();
@@ -174,6 +182,7 @@ class HajiGroupController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('haji_group_edit');
         $group = HajiGroup::findOrFail($id);
 
         $request->validate([
@@ -235,6 +244,7 @@ class HajiGroupController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('haji_group_trash');
         $group = HajiGroup::findOrFail($id);
         $group->delete();
 
@@ -248,6 +258,7 @@ class HajiGroupController extends Controller
      */
     public function smartSplitBus(Request $request, $id)
     {
+        $this->authorize('haji_group_split');
         $group = HajiGroup::with(['groupPersons.person', 'groupPersons.booking'])->findOrFail($id);
         $busCapacity = intval($request->input('bus_capacity', $group->bus_capacity ?: 45));
 
@@ -334,6 +345,7 @@ class HajiGroupController extends Controller
      */
     public function transferPersons(Request $request, $id)
     {
+        $this->authorize('haji_group_edit');
         $request->validate([
             'target_group_id'   => 'required|exists:haji_groups,id',
             'group_person_ids'   => 'required|array',

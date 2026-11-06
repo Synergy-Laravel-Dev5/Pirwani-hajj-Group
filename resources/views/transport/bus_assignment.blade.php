@@ -67,10 +67,13 @@
                     <p class="text-muted mb-0 small">Assign pilgrims to sector buses, manage seat numbers, and print official Bus Passenger Manifests.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
+                    @can('bus_assignment_create')
                     <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddBus">
                         <i class="mdi mdi-plus-circle me-1"></i> Add / Register New Bus
                     </button>
+                    @endcan
                     @if($activeBus)
+                        @can('bus_assignment_export')
                         <a href="{{ route('transport.bus-assignment.export-pdf', ['bus_id' => $activeBus->id]) }}" 
                            class="btn btn-danger btn-sm" title="Download Official Passenger Manifest PDF">
                             <i class="mdi mdi-file-pdf-box me-1"></i> Download Bus Manifest (PDF)
@@ -79,6 +82,7 @@
                            class="btn btn-success btn-sm" title="Download Manifest Excel">
                             <i class="mdi mdi-file-excel me-1"></i> Download Excel
                         </a>
+                        @endcan
                     @endif
                 </div>
             </div>

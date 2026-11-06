@@ -7,6 +7,7 @@
             <p class="text-muted fs-13 mb-0">Manage destination countries, visa categories, B2B prices, and requirements.</p>
         </div>
         <div class="mt-2 mt-sm-0 d-flex gap-2">
+            @can('visa_country_trash_view')
             @php
                 $trashTotal = \App\Models\VisaCountry::onlyTrashed()->count();
             @endphp
@@ -16,9 +17,12 @@
                     <span class="badge bg-danger text-white rounded-pill ms-1">{{ $trashTotal }}</span>
                 @endif
             </a>
+            @endcan
+            @can('visa_country_create')
             <a href="{{ route('mobile-ops.visa-countries.create') }}" class="btn btn-sm btn-primary rounded-pill px-3">
                 <i class="mdi mdi-plus me-1"></i> Add Visa Country
             </a>
+            @endcan
         </div>
     </div>
 
@@ -96,10 +100,13 @@
                                 </td>
                                 <td class="text-end pe-3">
                                     <div class="d-inline-flex gap-1">
+                                        @can('visa_country_edit')
                                         <a href="{{ route('mobile-ops.visa-countries.edit', $c->id) }}"
                                             class="btn btn-sm btn-outline-primary" title="Edit">
                                             <i class="mdi mdi-pencil"></i>
                                         </a>
+                                        @endcan
+                                        @can('visa_country_trash')
                                         <form action="{{ route('mobile-ops.visa-countries.destroy', $c->id) }}"
                                             method="POST"
                                             onsubmit="return confirm('Delete this country and all its visa types?');">
@@ -109,6 +116,7 @@
                                                 <i class="mdi mdi-delete"></i>
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

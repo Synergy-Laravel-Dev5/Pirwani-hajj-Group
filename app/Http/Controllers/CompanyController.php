@@ -9,23 +9,28 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CompanyController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
+        $this->authorize('company_view');
         $companies = Company::latest()->get();
         $trashcount = Company::onlyTrashed()->count();
         return view('companies.index', compact('companies', 'trashcount'));
     }
     public function create()
     {
+        $this->authorize('company_create');
         $company = null;
         return view('companies.create', compact('company'));
     }
     public function store(Request $request)
     {
-        // $this->authorize('company_create');
+        $this->authorize('company_create');
 
         $request->validate([
             // Company Details
@@ -242,12 +247,14 @@ class CompanyController extends Controller
 
     public function edit($id)
     {
+        $this->authorize('company_edit');
         $company = Company::findOrFail($id);
         return view('companies.create', compact('company'));
     }
 
     public function update(Request $request, $id)
     {
+        $this->authorize('company_edit');
         $company = Company::findOrFail($id);
 
         $request->validate([
@@ -478,6 +485,7 @@ class CompanyController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('company_trash');
         try {
             $company = Company::findOrFail($id);
             $company->delete();
@@ -494,12 +502,14 @@ class CompanyController extends Controller
 
     public function trash()
     {
+        $this->authorize('company_trash_view');
         $companies = Company::onlyTrashed()->get();
         return view('companies.trash', compact('companies'));
     }
 
     public function restore($id)
     {
+        $this->authorize('company_restore');
         try {
             $company = Company::onlyTrashed()->findOrFail($id);
             $company->restore();
@@ -516,6 +526,7 @@ class CompanyController extends Controller
 
     public function show($id)
     {
+        $this->authorize('company_show');
         $company = Company::with(['addresses', 'contactNumbers', 'emails', 'licenses'])
             ->findOrFail($id);
 

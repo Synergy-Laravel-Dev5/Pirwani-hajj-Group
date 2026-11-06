@@ -7,16 +7,19 @@
                 <div class="py-3 d-flex align-items-center justify-content-between">
                     <h4 class="fs-18 fw-semibold m-0">Leads</h4>
                     <div class="d-flex gap-2">
+                        @can('lead_create')
                         <a href="{{ route('lead.create') }}" class="btn btn-primary btn-sm">
                             + Add Lead
                         </a>
+                        @endcan
+                        @can('lead_trash_view')
                         <a href="{{ route('lead.trash') }}" class="btn btn-danger btn-sm">
                             🗑 Trash
                             <span class="badge bg-white text-danger ms-1">
                                 {{ $trashCount ?? 0 }}
                             </span>
                         </a>
-
+                        @endcan
                     </div>
                 </div>
                 @if (session('success'))
@@ -67,26 +70,28 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex gap-1">
+                                                    @can('lead_show')
                                                     <a href="{{ route('lead.show', $lead->id) }}"
                                                         class="btn btn-sm btn-outline-info" title="View">
-
                                                         <i class="mdi mdi-eye"></i>
                                                     </a>
+                                                    @endcan
+                                                    @can('lead_edit')
                                                     <a href="{{ route('lead.edit', $lead->id) }}"
                                                         class="btn btn-sm btn-outline-success" title="Edit">
-
                                                         <i class="mdi mdi-pencil"></i>
                                                     </a>
+                                                    @endcan
+                                                    @can('lead_trash')
                                                     <form action="{{ route('lead.delete', $lead->id) }}" method="POST"
                                                         onsubmit="return confirm('Move to trash?')">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button class="btn btn-sm btn-outline-danger" title="Delete">
-
                                                             <i class="mdi mdi-delete"></i>
-
                                                         </button>
                                                     </form>
+                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

@@ -9,15 +9,15 @@
                     <div class="col-md-12 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 text-uppercase">All Companies</h6>
                         <div class="mb-1 d-flex gap-2">
-                            {{-- @can('company_create') --}}
+                            @can('company_create')
                             <a href="{{ route('company.create') }}"
                                 class="btn btn-primary btn-sm d-flex align-items-center gap-1"
                                 style="font-size: 12px; padding: 4px 12px;">
                                 <i data-feather="plus" style="width:14px; height:14px;"></i>
                                 Add Company
                             </a>
-                            {{-- @endcan --}}
-                            {{-- @can('company_trash_view') --}}
+                            @endcan
+                            @can('company_trash_view')
                             <a href="{{ route('company.trash') }}"
                                 class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
                                 style="font-size: 12px; padding: 4px 12px;">
@@ -26,7 +26,7 @@
                                 <span class="badge bg-danger text-white"
                                     style="font-size: 10px;">{{ $trashcount ?? 0 }}</span>
                             </a>
-                            {{-- @endcan --}}
+                            @endcan
                         </div>
                     </div>
                 </div>
@@ -53,19 +53,19 @@
                                             <td>{{ \Carbon\Carbon::parse($company->established_on)->format('d-M-Y') }}</td>
                                             <td class="text-center text-center">
                                                 <div class="d-inline-flex gap-2">
-                                                    {{-- @can('company_show') --}}
+                                                    @can('company_show')
                                                     <a href="{{ route('company.show', $company->id) }}"
                                                         class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center">
                                                         Show
                                                     </a>
-                                                    {{-- @endcan --}}
-                                                    {{-- @can('company_edit') --}}
+                                                    @endcan
+                                                    @can('company_edit')
                                                     <a href="{{ route('company.edit', $company->id) }}"
                                                         class="btn btn-outline-success btn-sm d-flex align-items-center justify-content-center">
                                                         Edit
                                                     </a>
-                                                    {{-- @endcan --}}
-                                                    {{-- @can('company_destroy') --}}
+                                                    @endcan
+                                                    @can('company_trash')
                                                     <form action="{{ route('company.delete', $company->id) }}"
                                                         method="POST"
                                                         onsubmit="return confirm('Are you sure you want to delete this Company?');">
@@ -76,7 +76,7 @@
                                                             Delete
                                                         </button>
                                                     </form>
-                                                    {{-- @endcan --}}
+                                                    @endcan
                                                 </div>
                                             </td>
                                         </tr>

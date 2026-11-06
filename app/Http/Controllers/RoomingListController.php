@@ -13,13 +13,17 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class RoomingListController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      */
     public function index(Request $request)
     {
+        $this->authorize('rooming_list_report_view');
         $data = $this->getFilteredRoomingData($request);
 
         $registeredHotels = Hotel::orderBy('name')->get();
@@ -52,6 +56,7 @@ class RoomingListController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        $this->authorize('rooming_list_report_export');
         $data = $this->getFilteredRoomingData($request);
 
         $visibleCols = null;
@@ -85,6 +90,7 @@ class RoomingListController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        $this->authorize('rooming_list_report_export');
         @set_time_limit(180);
         @ini_set('memory_limit', '512M');
 
@@ -787,6 +793,7 @@ class RoomingListController extends Controller
      */
     public function lookupPilgrims(Request $request)
     {
+        $this->authorize('rooming_list_report_view');
         $term = trim($request->get('term', ''));
         if (empty($term)) {
             return response()->json(['success' => true, 'pilgrims' => [], 'count' => 0]);
@@ -836,6 +843,7 @@ class RoomingListController extends Controller
      */
     public function assignRoom(Request $request)
     {
+        $this->authorize('rooming_list_assign');
         $request->validate([
             'person_ids'   => 'nullable|array',
             'haji_ids'     => 'nullable|string',
@@ -1026,6 +1034,7 @@ class RoomingListController extends Controller
      */
     public function unassignRoom(Request $request)
     {
+        $this->authorize('rooming_list_assign');
         $personIds     = $request->person_ids ? (array)$request->person_ids : [];
         $allocationIds = $request->allocation_ids ? (array)$request->allocation_ids : [];
         $hotelName     = $request->hotel_name ? trim($request->hotel_name) : null;
@@ -1507,8 +1516,21 @@ class RoomingListController extends Controller
                         ]]);
                     }
 
-                    // Collect all active stage assignments for this person
+                    // Collect all active stage assignments for this person (prefill from booking hotels, then overlay actual allocations)
                     $stageAssignments = [];
+                    if (!empty($bHotels)) {
+                        foreach ($bHotels as $bh) {
+                            $locKey = strtolower(trim($bh->location ?? 'makkah'));
+                            if (!empty($bh->hotel_name)) {
+                                $stageAssignments[$locKey] = [
+                                    'location'    => $bh->location ?: $locKey,
+                                    'hotel_name'  => $bh->hotel_name,
+                                    'room_number' => 'PENDING',
+                                    'room_type'   => $bh->room_type ? ucfirst($bh->room_type) : $bookedRoomType,
+                                ];
+                            }
+                        }
+                    }
                     foreach ($allocations as $ra) {
                         $locK = strtolower(trim($ra->location ?? 'makkah'));
                         if (!empty($ra->hotel_name) && !in_array(strtolower(trim($ra->hotel_name)), ['pending room allocation', 'unassigned', 'unspecified hotel', '—', '-'])) {
@@ -1665,8 +1687,21 @@ class RoomingListController extends Controller
                             $unassignedOccupants[] = $occData;
                         }
                     } else {
-                        // Collect all active stage assignments for this person
+                        // Collect all active stage assignments for this person (prefill from booking hotels, then overlay actual allocations)
                         $stageAssignments = [];
+                        if (!empty($bHotels)) {
+                            foreach ($bHotels as $bh) {
+                                $locKey = strtolower(trim($bh->location ?? 'makkah'));
+                                if (!empty($bh->hotel_name)) {
+                                    $stageAssignments[$locKey] = [
+                                        'location'    => $bh->location ?: $locKey,
+                                        'hotel_name'  => $bh->hotel_name,
+                                        'room_number' => 'PENDING',
+                                        'room_type'   => $bh->room_type ? ucfirst($bh->room_type) : $bookedRoomType,
+                                    ];
+                                }
+                            }
+                        }
                         foreach ($allocations as $ra) {
                             $locK = strtolower(trim($ra->location ?? 'makkah'));
                             if (!empty($ra->hotel_name) && !in_array(strtolower(trim($ra->hotel_name)), ['pending room allocation', 'unassigned', 'unspecified hotel', '—', '-'])) {
@@ -2091,6 +2126,7 @@ class RoomingListController extends Controller
      */
     public function adjustBed(Request $request)
     {
+        $this->authorize('rooming_list_assign');
         $request->validate([
             'hotel_name'   => 'required|string|max:191',
             'room_number'  => 'required|string|max:100',
