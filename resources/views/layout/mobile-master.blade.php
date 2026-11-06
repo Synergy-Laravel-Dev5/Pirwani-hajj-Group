@@ -346,6 +346,8 @@
                                 <span>Visa Inquiries</span>
                             </a>
                         </li>
+                        @endcan
+
                         <li
                             class="menu-item {{ request()->routeIs('mobile-ops.qurbani.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('mobile-ops.qurbani.index') }}"
