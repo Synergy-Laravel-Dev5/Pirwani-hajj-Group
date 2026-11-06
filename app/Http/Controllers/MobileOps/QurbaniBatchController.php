@@ -64,11 +64,10 @@ class QurbaniBatchController extends Controller
         // Fetch already assigned person IDs in THIS batch
         $assignedPersonIds = $batch->hajjis->pluck('booking_person_id')->toArray();
 
-        // Get available booking persons for assignment
+        // Get available booking persons for assignment (all registered persons not yet in this batch)
         $availablePersons = BookingPerson::with('booking.client')
             ->whereNotIn('id', $assignedPersonIds)
-            ->latest('id')
-            ->limit(300)
+            ->orderBy('id', 'asc')
             ->get();
 
         return view('mobile-ops.qurbani.show', compact('batch', 'availablePersons'));
