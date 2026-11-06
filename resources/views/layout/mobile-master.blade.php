@@ -317,6 +317,14 @@
                                 <span>Visa Inquiries</span>
                             </a>
                         </li>
+                        <li
+                            class="menu-item {{ request()->routeIs('mobile-ops.qurbani.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('mobile-ops.qurbani.index') }}"
+                                class="menu-link py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="mdi mdi-bullhorn-outline fs-18 text-warning"></i>
+                                <span class="fw-semibold">Qurbani Batches</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div class="clearfix"></div>

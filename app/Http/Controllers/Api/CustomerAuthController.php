@@ -37,6 +37,7 @@ class CustomerAuthController extends Controller
         $deviceName  = trim($request->input('device_name')) ?: 'Mobile Device';
 
         $booking = null;
+        $matchedPerson = null;
 
         // 3. Branch: Head (1) vs Member (0)
         if ($isHead) {
@@ -76,13 +77,28 @@ class CustomerAuthController extends Controller
                 ], 404);
             }
         } else {
-            // --- MEMBER LOGIN (HB NUMBER / BOOKING ID MATCHING) ---
+            // --- MEMBER LOGIN (HB NUMBER / HAJJ ID / PASSPORT / BOOKING ID MATCHING) ---
             $cleanIdentifier = strtoupper(trim($identifier));
 
-            // Check HB number across linked persons
-            $booking = Booking::whereHas('persons', function ($q) use ($cleanIdentifier) {
-                $q->where('hb_number', $cleanIdentifier);
-            })->first();
+            // Check person by HB number, hajj_id, or passport_number
+            $matchedPerson = \App\Models\BookingPerson::where('hb_number', $cleanIdentifier)
+                ->orWhere('hajj_id', $cleanIdentifier)
+                ->orWhere('passport_number', $cleanIdentifier)
+                ->first();
+
+            if ($matchedPerson) {
+                $booking = Booking::find($matchedPerson->booking_id);
+            }
+
+            // Fallback: Check HB number across linked persons on booking
+            if (!$booking) {
+                $booking = Booking::whereHas('persons', function ($q) use ($cleanIdentifier) {
+                    $q->where('hb_number', $cleanIdentifier);
+                })->first();
+                if ($booking) {
+                    $matchedPerson = $booking->persons()->where('hb_number', $cleanIdentifier)->first();
+                }
+            }
 
             // Fallback: If numeric, search by primary key ID
             if (!$booking && is_numeric($cleanIdentifier)) {
@@ -110,7 +126,33 @@ class CustomerAuthController extends Controller
             ], 403);
         }
 
-        if (!Hash::check($password, $booking->app_password)) {
+        // Handle both hashed (Bcrypt) and plain text passwords seamlessly
+        $passwordMatches = false;
+        $storedPassword = (string)$booking->app_password;
+
+        if (str_starts_with($storedPassword, '$2y$') || str_starts_with($storedPassword, '$2a$') || str_starts_with($storedPassword, '$2b$')) {
+            try {
+                $passwordMatches = Hash::check($password, $storedPassword);
+            } catch (\Throwable $e) {
+                $passwordMatches = false;
+            }
+        } else {
+            // Stored as plain text: compare directly and upgrade to Bcrypt hash
+            $passwordMatches = hash_equals($storedPassword, $password);
+            if ($passwordMatches) {
+                $booking->update(['app_password' => Hash::make($password)]);
+            }
+        }
+
+        // Secondary check against app_password_plain if set
+        if (!$passwordMatches && !empty($booking->app_password_plain)) {
+            if (hash_equals((string)$booking->app_password_plain, $password)) {
+                $passwordMatches = true;
+                $booking->update(['app_password' => Hash::make($password)]);
+            }
+        }
+
+        if (!$passwordMatches) {
             return response()->json([
                 'success' => false,
                 'message' => 'Incorrect password.'
@@ -124,22 +166,33 @@ class CustomerAuthController extends Controller
 
         // 6. Generate Sanctum Bearer Token stamped with role ability
         $roleAbility = $isHead ? 'role:head' : 'role:member';
-        $token = $booking->createToken($deviceName, [$roleAbility])->plainTextToken;
+        $abilities = [$roleAbility];
+        if (!$isHead && isset($matchedPerson) && $matchedPerson) {
+            $abilities[] = 'person:' . $matchedPerson->id;
+        }
+
+        $token = $booking->createToken($deviceName, $abilities)->plainTextToken;
 
         // 7. Eager load relations
         $booking->loadMissing(['client', 'persons', 'hotels', 'transports']);
 
         // 8. Return JSON Response with `is_head` as boolean
+        $hajjiName = $booking->client?->name ?? ($booking->persons->first()?->full_name ?? 'Guest');
+        if (!$isHead && isset($matchedPerson) && $matchedPerson) {
+            $hajjiName = $matchedPerson->given_name ? ($matchedPerson->given_name . ' ' . $matchedPerson->surname) : ($matchedPerson->full_name ?? $hajjiName);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Login successful.',
             'data'    => [
-                'token'      => $token,
-                'token_type' => 'Bearer',
-                'is_head'    => $isHead,
-                'role'       => $isHead ? 'head' : 'member',
-                'booking_id' => $booking->id,
-                'client_name' => $booking->client?->name ?? ($booking->persons->first()?->full_name ?? 'Guest'),
+                'token'       => $token,
+                'token_type'  => 'Bearer',
+                'is_head'     => $isHead,
+                'role'        => $isHead ? 'head' : 'member',
+                'booking_id'  => $booking->id,
+                'person_id'   => (!$isHead && isset($matchedPerson) && $matchedPerson) ? $matchedPerson->id : null,
+                'client_name' => $hajjiName,
             ]
         ], 200);
     }

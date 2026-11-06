@@ -582,6 +582,18 @@ Route::middleware('auth')->group(function () {
             Route::delete('/international-packages/{id}', [InternationalPackageController::class, 'destroy'])->name('international-packages.destroy');
             Route::get('/international-packages/trash', [InternationalPackageController::class, 'trash'])->name('international-packages.trash');
             Route::post('/international-packages/{id}/restore', [InternationalPackageController::class, 'restore'])->name('international-packages.restore');
+
+            // Qurbani Batches & Announcements Module
+            Route::get('/qurbani', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'index'])->name('qurbani.index');
+            Route::get('/qurbani/create', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'create'])->name('qurbani.create');
+            Route::post('/qurbani', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'store'])->name('qurbani.store');
+            Route::get('/qurbani/{id}', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'show'])->name('qurbani.show');
+            Route::get('/qurbani/{id}/edit', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'edit'])->name('qurbani.edit');
+            Route::put('/qurbani/{id}', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'update'])->name('qurbani.update');
+            Route::delete('/qurbani/{id}', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'destroy'])->name('qurbani.destroy');
+            Route::post('/qurbani/{id}/assign', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'assignHajjis'])->name('qurbani.assign');
+            Route::delete('/qurbani/{batchId}/hajji/{hajjiId}', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'removeHajji'])->name('qurbani.remove-hajji');
+            Route::post('/qurbani/{id}/fire', [\App\Http\Controllers\MobileOps\QurbaniBatchController::class, 'fireAnnouncement'])->name('qurbani.fire');
         });
     });
 });
