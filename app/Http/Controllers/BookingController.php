@@ -384,8 +384,16 @@ class BookingController extends Controller
 
         // Calculate actual booking pax count
         $paxCount = 0;
+        $explicitDeletedIds = [];
+        if ($request->has('deleted_person_ids') && is_array($request->deleted_person_ids)) {
+            $explicitDeletedIds = array_map('intval', $request->deleted_person_ids);
+        }
+
         if ($request->has('persons') && is_array($request->persons)) {
             foreach ($request->persons as $p) {
+                if (!empty($p['id']) && in_array((int)$p['id'], $explicitDeletedIds)) {
+                    continue;
+                }
                 $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
                 if (!empty($name) || !empty($p['passport_number'])) {
                     $paxCount++;
@@ -422,13 +430,35 @@ class BookingController extends Controller
         $companyId = $request->booking_for === 'company' ? $request->company_id : null;
 
         $packageCost    = (float) ($request->package_cost ?? 0);
-        $noOfPax        = max(1, (int) ($request->no_of_pax ?: 1));
+        $noOfPax        = $paxCount > 0 ? $paxCount : max(1, (int) ($request->no_of_pax ?: 1));
         $visaCharges    = (float) ($request->visa_charges ?? 0);
         $flightCharges  = (float) ($request->flight_charges ?? 0);
         $otherCharges   = (float) ($request->other_charges ?? 0);
         $qurbaniCharges = (float) ($request->qurbani_charges ?? 0);
         $discount       = (float) ($request->discount ?? 0);
         $totalReceived  = (float) ($request->total_received ?? 0);
+
+        // Sanitize room_breakdown so sharing sum does not exceed $noOfPax
+        $roomBreakdown = $request->room_breakdown ?: null;
+        if (is_array($roomBreakdown)) {
+            $rbKeys = ['c_double_pax', 'c_triple_pax', 'c_quad_pax', 'a_double_pax', 'a_triple_pax', 'a_quad_pax'];
+            $rbTotal = 0;
+            foreach ($rbKeys as $k) {
+                $rbTotal += (int) ($roomBreakdown[$k] ?? 0);
+            }
+            if ($rbTotal > $noOfPax) {
+                $excess = $rbTotal - $noOfPax;
+                foreach ($rbKeys as $k) {
+                    if ($excess <= 0) break;
+                    $val = (int) ($roomBreakdown[$k] ?? 0);
+                    if ($val > 0) {
+                        $sub = min($val, $excess);
+                        $roomBreakdown[$k] = (string) ($val - $sub);
+                        $excess -= $sub;
+                    }
+                }
+            }
+        }
 
         $total = ($packageCost * $noOfPax)
             + $visaCharges
@@ -449,7 +479,8 @@ class BookingController extends Controller
                 '_token',
                 '_method',
                 'app_password',
-                'app_password_plain'
+                'app_password_plain',
+                'deleted_person_ids'
             ]),
             [
                 'package_id'      => $request->package_id ?: null,
@@ -457,7 +488,7 @@ class BookingController extends Controller
                 'company_id'      => $companyId,
                 'package_type'    => $request->package_type ?? ($booking->package_type ?? 'hajj'),
                 'camp'            => $request->camp ?: null,
-                'room_breakdown'  => $request->room_breakdown ?: null,
+                'room_breakdown'  => !empty($roomBreakdown) ? $roomBreakdown : null,
                 'qurbani_option'  => $request->qurbani_option ?? 'not_included',
                 'qurbani_qty'     => (int) ($request->qurbani_qty ?? 0),
                 'qurbani_charges' => $qurbaniCharges,
@@ -491,7 +522,37 @@ class BookingController extends Controller
         try {
             $booking->update($bookingData);
 
-            $booking->persons()->delete();
+            // Collect IDs of submitted persons that still exist
+            $submittedPersonIds = [];
+            if ($request->has('persons') && is_array($request->persons)) {
+                foreach ($request->persons as $p) {
+                    if (!empty($p['id'])) {
+                        $pId = (int)$p['id'];
+                        if (!in_array($pId, $explicitDeletedIds)) {
+                            $submittedPersonIds[] = $pId;
+                        }
+                    }
+                }
+            }
+
+            // Delete persons that were removed (either explicitly or omitted from remaining persons)
+            $personsToDelete = $booking->persons()
+                ->where(function($q) use ($submittedPersonIds, $explicitDeletedIds) {
+                    if (!empty($submittedPersonIds)) {
+                        $q->whereNotIn('id', $submittedPersonIds);
+                    }
+                    if (!empty($explicitDeletedIds)) {
+                        $q->orWhereIn('id', $explicitDeletedIds);
+                    }
+                })->get();
+
+            foreach ($personsToDelete as $delPerson) {
+                \App\Models\BookingPersonRoomAllocation::where('booking_person_id', $delPerson->id)->delete();
+                \App\Models\PersonDocument::where('person_id', $delPerson->id)->delete();
+                \App\Models\HajiGroupPerson::where('booking_person_id', $delPerson->id)->delete();
+                \App\Models\QurbaniBatchHajji::where('booking_person_id', $delPerson->id)->delete();
+                $delPerson->delete();
+            }
 
             if ($request->has('persons') && is_array($request->persons)) {
                 $uploadDir = public_path('uploads/booking_persons');
@@ -516,9 +577,15 @@ class BookingController extends Controller
                 $bookingHbNumber = \App\Models\BookingPerson::formatHbNumber($bookingHbNumber);
 
                 foreach ($request->persons as $index => $p) {
+                    $personId = !empty($p['id']) ? (int) $p['id'] : null;
+                    if ($personId && in_array($personId, $explicitDeletedIds)) {
+                        continue;
+                    }
+
                     $name = !empty($p['full_name']) ? trim($p['full_name']) : trim(($p['given_name'] ?? '') . ' ' . ($p['surname'] ?? ''));
                     if (!empty($name) || !empty($p['passport_number'])) {
                         $pData = $p;
+                        unset($pData['id']);
                         $pData['full_name'] = $name ?: 'Passenger';
                         $pData['given_name'] = !empty($p['given_name']) ? trim($p['given_name']) : null;
                         $pData['surname'] = !empty($p['surname']) ? trim($p['surname']) : null;
@@ -563,6 +630,24 @@ class BookingController extends Controller
                         }
 
                         unset($pData['existing_photo'], $pData['existing_passport_image']);
+
+                        if ($personId) {
+                            $existingPerson = $booking->persons()->where('id', $personId)->first();
+                            if ($existingPerson) {
+                                if (empty($pData['photo']) && !empty($existingPerson->photo)) {
+                                    $pData['photo'] = $existingPerson->photo;
+                                }
+                                if (empty($pData['passport_image']) && !empty($existingPerson->passport_image)) {
+                                    $pData['passport_image'] = $existingPerson->passport_image;
+                                }
+                                if (empty($p['hajj_id']) && !empty($existingPerson->hajj_id)) {
+                                    $pData['hajj_id'] = $existingPerson->hajj_id;
+                                }
+                                $existingPerson->update($pData);
+                                continue;
+                            }
+                        }
+
                         $booking->persons()->create($pData);
                     }
                 }
@@ -730,11 +815,41 @@ class BookingController extends Controller
         }
 
         $personName = $person->full_name;
+
+        // Clean up child allocations and linked records for this person
+        \App\Models\BookingPersonRoomAllocation::where('booking_person_id', $person->id)->delete();
+        \App\Models\PersonDocument::where('person_id', $person->id)->delete();
+        \App\Models\HajiGroupPerson::where('booking_person_id', $person->id)->delete();
+        \App\Models\QurbaniBatchHajji::where('booking_person_id', $person->id)->delete();
+
         $person->delete();
 
         // Update pax count
         $newPax = max(1, $booking->persons()->count());
         $booking->no_of_pax = $newPax;
+
+        // Sanitize room_breakdown so room sharing sum does not exceed newPax
+        if (!empty($booking->room_breakdown) && is_array($booking->room_breakdown)) {
+            $rb = $booking->room_breakdown;
+            $rbKeys = ['c_double_pax', 'c_triple_pax', 'c_quad_pax', 'a_double_pax', 'a_triple_pax', 'a_quad_pax'];
+            $rbTotal = 0;
+            foreach ($rbKeys as $k) {
+                $rbTotal += (int) ($rb[$k] ?? 0);
+            }
+            if ($rbTotal > $newPax) {
+                $excess = $rbTotal - $newPax;
+                foreach ($rbKeys as $k) {
+                    if ($excess <= 0) break;
+                    $val = (int) ($rb[$k] ?? 0);
+                    if ($val > 0) {
+                        $sub = min($val, $excess);
+                        $rb[$k] = (string) ($val - $sub);
+                        $excess -= $sub;
+                    }
+                }
+                $booking->room_breakdown = $rb;
+            }
+        }
 
         // Recalculate total if package cost is set
         if (!empty($booking->package_cost) && $booking->package_cost > 0) {
