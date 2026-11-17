@@ -156,7 +156,7 @@
     @php
         $showCol = function($key) use ($visibleColumns) {
             if ($visibleColumns === null) {
-                return in_array($key, ['sr', 'picture', 'hajj-id', 'hb', 'name', 'gender', 'passport', 'cnic', 'phone', 'room', 'hotel', 'camp']);
+                return in_array($key, ['sr', 'picture', 'hajj-id', 'hb', 'name', 'gender', 'passport', 'cnic', 'phone', 'booking-ref', 'package', 'room', 'hotel', 'camp']);
             }
             return in_array($key, $visibleColumns);
         };
@@ -164,7 +164,13 @@
 
     @foreach($groupedByCareOf as $careOfName => $bookings)
         @php
-            $groupPax = $bookings->sum(function($b) { return $b->persons->count(); });
+            $allGroupPersons = $bookings->flatMap(function($b) {
+                return $b->persons->map(function($p) use ($b) {
+                    $p->parent_booking = $b;
+                    return $p;
+                });
+            });
+            $groupPax = $allGroupPersons->count();
             $groupAmt = $bookings->sum('total_amount');
             $groupRecv = $bookings->sum('total_received');
             $groupBal = $bookings->sum('balance');
@@ -179,89 +185,95 @@
             &nbsp;|&nbsp; Bal: PKR {{ number_format($groupBal) }}
         </div>
 
-        @foreach($bookings as $booking)
-            @php
-                $clientName = $booking->booking_for === 'company' ? ($booking->company->company_name ?? 'N/A') : ($booking->client->name ?? 'N/A');
-                $voucher = $booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT));
-                $pkg = $booking->package->package_title ?? $booking->package->name ?? $booking->package_name ?? ucfirst($booking->package_type ?? 'N/A');
-            @endphp
+        <table class="manifest-table">
+            <thead>
+                <tr>
+                    @if($showCol('sr')) <th style="width: 20px;">#</th> @endif
+                    @if($showCol('picture')) <th style="width: 28px;">PHOTO</th> @endif
+                    @if($showCol('hajj-id')) <th style="width: 55px;">HAJJ ID</th> @endif
+                    @if($showCol('hb')) <th style="width: 50px;">HB #</th> @endif
+                    @if($showCol('name')) <th style="text-align: left;">PILGRIM NAME</th> @endif
+                    @if($showCol('gender')) <th style="width: 40px;">GENDER</th> @endif
+                    @if($showCol('passport')) <th style="width: 65px;">PASSPORT</th> @endif
+                    @if($showCol('doi')) <th style="width: 55px;">DOI</th> @endif
+                    @if($showCol('expiry')) <th style="width: 55px;">EXPIRY</th> @endif
+                    @if($showCol('cnic')) <th style="width: 75px;">CNIC</th> @endif
+                    @if($showCol('phone')) <th style="width: 70px;">PHONE</th> @endif
+                    @if($showCol('booking-ref')) <th style="width: 80px;">BOOKING REF</th> @endif
+                    @if($showCol('package')) <th style="width: 75px;">PACKAGE</th> @endif
+                    @if($showCol('room')) <th style="width: 70px;">ROOM</th> @endif
+                    @if($showCol('hotel')) <th style="width: 70px;">HOTEL</th> @endif
+                    @if($showCol('camp')) <th style="width: 65px;">CAMP</th> @endif
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($allGroupPersons as $person)
+                    @php
+                        $booking = $person->parent_booking;
+                        $gender = strtoupper($person->gender ?? 'MALE');
+                        $genderClass = ($gender === 'FEMALE') ? 'gender-female' : 'gender-male';
+                        $hb = \App\Models\BookingPerson::formatHbNumber($person->hb_number);
+                        $doi = $person->date_of_issue ?: ($person->passport_issue_date ?: '—');
+                        $roomInfo = ($person->room_number ? 'Room ' . $person->room_number : '') . ($person->room_type ? ' (' . $person->room_type . ')' : '');
 
-            <div class="booking-info-bar">
-                Ref: {{ $voucher }} | Client: {{ $clientName }} | Package: {{ $pkg }} 
-                | Camp: {{ $booking->camp ?: '—' }} | Pax: {{ $booking->persons->count() }}
-                | Amount: {{ number_format($booking->total_amount) }} | Recv: {{ number_format($booking->total_received) }} | Bal: {{ number_format($booking->balance) }}
-            </div>
-
-            <table class="manifest-table">
-                <thead>
+                        $voucherNo = $booking ? ($booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT))) : '—';
+                        $pkg = $booking ? ($booking->package->package_title ?? $booking->package->name ?? $booking->package_name ?? ucfirst($booking->package_type ?? 'N/A')) : '—';
+                    @endphp
                     <tr>
-                        @if($showCol('sr')) <th style="width: 20px;">#</th> @endif
-                        @if($showCol('picture')) <th style="width: 30px;">PHOTO</th> @endif
-                        @if($showCol('hajj-id')) <th style="width: 60px;">HAJJ ID</th> @endif
-                        @if($showCol('hb')) <th style="width: 55px;">HB #</th> @endif
-                        @if($showCol('name')) <th style="text-align: left;">PILGRIM NAME</th> @endif
-                        @if($showCol('gender')) <th style="width: 45px;">GENDER</th> @endif
-                        @if($showCol('passport')) <th style="width: 70px;">PASSPORT</th> @endif
-                        @if($showCol('doi')) <th style="width: 60px;">DOI</th> @endif
-                        @if($showCol('expiry')) <th style="width: 60px;">EXPIRY</th> @endif
-                        @if($showCol('cnic')) <th style="width: 80px;">CNIC</th> @endif
-                        @if($showCol('phone')) <th style="width: 75px;">PHONE</th> @endif
-                        @if($showCol('room')) <th style="width: 80px;">ROOM</th> @endif
-                        @if($showCol('hotel')) <th style="width: 80px;">HOTEL</th> @endif
-                        @if($showCol('camp')) <th style="width: 75px;">CAMP</th> @endif
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($booking->persons as $person)
-                        @php
-                            $gender = strtoupper($person->gender ?? 'MALE');
-                            $genderClass = ($gender === 'FEMALE') ? 'gender-female' : 'gender-male';
-                            $hb = \App\Models\BookingPerson::formatHbNumber($person->hb_number);
-                            $doi = $person->date_of_issue ?: ($person->passport_issue_date ?: '—');
-                            $roomInfo = ($person->room_number ? 'Room ' . $person->room_number : '') . ($person->room_type ? ' (' . $person->room_type . ')' : '');
-                        @endphp
-                        <tr>
-                            @if($showCol('sr')) <td class="center">{{ $loop->iteration }}</td> @endif
-                            @if($showCol('picture'))
-                                <td class="center">
+                        @if($showCol('sr')) <td class="center">{{ $loop->iteration }}</td> @endif
+                        @if($showCol('picture'))
+                            <td class="center">
+                                @php
+                                    $photoSrc = $person->thumb_photo ?? null;
+                                    if (!$photoSrc && !empty($person->photo)) {
+                                        $clean = ltrim($person->photo, '/\\');
+                                        if (file_exists(public_path($clean))) {
+                                            $photoSrc = public_path($clean);
+                                        } elseif (file_exists($person->photo)) {
+                                            $photoSrc = $person->photo;
+                                        }
+                                    }
+                                @endphp
+                                @if($photoSrc && file_exists($photoSrc))
+                                    <img src="{{ $photoSrc }}" class="haji-photo" alt="P">
+                                @else
+                                    —
+                                @endif
+                            </td>
+                        @endif
+                        @if($showCol('hajj-id')) <td class="center fw-bold">{{ $person->hajj_id ?? '—' }}</td> @endif
+                        @if($showCol('hb')) <td class="center">{{ $hb ?: '—' }}</td> @endif
+                        @if($showCol('name'))
+                            <td>
+                                <strong>{{ $person->full_name ?: ($person->given_name . ' ' . $person->surname) }}</strong>
+                                @if($person->father_name)
                                     @php
-                                        $photoPath = public_path($person->photo ?? '');
+                                        $pGenderLower = strtolower($person->gender ?? '');
+                                        $relationLabel = ($pGenderLower === 'female') ? 'D/O, W/O' : 'S/O';
                                     @endphp
-                                    @if(!empty($person->photo) && file_exists($photoPath))
-                                        <img src="{{ $photoPath }}" class="haji-photo" alt="P">
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                            @endif
-                            @if($showCol('hajj-id')) <td class="center fw-bold">{{ $person->hajj_id ?? '—' }}</td> @endif
-                            @if($showCol('hb')) <td class="center">{{ $hb ?: '—' }}</td> @endif
-                            @if($showCol('name'))
-                                <td>
-                                    <strong>{{ $person->full_name ?: ($person->given_name . ' ' . $person->surname) }}</strong>
-                                    @if($person->father_name)
-                                        <br><span style="font-size:7px; color:#555;">S/O, D/O: {{ $person->father_name }}</span>
-                                    @endif
-                                </td>
-                            @endif
-                            @if($showCol('gender')) <td class="center {{ $genderClass }}">{{ $gender }}</td> @endif
-                            @if($showCol('passport')) <td class="center fw-bold">{{ $person->passport_number ?? '—' }}</td> @endif
-                            @if($showCol('doi')) <td class="center">{{ $doi }}</td> @endif
-                            @if($showCol('expiry')) <td class="center">{{ $person->passport_expiry_date ?? '—' }}</td> @endif
-                            @if($showCol('cnic')) <td class="center">{{ $person->cnic ?? '—' }}</td> @endif
-                            @if($showCol('phone')) <td class="center">{{ $person->phone ?: ($booking->phone ?: '—') }}</td> @endif
-                            @if($showCol('room')) <td class="center">{{ $roomInfo ?: '—' }}</td> @endif
-                            @if($showCol('hotel')) <td class="center">{{ $person->hotel_name ?? '—' }}</td> @endif
-                            @if($showCol('camp')) <td class="center">{{ $booking->camp ?: '—' }}</td> @endif
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="14" class="center" style="padding: 5px;">No pilgrims found for this booking.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        @endforeach
+                                    <br><span style="font-size:7px; color:#555;">{{ $relationLabel }}: {{ $person->father_name }}</span>
+                                @endif
+                            </td>
+                        @endif
+                        @if($showCol('gender')) <td class="center {{ $genderClass }}">{{ $gender }}</td> @endif
+                        @if($showCol('passport')) <td class="center fw-bold">{{ $person->passport_number ?? '—' }}</td> @endif
+                        @if($showCol('doi')) <td class="center">{{ $doi }}</td> @endif
+                        @if($showCol('expiry')) <td class="center">{{ $person->passport_expiry_date ?? '—' }}</td> @endif
+                        @if($showCol('cnic')) <td class="center">{{ $person->cnic ?? '—' }}</td> @endif
+                        @if($showCol('phone')) <td class="center">{{ $person->phone ?: ($booking->phone ?? '—') }}</td> @endif
+                        @if($showCol('booking-ref')) <td class="center fw-bold">{{ $voucherNo }}</td> @endif
+                        @if($showCol('package')) <td class="center">{{ $pkg }}</td> @endif
+                        @if($showCol('room')) <td class="center">{{ $roomInfo ?: '—' }}</td> @endif
+                        @if($showCol('hotel')) <td class="center">{{ $person->hotel_name ?? '—' }}</td> @endif
+                        @if($showCol('camp')) <td class="center">{{ $booking->camp ?? '—' }}</td> @endif
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="16" class="center" style="padding: 5px;">No pilgrims found for this Care of person.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     @endforeach
 
 </body>

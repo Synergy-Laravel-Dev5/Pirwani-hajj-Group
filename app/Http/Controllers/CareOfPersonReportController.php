@@ -32,14 +32,15 @@ class CareOfPersonReportController extends Controller
                 $q->orderBy('id', 'asc');
             }
         ])
-        ->whereNotNull('care_of')
-        ->where('care_of', '!=', '')
-        ->whereNull('deleted_at')
-        ->whereNotIn('status', ['cancelled', 'rejected']);
+            ->whereNotNull('care_of')
+            ->where('care_of', '!=', '')
+            ->whereNull('deleted_at')
+            ->whereNotIn('status', ['cancelled', 'rejected']);
 
-        // Filter by selected Care Of
+        // Filter by selected Care Of (normalized comparison)
         if (!empty($selectedCareOf) && $selectedCareOf !== 'all') {
-            $bookingsQuery->where('care_of', $selectedCareOf);
+            $normalizedSelected = trim($selectedCareOf);
+            $bookingsQuery->whereRaw('TRIM(care_of) = ?', [$normalizedSelected]);
         }
 
         // Filter by package
@@ -73,7 +74,8 @@ class CareOfPersonReportController extends Controller
             });
         }
 
-        $allBookings = $bookingsQuery->orderBy('care_of', 'asc')->orderBy('id', 'asc')->get();
+        // Sort by clean normalized care_of first, then booking ID
+        $allBookings = $bookingsQuery->orderByRaw('TRIM(care_of) ASC')->orderBy('id', 'asc')->get();
 
         // If gender filter is active, filter persons inside each booking
         if (!empty($gender) && $gender !== 'all') {
@@ -86,14 +88,19 @@ class CareOfPersonReportController extends Controller
                     })->values()
                 );
             }
-            // If filtering by gender, keep bookings that have matching persons (or all bookings if viewing totals)
+            // If filtering by gender, keep bookings that have matching persons
             $allBookings = $allBookings->filter(function ($booking) {
                 return $booking->persons->count() > 0;
             })->values();
         }
 
-        // Group by Care Of person / agent
-        $groupedByCareOf = $allBookings->groupBy('care_of');
+        // Group by normalized trimmed Care Of person / agent name (case-insensitive)
+        $groupedByCareOf = $allBookings->groupBy(function ($booking) {
+            $val = trim((string)($booking->care_of ?? ''));
+            // Normalize multiple whitespaces into a single space
+            $val = preg_replace('/\s+/', ' ', $val);
+            return mb_strtoupper($val, 'UTF-8');
+        });
 
         // Calculate KPI Statistics
         $totalCareOfGroups = $groupedByCareOf->count();
@@ -172,11 +179,104 @@ class CareOfPersonReportController extends Controller
     }
 
     /**
+     * Helper to create or fetch a lightweight cached thumbnail for high-speed rendering in PDF
+     */
+    private function getFastThumbnail(?string $photoPath, string $thumbDir, int $maxW = 100, int $maxH = 120): ?string
+    {
+        if (empty($photoPath)) {
+            return null;
+        }
+
+        $clean = ltrim($photoPath, '/\\');
+        $fullPath = null;
+        if (file_exists(public_path($clean))) {
+            $fullPath = public_path($clean);
+        } elseif (file_exists($photoPath)) {
+            $fullPath = $photoPath;
+        }
+
+        if (!$fullPath || !file_exists($fullPath)) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+            return null;
+        }
+
+        $mtime = filemtime($fullPath);
+        $fileSize = filesize($fullPath);
+        $hash = md5($fullPath . '_' . $mtime . "_{$maxW}x{$maxH}");
+        $thumbPath = $thumbDir . '/' . $hash . '.jpg';
+
+        if (file_exists($thumbPath) && filesize($thumbPath) > 0) {
+            return $thumbPath;
+        }
+
+        // If file is already tiny (<= 15KB) and JPEG, use it directly
+        if ($fileSize <= 15360 && in_array($ext, ['jpg', 'jpeg'])) {
+            return $fullPath;
+        }
+
+        $info = @getimagesize($fullPath);
+        if (!$info) {
+            return null;
+        }
+
+        $w = $info[0];
+        $h = $info[1];
+        if ($w <= 0 || $h <= 0) {
+            return null;
+        }
+
+        $ratio = min($maxW / $w, $maxH / $h, 1.0);
+        $newW = max(1, (int)round($w * $ratio));
+        $newH = max(1, (int)round($h * $ratio));
+
+        $srcImg = null;
+        switch ($info[2]) {
+            case IMAGETYPE_JPEG:
+                $srcImg = @imagecreatefromjpeg($fullPath);
+                break;
+            case IMAGETYPE_PNG:
+                $srcImg = @imagecreatefrompng($fullPath);
+                break;
+            case IMAGETYPE_WEBP:
+                $srcImg = function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($fullPath) : null;
+                break;
+            case IMAGETYPE_GIF:
+                $srcImg = @imagecreatefromgif($fullPath);
+                break;
+            default:
+                return null;
+        }
+
+        if (!$srcImg) {
+            return null;
+        }
+
+        $dstImg = imagecreatetruecolor($newW, $newH);
+        $white = imagecolorallocate($dstImg, 255, 255, 255);
+        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $white);
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $w, $h);
+        imagejpeg($dstImg, $thumbPath, 75);
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
+
+        return $thumbPath;
+    }
+
+    /**
      * Export Care of Persons Report as PDF
      */
     public function exportPdf(Request $request)
     {
         $this->authorize('care_of_report_view');
+        @set_time_limit(300);
+        @ini_set('memory_limit', '1024M');
+
         $data = $this->getCareOfReportData($request);
 
         $visibleCols = null;
@@ -190,10 +290,32 @@ class CareOfPersonReportController extends Controller
         }
         $data['visibleColumns'] = $visibleCols;
 
+        // Auto-optimize pilgrim photos into cached lightweight thumbnails for fast PDF rendering
+        $showPictures = ($visibleCols === null || in_array('picture', $visibleCols));
+        if ($showPictures) {
+            $thumbDir = storage_path('app/temp_thumbnails');
+            if (!is_dir($thumbDir)) {
+                @mkdir($thumbDir, 0777, true);
+            }
+
+            foreach ($data['groupedByCareOf'] as $bookings) {
+                foreach ($bookings as $b) {
+                    foreach ($b->persons as $person) {
+                        if (!empty($person->photo)) {
+                            $person->thumb_photo = $this->getFastThumbnail($person->photo, $thumbDir, 80, 95);
+                        }
+                    }
+                }
+            }
+        }
+
         $pdf = Pdf::loadView('reports.care_of_person_pdf', $data);
         $pdf->setPaper('A4', 'landscape');
         $pdf->setOption('isHtml5ParserEnabled', true);
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isFontSubsettingEnabled', true);
+        $pdf->setOption('defaultFont', 'Helvetica');
+        $pdf->setOption('dpi', 96);
 
         $careOfSuffix = '';
         if (!empty($data['selectedCareOf']) && $data['selectedCareOf'] !== 'all') {
@@ -243,13 +365,15 @@ class CareOfPersonReportController extends Controller
             echo '<tr><td colspan="14" style="text-align: center; font-style: italic; color: #475569; border: none; height: 24px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
 
             foreach ($grouped as $careOfName => $bookings) {
-                $groupPax = $bookings->sum(function($b) { return $b->persons->count(); });
+                $groupPax = $bookings->sum(function ($b) {
+                    return $b->persons->count();
+                });
                 $groupAmount = $bookings->sum('total_amount');
                 $groupReceived = $bookings->sum('total_received');
                 $groupBalance = $bookings->sum('balance');
 
                 echo '<tr><td colspan="14" class="careof-header">'
-                    . 'CARE OF: ' . htmlspecialchars($careOfName) 
+                    . 'CARE OF: ' . htmlspecialchars($careOfName)
                     . ' &nbsp;|&nbsp; Bookings: ' . $bookings->count()
                     . ' &nbsp;|&nbsp; Total Pilgrims: ' . $groupPax
                     . ' &nbsp;|&nbsp; Total Amount: PKR ' . number_format($groupAmount)
