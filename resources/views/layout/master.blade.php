@@ -136,10 +136,86 @@
         .topbar-custom {
             background: linear-gradient(135deg, #071527 0%, #0E233E 55%, #08162A 100%) !important;
             border-bottom: 2px solid #C9A84C !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(201, 168, 76, 0.2) !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 1px 0 rgba(201, 168, 76, 0.25) !important;
             height: 70px !important;
-            padding: 0 20px !important;
+            padding: 0 24px !important;
+            display: flex !important;
+            align-items: center !important;
             transition: all 0.2s ease-out !important;
+        }
+
+        .topbar-custom .topnav-menu {
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .topbar-custom .topnav-menu > li {
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        /* Brand Badge in Header */
+        .topbar-brand-badge {
+            background: rgba(201, 168, 76, 0.12) !important;
+            color: #F3DC9B !important;
+            border: 1px solid rgba(201, 168, 76, 0.35) !important;
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+            padding: 6px 14px !important;
+            border-radius: 30px !important;
+            letter-spacing: 0.6px !important;
+            box-shadow: inset 0 0 10px rgba(201, 168, 76, 0.08) !important;
+        }
+
+        .topbar-module-badge {
+            background: rgba(201, 168, 76, 0.15) !important;
+            color: #F3DC9B !important;
+            border: 1px solid rgba(201, 168, 76, 0.4) !important;
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+            padding: 6px 14px !important;
+            border-radius: 30px !important;
+        }
+
+        /* Topbar Navigation Pills */
+        .topbar-nav-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            font-size: 12.5px !important;
+            font-weight: 600 !important;
+            padding: 6px 14px !important;
+            border-radius: 30px !important;
+            text-decoration: none !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .topbar-nav-pill-gold {
+            background: rgba(201, 168, 76, 0.14) !important;
+            color: #F3DC9B !important;
+            border: 1px solid rgba(201, 168, 76, 0.4) !important;
+        }
+
+        .topbar-nav-pill-gold:hover {
+            background: linear-gradient(135deg, #D4AF37 0%, #B88E28 100%) !important;
+            color: #071527 !important;
+            border-color: #D4AF37 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(201, 168, 76, 0.35) !important;
+        }
+
+        .topbar-nav-pill-portal {
+            background: rgba(255, 255, 255, 0.07) !important;
+            color: #E2E8F0 !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .topbar-nav-pill-portal:hover {
+            background: rgba(255, 255, 255, 0.16) !important;
+            color: #FFFFFF !important;
+            border-color: rgba(255, 255, 255, 0.4) !important;
+            transform: translateY(-1px) !important;
         }
 
         /* Hamburger Sidebar Toggle Button */
@@ -174,133 +250,218 @@
             stroke-width: 2.2 !important;
         }
 
-        /* Topbar Search */
-        .topbar-custom .topbar-search input {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border: 1px solid rgba(201, 168, 76, 0.35) !important;
-            color: #FFFFFF !important;
-            border-radius: 24px !important;
-            padding: 7px 16px 7px 38px !important;
-            font-size: 13px !important;
-            height: 38px !important;
-            transition: all 0.2s ease !important;
+        /* Topbar User Profile Button - Narrow & Sleek */
+        .topbar-custom .topnav-menu .notification-list.topbar-dropdown {
+            display: flex !important;
+            align-items: center !important;
+            height: 100% !important;
         }
 
-        .topbar-custom .topbar-search input::placeholder {
-            color: rgba(243, 220, 155, 0.6) !important;
-        }
-
-        .topbar-custom .topbar-search input:focus {
-            background: rgba(255, 255, 255, 0.14) !important;
-            border-color: #D4AF37 !important;
-            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.25) !important;
-            color: #FFFFFF !important;
-        }
-
-        .topbar-custom .topbar-search i {
-            color: #E5C368 !important;
-        }
-
-        /* Topbar User Profile Pill */
         .topbar-custom .nav-user {
-            background: rgba(201, 168, 76, 0.12) !important;
-            border: 1px solid rgba(201, 168, 76, 0.35) !important;
-            padding: 4px 12px 4px 6px !important;
+            background: rgba(201, 168, 76, 0.1) !important;
+            border: 1px solid rgba(201, 168, 76, 0.32) !important;
+            padding: 4px 12px 4px 5px !important;
             border-radius: 30px !important;
             display: inline-flex !important;
             align-items: center !important;
+            gap: 6px !important;
+            line-height: normal !important;
+            height: 38px !important;
+            max-height: 38px !important;
             transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            box-shadow: none !important;
         }
 
-        .topbar-custom .nav-user:hover {
+        .topbar-custom .nav-user:hover,
+        .topbar-custom .nav-user[aria-expanded="true"] {
             background: rgba(201, 168, 76, 0.22) !important;
             border-color: #D4AF37 !important;
+            box-shadow: 0 2px 10px rgba(201, 168, 76, 0.25) !important;
         }
 
-        .topbar-custom .nav-user .user-avatar-top,
-        .topbar-custom .nav-user img {
-            width: 32px !important;
-            height: 32px !important;
-            object-fit: cover !important;
-            border: 1.5px solid #C9A84C !important;
-            box-shadow: 0 0 8px rgba(201, 168, 76, 0.3) !important;
+        .user-avatar-wrap {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #D4AF37 0%, #A47E24 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid rgba(243, 220, 155, 0.85);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+            flex-shrink: 0;
+        }
+
+        .user-avatar-wrap .user-initials {
+            color: #071527;
+            font-weight: 800;
+            font-size: 12.5px;
+            line-height: 1;
         }
 
         .topbar-custom .nav-user .pro-user-name {
             color: #FFFFFF !important;
             font-weight: 600 !important;
-            font-size: 13.5px !important;
+            font-size: 13px !important;
+            line-height: 1.1 !important;
         }
 
-        .topbar-custom .nav-user i {
+        .topbar-custom .nav-user .pro-user-role {
+            color: #C9A84C !important;
+            font-size: 9.5px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
+            line-height: 1 !important;
+        }
+
+        .topbar-custom .nav-user .chevron-icon {
             color: #F3DC9B !important;
             font-size: 14px !important;
-            margin-left: 3px !important;
+            transition: transform 0.2s ease !important;
         }
 
-        /* Profile Dropdown & Logout Menu Item */
+        .topbar-custom .nav-user[aria-expanded="true"] .chevron-icon {
+            transform: rotate(180deg) !important;
+        }
+
+        /* ── Modern Luxury Profile Dropdown ── */
         .profile-dropdown {
             background: #0B1E36 !important;
-            border-radius: 12px !important;
-            border: 1px solid #C9A84C !important;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+            border-radius: 14px !important;
+            border: 1px solid rgba(201, 168, 76, 0.45) !important;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
             padding: 8px !important;
-            min-width: 210px !important;
+            min-width: 250px !important;
+            margin-top: 8px !important;
+            animation: topbarDropdownFade 0.18s ease-out !important;
         }
 
-        .profile-dropdown .noti-title {
-            background: rgba(201, 168, 76, 0.1) !important;
-            border-radius: 8px !important;
+        @keyframes topbarDropdownFade {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .profile-dropdown .noti-title small {
-            color: #C9A84C !important;
+        .profile-dropdown-header {
+            background: linear-gradient(135deg, rgba(201, 168, 76, 0.18) 0%, rgba(14, 35, 62, 0.6) 100%) !important;
+            border: 1px solid rgba(201, 168, 76, 0.25) !important;
+            border-radius: 10px !important;
+            padding: 10px 12px !important;
+            margin-bottom: 6px !important;
         }
 
-        .profile-dropdown .noti-title h6 {
-            color: #FFFFFF !important;
+        .user-avatar-wrap-lg {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #D4AF37 0%, #A47E24 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #071527;
+            font-weight: 800;
+            font-size: 16px;
+            border: 1.5px solid #F3DC9B;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .profile-role-badge {
+            background: rgba(201, 168, 76, 0.25) !important;
+            color: #F3DC9B !important;
+            border: 1px solid rgba(201, 168, 76, 0.45) !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
+            padding: 2px 8px !important;
+            border-radius: 12px !important;
         }
 
         .profile-dropdown .dropdown-divider {
             border-color: rgba(201, 168, 76, 0.2) !important;
+            margin: 6px 0 !important;
         }
 
         .profile-dropdown .dropdown-item {
             border-radius: 8px !important;
-            font-size: 13.5px !important;
+            font-size: 13px !important;
             font-weight: 500 !important;
             color: #E2E8F0 !important;
-            padding: 8px 12px !important;
+            padding: 8px 10px !important;
             transition: all 0.18s ease !important;
         }
 
         .profile-dropdown .dropdown-item:hover {
-            background: rgba(201, 168, 76, 0.2) !important;
-            color: #F3DC9B !important;
+            background: rgba(201, 168, 76, 0.18) !important;
+            color: #FFFFFF !important;
+            transform: translateX(2px) !important;
         }
 
-        .profile-dropdown .dropdown-item i.mdi-lock-reset {
-            color: #E5C368 !important;
+        /* Dropdown Icon Bubble */
+        .icon-bubble {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.18s ease;
+        }
+
+        .icon-bubble-warning {
+            background: rgba(201, 168, 76, 0.18);
+            color: #F3DC9B;
+        }
+
+        .icon-bubble-primary {
+            background: rgba(59, 130, 246, 0.18);
+            color: #93C5FD;
+        }
+
+        .icon-bubble-danger {
+            background: rgba(239, 68, 68, 0.18);
+            color: #FCA5A5;
+        }
+
+        .profile-dropdown .dropdown-item:hover .icon-bubble-warning {
+            background: #D4AF37;
+            color: #071527;
+        }
+
+        .profile-dropdown .dropdown-item:hover .icon-bubble-primary {
+            background: #3B82F6;
+            color: #FFFFFF;
         }
 
         .profile-dropdown .logout-menu-btn {
-            color: #FF6B6B !important;
+            color: #FCA5A5 !important;
             font-weight: 600 !important;
-            background: rgba(255, 107, 107, 0.08) !important;
-            border: none !important;
+            background: rgba(239, 68, 68, 0.08) !important;
+            border: 1px solid rgba(239, 68, 68, 0.2) !important;
             width: 100% !important;
             text-align: left !important;
             border-radius: 8px !important;
-            padding: 8px 12px !important;
+            padding: 8px 10px !important;
             transition: all 0.18s ease !important;
         }
 
         .profile-dropdown .logout-menu-btn:hover {
-            background: #E11D48 !important;
+            background: #DC2626 !important;
+            border-color: #DC2626 !important;
             color: #FFFFFF !important;
         }
 
-        .profile-dropdown .logout-menu-btn:hover i {
+        .profile-dropdown .logout-menu-btn:hover .icon-bubble-danger {
+            background: rgba(255, 255, 255, 0.25) !important;
             color: #FFFFFF !important;
         }
 

@@ -3175,6 +3175,172 @@
 
         // Load saved column preferences on page load
         loadColumnPreferences();
+
+        // ==========================================
+        // DOWNLOAD PROGRESS LOADER MODAL (PDF / EXCEL)
+        // ==========================================
+        const downloadModalHtml = `
+            <div class="modal fade" id="exportProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true" style="z-index: 1060;">
+                <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                        <div class="modal-body p-4 text-center">
+                            <div class="mb-3">
+                                <div class="avatar-lg mx-auto d-flex align-items-center justify-content-center rounded-circle" id="exportModalIconBg" style="width: 64px; height: 64px; background-color: #fee2e2;">
+                                    <i class="mdi mdi-file-pdf-box text-danger" id="exportModalIcon" style="font-size: 36px;"></i>
+                                </div>
+                            </div>
+                            <h5 class="fw-bold mb-1" id="exportModalTitle">Generating Official PDF Manifest</h5>
+                            <p class="text-muted small mb-3" id="exportModalSubtitle">Processing full pilgrim records, rooming layouts, and photos...</p>
+                            
+                            <div class="progress mb-2" style="height: 12px; border-radius: 6px; background-color: #f1f5f9;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="exportProgressBar" role="progressbar" style="width: 15%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small text-muted px-1 mb-3">
+                                <span id="exportProgressPhase">Compiling data & layout...</span>
+                                <span class="fw-bold" id="exportProgressPercent">15%</span>
+                            </div>
+
+                            <div class="alert alert-light border small text-muted py-2 px-3 mb-0 text-start d-flex align-items-center gap-2">
+                                <i class="mdi mdi-information-outline fs-16 text-primary"></i>
+                                <span>Please keep this window open. Your file download will trigger automatically when ready.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', downloadModalHtml);
+
+        const exportModalEl = document.getElementById('exportProgressModal');
+        const exportModal = new bootstrap.Modal(exportModalEl, { backdrop: 'static', keyboard: false });
+        const exportModalTitle = document.getElementById('exportModalTitle');
+        const exportModalSubtitle = document.getElementById('exportModalSubtitle');
+        const exportModalIcon = document.getElementById('exportModalIcon');
+        const exportModalIconBg = document.getElementById('exportModalIconBg');
+        const exportProgressBar = document.getElementById('exportProgressBar');
+        const exportProgressPercent = document.getElementById('exportProgressPercent');
+        const exportProgressPhase = document.getElementById('exportProgressPhase');
+
+        let exportProgressInterval = null;
+
+        function startExportProgress(type) {
+            clearInterval(exportProgressInterval);
+            const isPdf = type === 'pdf';
+
+            if (isPdf) {
+                exportModalTitle.textContent = 'Generating Official PDF Manifest';
+                exportModalSubtitle.textContent = 'Processing pilgrim records, room allocations, and pictures...';
+                exportModalIcon.className = 'mdi mdi-file-pdf-box text-danger';
+                exportModalIconBg.style.backgroundColor = '#fee2e2';
+                exportProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-danger';
+            } else {
+                exportModalTitle.textContent = 'Generating Official Excel Manifest';
+                exportModalSubtitle.textContent = 'Structuring spreadsheet, pilgrim manifests, and picture columns...';
+                exportModalIcon.className = 'mdi mdi-file-excel text-success';
+                exportModalIconBg.style.backgroundColor = '#dcfce7';
+                exportProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success';
+            }
+
+            let currentPercent = 15;
+            exportProgressBar.style.width = '15%';
+            exportProgressPercent.textContent = '15%';
+            exportProgressPhase.textContent = 'Loading dataset & allocations...';
+            exportModal.show();
+
+            exportProgressInterval = setInterval(() => {
+                if (currentPercent < 45) {
+                    currentPercent += 5;
+                    exportProgressPhase.textContent = 'Optimizing manifest layout & images...';
+                } else if (currentPercent < 75) {
+                    currentPercent += 3;
+                    exportProgressPhase.textContent = 'Building pages & styling tables...';
+                } else if (currentPercent < 90) {
+                    currentPercent += 1;
+                    exportProgressPhase.textContent = 'Finalizing file stream & compression...';
+                }
+                exportProgressBar.style.width = currentPercent + '%';
+                exportProgressPercent.textContent = currentPercent + '%';
+            }, 600);
+        }
+
+        function finishExportProgress() {
+            clearInterval(exportProgressInterval);
+            exportProgressBar.style.width = '100%';
+            exportProgressPercent.textContent = '100%';
+            exportProgressPhase.textContent = 'Download started!';
+            setTimeout(() => {
+                exportModal.hide();
+            }, 800);
+        }
+
+        async function triggerDownloadWithLoader(url, type) {
+            startExportProgress(type);
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned status: ${response.status} ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                
+                // Get filename from header if available
+                let filename = (type === 'pdf') ? 'Official_Rooming_List_Manifest.pdf' : 'Official_Rooming_List_Manifest.xls';
+                const disposition = response.headers.get('content-disposition');
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+
+                // Trigger browser save
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(downloadUrl);
+                a.remove();
+
+                finishExportProgress();
+            } catch (err) {
+                clearInterval(exportProgressInterval);
+                exportModal.hide();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Export Failed',
+                    text: err.message || 'An error occurred while generating the manifest export. Please check your network and filters.',
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        }
+
+        // Attach loader triggers to PDF & Excel export links
+        document.querySelectorAll('a[href*="export-pdf"], .btn-export-pdf, #btnExportPdf').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const colStr = getActiveColumnsString();
+                const url = new URL(this.href, window.location.href);
+                url.searchParams.set('columns', colStr);
+                triggerDownloadWithLoader(url.href, 'pdf');
+            });
+        });
+
+        document.querySelectorAll('a[href*="export-excel"], .btn-export-excel, #btnExportExcel').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const colStr = getActiveColumnsString();
+                const url = new URL(this.href, window.location.href);
+                url.searchParams.set('columns', colStr);
+                triggerDownloadWithLoader(url.href, 'excel');
+            });
+        });
     });
 </script>
 

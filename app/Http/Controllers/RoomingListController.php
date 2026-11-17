@@ -57,6 +57,9 @@ class RoomingListController extends Controller
     public function exportPdf(Request $request)
     {
         $this->authorize('rooming_list_report_export');
+        @set_time_limit(300);
+        @ini_set('memory_limit', '1024M');
+
         $data = $this->getFilteredRoomingData($request);
 
         $visibleCols = null;
@@ -70,13 +73,35 @@ class RoomingListController extends Controller
         }
         $data['visibleColumns'] = $visibleCols;
 
+        // Auto-optimize pilgrim photos into cached lightweight thumbnails for fast PDF rendering
+        $thumbDir = storage_path('app/temp_thumbnails');
+        if (!is_dir($thumbDir)) {
+            @mkdir($thumbDir, 0777, true);
+        }
+
+        if (!empty($data['groupedRooms'])) {
+            foreach ($data['groupedRooms'] as &$room) {
+                if (!empty($room['occupants'])) {
+                    foreach ($room['occupants'] as &$occ) {
+                        if (!empty($occ['photo'])) {
+                            $occ['photo'] = $this->getFastThumbnail($occ['photo'], $thumbDir, 120, 140);
+                        }
+                    }
+                }
+            }
+            unset($room);
+        }
+
         $paperOrientation = ($visibleCols && count($visibleCols) > 7) ? 'landscape' : 'portrait';
         $data['paperOrientation'] = $paperOrientation;
 
         $pdf = Pdf::loadView('reports.rooming_list_pdf', $data);
         $pdf->setPaper('A4', $paperOrientation);
         $pdf->setOption('isHtml5ParserEnabled', true);
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isFontSubsettingEnabled', true);
+        $pdf->setOption('defaultFont', 'Helvetica');
+        $pdf->setOption('dpi', 96);
 
         $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
         $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
@@ -100,7 +125,7 @@ class RoomingListController extends Controller
         $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
         $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
         $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
-        $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.xlsx';
+        $baseFilePart = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His');
 
         // Subtitle / Filters summary Block
         $filterSummary = 'Generated: ' . date('d M Y, h:i A');
@@ -120,50 +145,91 @@ class RoomingListController extends Controller
         $unassignedPilgrimsCount = $data['unassignedPilgrimsCount'] ?? 0;
         $totalBedsOccupied = $data['totalBedsOccupied'] ?? 0;
 
-        if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
-            $csvFileName = str_replace('.xlsx', '.csv', $fileName);
-            return response()->streamDownload(function () use ($groupedRooms, $filterSummary, $roomTypeSummary, $roomTypeSummaryGrand, $totalAssignedRoomsCount, $unassignedPilgrimsCount, $totalBedsOccupied) {
-                $out = fopen('php://output', 'w');
-                // UTF-8 BOM so Excel opens Urdu/Arabic/English correctly without encoding issues
-                fwrite($out, "\xEF\xBB\xBF");
+        // Unified Excel file name (.xls extension for universal compatibility across older and newer Excel versions)
+        $fileName = $baseFilePart . '.xls';
 
-                // Title Block
-                fputcsv($out, ['PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT']);
-                fputcsv($out, [$filterSummary]);
-                fputcsv($out, []);
+        // Check if PhpSpreadsheet is available. If unavailable, stream clean HTML table format with photos
+        if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
+            return response()->streamDownload(function () use ($groupedRooms, $filterSummary, $roomTypeSummary, $roomTypeSummaryGrand, $totalAssignedRoomsCount, $unassignedPilgrimsCount, $totalBedsOccupied) {
+                echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+                echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+                echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Rooming Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+                echo '<style>
+                    body { font-family: Arial, sans-serif; }
+                    table { border-collapse: collapse; width: 100%; }
+                    th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle; height: 35px; }
+                    td { border: 1px solid #CBD5E1; vertical-align: middle; padding: 6px; }
+                    .center { text-align: center; }
+                    .room-no { font-weight: bold; color: #DC2626; font-size: 14px; text-align: center; }
+                    .gender-male { color: #1E3A8A; font-weight: bold; }
+                    .gender-female { color: #9D174D; font-weight: bold; }
+                    .room-divider { border-top: 2px solid #000000 !important; }
+                </style></head><body>';
+                echo '<table>';
+                echo '<tr><th colspan="25" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
+                echo '<tr><td colspan="25" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+                echo '</table>';
 
                 // Room Type Breakdown Summary Table
                 if (!empty($roomTypeSummary)) {
-                    fputcsv($out, ['ROOM TYPE BREAKDOWN SUMMARY']);
-                    fputcsv($out, ['ROOM CATEGORY', 'ALLOCATED ROOMS', 'ALLOCATED PAX', 'PENDING PAX', 'TOTAL PILGRIMS (PAX)']);
+                    echo '<br><table style="width: auto; border: 1.5px solid #000; margin-bottom: 15px;">';
+                    echo '<tr><th colspan="5" style="background-color: #0F172A; color: #FFFFFF; font-size: 12px; text-align: left; padding: 6px;">ROOM TYPE BREAKDOWN SUMMARY</th></tr>';
+                    echo '<tr style="background-color: #1E293B; color: #FFFFFF;">
+                        <th style="padding: 5px; text-align: left;">ROOM CATEGORY</th>
+                        <th style="padding: 5px; text-align: center;">ALLOCATED ROOMS</th>
+                        <th style="padding: 5px; text-align: center;">ALLOCATED PAX</th>
+                        <th style="padding: 5px; text-align: center;">PENDING PAX</th>
+                        <th style="padding: 5px; text-align: center; background-color: #1E3A8A;">TOTAL PILGRIMS (PAX)</th>
+                    </tr>';
                     foreach ($roomTypeSummary as $key => $sum) {
                         if (($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0) {
-                            fputcsv($out, [
-                                $sum['name'] ?? $key,
-                                $sum['assigned_rooms'] ?? 0,
-                                $sum['assigned_pax'] ?? 0,
-                                $sum['pending_pax'] ?? 0,
-                                $sum['total_pax'] ?? 0,
-                            ]);
+                            echo '<tr>';
+                            echo '<td style="font-weight: bold; padding: 4px 6px;">' . htmlspecialchars($sum['name'] ?? $key) . '</td>';
+                            echo '<td style="text-align: center;">' . ($sum['assigned_rooms'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center;">' . ($sum['assigned_pax'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center;">' . ($sum['pending_pax'] ?? 0) . '</td>';
+                            echo '<td style="text-align: center; font-weight: bold; background-color: #EFF6FF;">' . ($sum['total_pax'] ?? 0) . '</td>';
+                            echo '</tr>';
                         }
                     }
-                    fputcsv($out, [
-                        'GRAND TOTAL',
-                        $totalAssignedRoomsCount,
-                        $roomTypeSummaryGrand['assigned_pax'] ?? 0,
-                        $unassignedPilgrimsCount,
-                        $totalBedsOccupied,
-                    ]);
-                    fputcsv($out, []);
+                    echo '<tr style="background-color: #E2E8F0; font-weight: bold; border-top: 2px solid #000;">
+                        <td style="padding: 5px 6px;">GRAND TOTAL</td>
+                        <td style="text-align: center;">' . $totalAssignedRoomsCount . '</td>
+                        <td style="text-align: center;">' . ($roomTypeSummaryGrand['assigned_pax'] ?? 0) . '</td>
+                        <td style="text-align: center;">' . $unassignedPilgrimsCount . '</td>
+                        <td style="text-align: center; background-color: #DBEAFE;">' . $totalBedsOccupied . '</td>
+                    </tr>';
+                    echo '</table><br>';
                 }
 
-                // Manifest Headers
-                fputcsv($out, [
-                    'SR', 'HAJJ ID', 'HB NUMBER', 'PASSPORT NO', 'DATE OF ISSUE', 'PASSPORT EXPIRY',
-                    'PILGRIM FULL NAME', 'GIVEN NAME', 'SURNAME', 'GENDER', 'LOCATION', 'HOTEL / BUILDING',
-                    'ROOM TYPE', 'ROOM NUMBER', 'TOTAL BEDS', 'OCCUPIED', 'AVAILABLE', 'ROOM GENDER',
-                    'BOOKING REF', 'CLIENT / AGENT', 'PHONE', 'CHECK IN', 'CHECK OUT', 'ROOM NOTES'
-                ]);
+                echo '<table>';
+                echo '<tr>
+                    <th>SR</th>
+                    <th>PICTURE</th>
+                    <th>HAJJ ID</th>
+                    <th>HB NUMBER</th>
+                    <th>PASSPORT NO</th>
+                    <th>DATE OF ISSUE</th>
+                    <th>PASSPORT EXPIRY</th>
+                    <th>PILGRIM FULL NAME</th>
+                    <th>GIVEN NAME</th>
+                    <th>SURNAME</th>
+                    <th>GENDER</th>
+                    <th>LOCATION</th>
+                    <th>HOTEL / BUILDING</th>
+                    <th>ROOM TYPE</th>
+                    <th>ROOM NUMBER</th>
+                    <th>TOTAL BEDS</th>
+                    <th>OCCUPIED</th>
+                    <th>AVAILABLE</th>
+                    <th>ROOM GENDER</th>
+                    <th>BOOKING REF</th>
+                    <th>CLIENT / AGENT</th>
+                    <th>PHONE</th>
+                    <th>CHECK IN</th>
+                    <th>CHECK OUT</th>
+                    <th>ROOM NOTES</th>
+                </tr>';
 
                 $sr = 1;
                 foreach ($groupedRooms as $room) {
@@ -174,49 +240,84 @@ class RoomingListController extends Controller
                     $roomTypeExp = (!empty($room['is_assigned']) && !empty($room['room_type'])) ? $room['room_type'] : '—';
 
                     if (empty($room['occupants'])) {
-                        fputcsv($out, [
-                            $sr++, '—', '—', '—', '—', '—', '(Empty Room)', '—', '—', '—',
-                            $locLabel, $room['hotel_name'], $roomTypeExp, $roomDisplayNo,
-                            $room['total_capacity'], 0, $room['total_capacity'], $room['room_gender'] ?? 'Any',
-                            '—', '—', '—',
-                            $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—',
-                            $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—',
-                            $room['notes'] ?? ''
-                        ]);
+                        echo '<tr class="room-divider">';
+                        echo '<td class="center">' . ($sr++) . '</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td><em>(Empty Room)</em></td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
+                        echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
+                        echo '<td class="center">' . htmlspecialchars($roomTypeExp) . '</td>';
+                        echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
+                        echo '<td class="center">' . $room['total_capacity'] . '</td>';
+                        echo '<td class="center">0</td>';
+                        echo '<td class="center">' . $room['total_capacity'] . '</td>';
+                        echo '<td class="center">' . htmlspecialchars($room['room_gender'] ?? 'Any') . '</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">—</td>';
+                        echo '<td class="center">' . ($room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—') . '</td>';
+                        echo '<td class="center">' . ($room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—') . '</td>';
+                        echo '<td>' . htmlspecialchars($room['notes'] ?? '') . '</td>';
+                        echo '</tr>';
                     } else {
-                        foreach ($room['occupants'] as $occ) {
-                            fputcsv($out, [
-                                $sr++,
-                                !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—',
-                                !empty($occ['hb_number']) ? $occ['hb_number'] : '—',
-                                $occ['passport'] ?? '—',
-                                $occ['date_of_issue'] ?? '—',
-                                $occ['passport_expiry_date'] ?? '—',
-                                $occ['name'] ?? '—',
-                                $occ['given_name'] ?? '—',
-                                $occ['surname'] ?? '—',
-                                strtoupper($occ['gender'] ?? 'MALE'),
-                                $locLabel,
-                                $room['hotel_name'],
-                                $roomTypeExp,
-                                $roomDisplayNo,
-                                $room['total_capacity'],
-                                $room['occupied_beds'],
-                                $room['available_beds'],
-                                $room['room_gender'] ?? 'Any',
-                                $occ['booking_number'] ?? '—',
-                                $occ['client_name'] ?? '—',
-                                $occ['phone'] ?? '—',
-                                $occ['check_in'] ?? '—',
-                                $occ['check_out'] ?? '—',
-                                $room['notes'] ?? ''
-                            ]);
+                        foreach ($room['occupants'] as $occIdx => $occ) {
+                            $isTop = ($occIdx === 0) ? ' class="room-divider"' : '';
+                            $occGender = strtoupper($occ['gender'] ?? 'MALE');
+                            $genderClass = ($occGender === 'FEMALE') ? 'gender-female' : 'gender-male';
+
+                            $photoUrl = null;
+                            if (!empty($occ['photo'])) {
+                                $rawPhoto = ltrim($occ['photo'], '/\\');
+                                if (file_exists(public_path($rawPhoto))) {
+                                    $photoUrl = asset($rawPhoto);
+                                }
+                            }
+
+                            echo '<tr' . $isTop . '>';
+                            echo '<td class="center">' . ($sr++) . '</td>';
+                            if ($photoUrl) {
+                                echo '<td class="center" style="height: 52px;"><img src="' . htmlspecialchars($photoUrl) . '" width="42" height="48" style="object-fit: cover; border-radius: 3px;"></td>';
+                            } else {
+                                echo '<td class="center">—</td>';
+                            }
+                            echo '<td class="center">' . htmlspecialchars(!empty($occ['hajj_id']) ? $occ['hajj_id'] : '—') . '</td>';
+                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars(!empty($occ['hb_number']) ? $occ['hb_number'] : '—') . '</td>';
+                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($occ['passport'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['date_of_issue'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['passport_expiry_date'] ?? '—') . '</td>';
+                            echo '<td><strong>' . htmlspecialchars($occ['name'] ?? '—') . '</strong></td>';
+                            echo '<td>' . htmlspecialchars($occ['given_name'] ?? '—') . '</td>';
+                            echo '<td>' . htmlspecialchars($occ['surname'] ?? '—') . '</td>';
+                            echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($occGender) . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
+                            echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($roomTypeExp) . '</td>';
+                            echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
+                            echo '<td class="center">' . $room['total_capacity'] . '</td>';
+                            echo '<td class="center">' . $room['occupied_beds'] . '</td>';
+                            echo '<td class="center">' . $room['available_beds'] . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($room['room_gender'] ?? 'Any') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['booking_number'] ?? '—') . '</td>';
+                            echo '<td>' . htmlspecialchars($occ['client_name'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['phone'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['check_in'] ?? '—') . '</td>';
+                            echo '<td class="center">' . htmlspecialchars($occ['check_out'] ?? '—') . '</td>';
+                            echo '<td>' . htmlspecialchars($room['notes'] ?? '') . '</td>';
+                            echo '</tr>';
                         }
                     }
                 }
-                fclose($out);
-            }, $csvFileName, [
-                'Content-Type' => 'text/csv; charset=UTF-8',
+                echo '</table></body></html>';
+            }, $fileName, [
+                'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
                 'Cache-Control' => 'max-age=0',
             ]);
         }
@@ -430,21 +531,16 @@ class RoomingListController extends Controller
                     $sheet->getRowDimension($currentRow)->setRowHeight(52);
                     $sheet->setCellValue('A' . $currentRow, $sr++);
 
-                    // Embed Photo in Column B
+                    // Embed Photo in Column B (use optimized thumbnail to ensure lightning fast save and older Excel compatibility)
                     $photoPath = !empty($occ['photo']) ? trim($occ['photo']) : null;
                     $photoFile = null;
 
                     if ($photoPath) {
-                        $rawClean = ltrim($photoPath, '/\\');
-                        $localPath = public_path($rawClean);
-                        if (file_exists($localPath) && @getimagesize($localPath)) {
-                            $photoFile = $localPath;
-                        } else {
-                            $cachedFile = $cacheDir . '/' . md5($rawClean) . '.jpg';
-                            if (file_exists($cachedFile) && filesize($cachedFile) > 0 && @getimagesize($cachedFile)) {
-                                $photoFile = $cachedFile;
-                            }
+                        $thumbDir = storage_path('app/temp_thumbnails');
+                        if (!is_dir($thumbDir)) {
+                            @mkdir($thumbDir, 0777, true);
                         }
+                        $photoFile = $this->getFastThumbnail($photoPath, $thumbDir, 120, 140);
                     }
 
                     if ($photoFile && file_exists($photoFile)) {
@@ -527,14 +623,104 @@ class RoomingListController extends Controller
             }
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'application/vnd.ms-excel',
             'Cache-Control' => 'max-age=0',
         ]);
+    }
+
+    /**
+     * Helper to create or fetch a lightweight cached thumbnail for high-speed rendering in PDF/Excel
+     */
+    private function getFastThumbnail(?string $photoPath, string $thumbDir, int $maxW = 120, int $maxH = 140): ?string
+    {
+        if (empty($photoPath)) {
+            return null;
+        }
+
+        $clean = ltrim($photoPath, '/\\');
+        $fullPath = null;
+        if (file_exists(public_path($clean))) {
+            $fullPath = public_path($clean);
+        } elseif (file_exists($photoPath)) {
+            $fullPath = $photoPath;
+        }
+
+        if (!$fullPath || !file_exists($fullPath)) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+            return null;
+        }
+
+        $mtime = filemtime($fullPath);
+        $fileSize = filesize($fullPath);
+        $hash = md5($fullPath . '_' . $mtime . "_{$maxW}x{$maxH}");
+        $thumbPath = $thumbDir . '/' . $hash . '.jpg';
+
+        if (file_exists($thumbPath) && filesize($thumbPath) > 0) {
+            return $thumbPath;
+        }
+
+        // If original file is already very small (<= 25KB), directly use it to avoid expensive GD processing
+        if ($fileSize <= 25600 && in_array($ext, ['jpg', 'jpeg'])) {
+            return $fullPath;
+        }
+
+        $info = @getimagesize($fullPath);
+        if (!$info) {
+            return null;
+        }
+
+        $w = $info[0];
+        $h = $info[1];
+        if ($w <= 0 || $h <= 0) {
+            return null;
+        }
+
+        $ratio = min($maxW / $w, $maxH / $h, 1.0);
+        $newW = max(1, (int)round($w * $ratio));
+        $newH = max(1, (int)round($h * $ratio));
+
+        $srcImg = null;
+        switch ($info[2]) {
+            case IMAGETYPE_JPEG:
+                $srcImg = @imagecreatefromjpeg($fullPath);
+                break;
+            case IMAGETYPE_PNG:
+                $srcImg = @imagecreatefrompng($fullPath);
+                break;
+            case IMAGETYPE_WEBP:
+                $srcImg = function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($fullPath) : null;
+                break;
+            case IMAGETYPE_GIF:
+                $srcImg = @imagecreatefromgif($fullPath);
+                break;
+            default:
+                return null;
+        }
+
+        if (!$srcImg) {
+            return null;
+        }
+
+        $dstImg = imagecreatetruecolor($newW, $newH);
+        $white = imagecolorallocate($dstImg, 255, 255, 255);
+        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $white);
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $w, $h);
+        imagejpeg($dstImg, $thumbPath, 80);
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
+
+        return $thumbPath;
     }
 
     /**
@@ -1247,6 +1433,10 @@ class RoomingListController extends Controller
 
         $allBookings = $bookingQuery->orderBy('id', 'asc')->get();
 
+        // Preload all HotelRoomCapacity records into memory once to eliminate repetitive database queries in the loop
+        $allCapacities = HotelRoomCapacity::all();
+        $allRoomTypes = RoomType::where('status', 'active')->get();
+
         $groupedRooms = [];
         $unassignedOccupants = [];
         $alreadyAddedPersonIds = []; // Track persons added to prevent duplicates
@@ -1264,7 +1454,7 @@ class RoomingListController extends Controller
             $bId,
             $p,
             $roomGroupId = null
-        ) {
+        ) use ($allCapacities, $allRoomTypes) {
             $isPendingRoom = (strtoupper(trim($displayRoomNo)) === 'PENDING' || empty($displayRoomNo));
             $cleanDisplayNo = $isPendingRoom ? 'PENDING' : $displayRoomNo;
             $occData['room_number'] = $cleanDisplayNo;
@@ -1281,14 +1471,60 @@ class RoomingListController extends Controller
             }
 
             if (!isset($groupedRooms[$groupKey])) {
-                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $cleanDisplayNo, $rType, $loc);
                 $customCap = null;
                 if (!$isPendingRoom) {
-                    $customCap = HotelRoomCapacity::where(function ($q) use ($cleanDisplayNo) {
-                        foreach (HotelRoomCapacity::normalizeRoomNumber($cleanDisplayNo) as $v) {
-                            $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                    $variants = HotelRoomCapacity::normalizeRoomNumber($cleanDisplayNo);
+                    $normHotel = HotelRoomCapacity::normalizeHotelString($hName);
+                    $normLoc = strtolower(trim((string)$loc));
+
+                    $matchedCapacities = $allCapacities->filter(function ($rc) use ($variants) {
+                        $rcNum = strtolower(trim((string)$rc->room_number));
+                        return in_array($rcNum, $variants);
+                    });
+
+                    if ($matchedCapacities->isNotEmpty()) {
+                        if (!empty($normHotel)) {
+                            $customCap = $matchedCapacities->first(function ($rc) use ($normHotel) {
+                                $rNorm = HotelRoomCapacity::normalizeHotelString($rc->hotel_name);
+                                return !empty($rNorm) && ($rNorm === $normHotel || str_contains($rNorm, $normHotel) || str_contains($normHotel, $rNorm));
+                            });
                         }
-                    })->first();
+                        if (!$customCap && !empty($normLoc)) {
+                            $customCap = $matchedCapacities->first(function ($rc) use ($normLoc) {
+                                return strtolower(trim((string)$rc->location)) === $normLoc;
+                            });
+                        }
+                        if (!$customCap) {
+                            $customCap = $matchedCapacities->first();
+                        }
+                    }
+                }
+
+                $baseCap = 2;
+                if ($customCap && $customCap->bed_capacity > 0) {
+                    $baseCap = (int) $customCap->bed_capacity;
+                } else {
+                    $normType = strtolower(trim((string)$rType));
+                    $rt = $allRoomTypes->first(function ($t) use ($normType) {
+                        return strtolower(trim((string)$t->name)) === $normType || strtolower(trim((string)$t->code)) === $normType;
+                    });
+                    if ($rt && $rt->capacity > 0) {
+                        $baseCap = (int) $rt->capacity;
+                    } else {
+                        $baseCap = match ($normType) {
+                            'single'            => 1,
+                            'double'            => 2,
+                            'triple'            => 3,
+                            'quad'              => 4,
+                            'quint'             => 5,
+                            'sharing'           => 4,
+                            'suite'             => 2,
+                            'executive_suite'   => 2,
+                            'family_room'       => 4,
+                            'studio'            => 2,
+                            default             => 2,
+                        };
+                    }
                 }
 
                 $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;

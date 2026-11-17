@@ -35,6 +35,12 @@
 
                                 <div class="d-flex gap-2">
 
+                                    @can('care_of_report_view')
+                                        <a href="{{ route('report.care-of-person') }}"
+                                            class="btn btn-outline-primary btn-sm d-flex gap-1 align-items-center">
+                                            <i class="mdi mdi-account-switch"></i> Care of Report
+                                        </a>
+                                    @endcan
                                     @can('booking_create')
                                         <a href="{{ route('booking.create') }}"
                                             class="btn btn-primary btn-sm d-flex gap-1 align-items-center">
