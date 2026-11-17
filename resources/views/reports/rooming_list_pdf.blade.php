@@ -410,8 +410,8 @@
                         @if($showCol('client')) <td style="text-align: center; color: #777;">—</td> @endif
                         @if($showCol('room-typ'))
                             <td class="room-typ-cell">
-                                <div style="font-size: 7.5px; color: #555;">{{ $locLabel }}</div>
-                                <div>{{ $roomTypeDisplay }}</div>
+                                <span style="font-size: 7.5px; color: #555;">{{ $locLabel }}</span><br>
+                                <span>{{ $roomTypeDisplay }}</span>
                             </td>
                         @endif
                         @if($showCol('room-no')) <td class="room-no-cell" style="{{ $isUnassigned ? 'color: #555; font-weight: normal;' : '' }}">{{ $roomDisplayNo }}</td> @endif
@@ -423,10 +423,14 @@
                         @php
                             $photoSrc = null;
                             if (!empty($occ['photo'])) {
-                                $cleanPath = ltrim($occ['photo'], '/\\');
-                                $fullPath = public_path($cleanPath);
-                                if (file_exists($fullPath)) {
-                                    $photoSrc = $fullPath;
+                                if (file_exists($occ['photo'])) {
+                                    $photoSrc = $occ['photo'];
+                                } else {
+                                    $cleanPath = ltrim($occ['photo'], '/\\');
+                                    $fullPath = public_path($cleanPath);
+                                    if (file_exists($fullPath)) {
+                                        $photoSrc = $fullPath;
+                                    }
                                 }
                             }
                             $isFemale = strtoupper($occ['gender'] ?? 'MALE') === 'FEMALE';
@@ -437,7 +441,7 @@
                             @if($showCol('hb')) <td style="text-align: center; font-weight: bold; text-transform: uppercase;">{{ !empty($occ['hb_number']) ? $occ['hb_number'] : '—' }}</td> @endif
                             @if($showCol('passport'))
                                 <td style="text-align: center; font-weight: bold; text-transform: uppercase;">
-                                    <div>{{ $occ['passport'] }}</div>
+                                    {{ $occ['passport'] }}
                                     @if(!$showCol('passport-doi') && !empty($occ['date_of_issue']))
                                         <div style="font-size: 6px; color: #555; font-weight: normal;">DOI: {{ date('d/m/Y', strtotime($occ['date_of_issue'])) }}</div>
                                     @endif
@@ -451,7 +455,7 @@
                             @if($showCol('cnic')) <td style="text-align: center;">{{ $occ['cnic'] ?? '—' }}</td> @endif
                             @if($showCol('name'))
                                 <td style="text-align: left; padding-left: 3px; font-weight: bold; text-transform: uppercase; color: #000;">
-                                    <div>{{ $occ['name'] }}</div>
+                                    {{ $occ['name'] }}
                                 </td>
                             @endif
                             @if($showCol('given-name')) <td style="text-align: left; padding-left: 3px;">{{ $occ['given_name'] ?? '—' }}</td> @endif
@@ -463,12 +467,12 @@
                             @if($showCol('client')) <td style="text-align: left; padding-left: 3px;">{{ $occ['client_name'] ?? '—' }}</td> @endif
                             @if($showCol('room-typ'))
                                 <td class="room-typ-cell" style="text-align: center;">
-                                    <div style="font-weight: bold;">{{ $roomTypeDisplay }}</div>
+                                    {{ $roomTypeDisplay }}
                                 </td>
                             @endif
                             @if($showCol('room-no'))
                                 <td class="room-no-cell" style="{{ $isUnassigned ? 'color: #555; font-weight: normal;' : '' }}">
-                                    <div>{{ $roomDisplayNo }}</div>
+                                    {{ $roomDisplayNo }}
                                     @if(!$isUnassigned && $oIdx === 0 && $room['total_capacity'] > 0)
                                         <div style="font-size: 6px; color: #666; font-weight: normal;">{{ $room['occupied_beds'] }}/{{ $room['total_capacity'] }}</div>
                                     @endif

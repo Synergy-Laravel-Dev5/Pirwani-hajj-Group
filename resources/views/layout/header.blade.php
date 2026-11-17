@@ -1,38 +1,34 @@
     <!-- Topbar Start -->
     <div class="topbar-custom">
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center">
+        <div class="container-fluid px-3 h-100">
+            <div class="d-flex justify-content-between align-items-center h-100">
+                <!-- Left: Sidebar Toggle & Brand Title -->
                 <ul class="list-unstyled topnav-menu mb-0 d-flex align-items-center">
                     <li>
                         <button class="button-toggle-menu nav-link" aria-label="Toggle Sidebar">
                             <i data-feather="menu" class="noti-icon"></i>
                         </button>
                     </li>
-                    <li class="d-none d-lg-block ms-2">
+                    <li class="d-none d-md-block ms-2">
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge"
-                                style="background: rgba(201, 168, 76, 0.18); color: #F3DC9B; border: 1px solid rgba(201, 168, 76, 0.45); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.5px;">
+                            <span class="badge topbar-brand-badge">
                                 🕋 PIRWANI HAJJ GROUP
                             </span>
-                            <h5 class="mb-0 text-white fw-bold" style="font-size: 15px; letter-spacing: 0.3px;">
-                                {{ Auth::user()->name ?? 'Admin User' }}
-                            </h5>
                         </div>
                     </li>
                 </ul>
 
+                <!-- Right Action Navigation & User Profile -->
                 <ul class="list-unstyled topnav-menu mb-0 d-flex align-items-center gap-2">
                     @if (session('active_module') === 'hotel_sale')
                         <li class="d-none d-sm-block">
-                            <span class="badge"
-                                style="background: rgba(201, 168, 76, 0.18); color: #F3DC9B; border: 1px solid rgba(201, 168, 76, 0.45); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px;">
+                            <span class="badge topbar-module-badge">
                                 🏨 Hotel Sale
                             </span>
                         </li>
                         <li class="d-none d-sm-block">
                             <a href="{{ route('module.switch', 'main') }}"
-                                class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1"
-                                style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
+                                class="topbar-nav-pill topbar-nav-pill-gold">
                                 <i class="mdi mdi-view-dashboard-outline"></i>
                                 <span>Main Dashboard</span>
                             </a>
@@ -40,79 +36,104 @@
                     @else
                         <li class="d-none d-sm-block">
                             <a href="{{ route('module.switch', 'hotel_sale') }}"
-                                class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1"
-                                style="border-radius: 20px; font-weight: 600; padding: 5px 12px;">
+                                class="topbar-nav-pill topbar-nav-pill-gold">
                                 <i class="mdi mdi-domain"></i>
                                 <span>Hotel Sale</span>
                             </a>
                         </li>
                     @endif
-                    <li class="d-none d-md-block">
+
+                    <li class="d-none d-sm-block">
                         <a href="{{ route('welcome') }}"
-                            class="btn btn-sm text-white d-inline-flex align-items-center gap-1 me-2"
-                            title="Switch Portal / Module"
-                            style="border-radius: 20px; font-weight: 500; padding: 5px 12px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.06);">
+                            class="topbar-nav-pill topbar-nav-pill-portal"
+                            title="Switch Portal / Module">
                             <i class="mdi mdi-apps"></i>
                             <span>Portal</span>
                         </a>
                     </li>
+
                     @canany(['mobile_ops_dashboard_view', 'umrah_package_view', 'domestic_package_view', 'international_package_view', 'mobile_ops_inquiry_view', 'gallery_view', 'book_view', 'guideline_view', 'video_view', 'visa_country_view', 'visa_inquiry_view'])
                     <li class="d-none d-lg-block">
-                        <div class="position-relative">
-                            <a href="{{ route('mobile-ops.dashboard') }}" class="mobile-ops-btn">
-                                <span>Mobile App Portal</span>
-                            </a>
-                        </div>
+                        <a href="{{ route('mobile-ops.dashboard') }}" class="mobile-ops-btn">
+                            <i class="mdi mdi-cellphone-cog"></i>
+                            <span>Mobile App Portal</span>
+                        </a>
                     </li>
                     @endcanany
-                    <li class="d-none d-lg-block">
-                        <div class="position-relative topbar-search">
-                            <input type="text" class="form-control" placeholder="Search here...">
-                            <i
-                                class="mdi mdi-magnify fs-16 position-absolute text-muted top-50 translate-middle-y ms-2"></i>
-                        </div>
-                    </li>
 
-                    <li class="dropdown notification-list topbar-dropdown">
+                    <!-- Admin User Dropdown -->
+                    <li class="dropdown notification-list topbar-dropdown ms-1">
                         <a class="nav-link dropdown-toggle nav-user me-0" data-bs-toggle="dropdown" href="#"
                             role="button" aria-haspopup="false" aria-expanded="false">
-                            <img src="{{ asset('assets/images/users/user-5.jpg') }}" alt="user-image"
-                                class="rounded-circle user-avatar-top">
-                            <span class="pro-user-name ms-1">
-                                {{ Auth::user()->name ?? 'Admin User' }}
-                                <i class="mdi mdi-chevron-down"></i>
-                            </span>
+                            <div class="user-avatar-wrap">
+                                <span class="user-initials">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</span>
+                            </div>
+                            <div class="d-none d-md-flex flex-column text-start ms-2 lh-1">
+                                <span class="pro-user-name">
+                                    {{ Auth::user()->name ?? 'Admin User' }}
+                                </span>
+                                <span class="pro-user-role">
+                                    {{ Auth::user()->roles->first()->name ?? 'Administrator' }}
+                                </span>
+                            </div>
+                            <i class="mdi mdi-chevron-down ms-1 chevron-icon"></i>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end profile-dropdown shadow-lg">
-                            <div class="dropdown-header noti-title py-2 px-3">
-                                <small class="text-uppercase fw-bold text-muted"
-                                    style="letter-spacing: 0.5px; font-size: 10.5px;">Signed in as</small>
-                                <h6 class="text-overflow m-0 fw-bold text-dark" style="font-size: 13.5px;">
-                                    {{ Auth::user()->name ?? 'Admin' }}</h6>
+
+                        <div class="dropdown-menu dropdown-menu-end profile-dropdown shadow-lg animate-fade-in">
+                            <!-- Dropdown Header Card -->
+                            <div class="profile-dropdown-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar-wrap-lg">
+                                        <span>{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</span>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h6 class="mb-0 text-white fw-bold text-truncate" style="font-size: 13.5px;">
+                                            {{ Auth::user()->name ?? 'Admin User' }}
+                                        </h6>
+                                        <small class="text-white-50 text-truncate d-block" style="font-size: 11px;">
+                                            {{ Auth::user()->email ?? 'admin@pirwanihajj.com' }}
+                                        </small>
+                                        <span class="badge mt-1 profile-role-badge">
+                                            {{ Auth::user()->roles->first()->name ?? 'Administrator' }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="dropdown-divider my-1"></div>
+                            <div class="dropdown-body-items py-1">
+                                <a href="{{ route('welcome') }}"
+                                    class="dropdown-item notify-item d-flex align-items-center gap-2">
+                                    <div class="icon-bubble icon-bubble-warning">
+                                        <i class="mdi mdi-apps fs-15"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block fw-semibold">Switch Portal / Module</span>
+                                        <small class="text-muted d-block" style="font-size: 11px; margin-top: -2px;">All applications & portals</small>
+                                    </div>
+                                </a>
 
-                            <a href="{{ route('welcome') }}"
-                                class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
-                                <i class="mdi mdi-apps fs-16 text-warning"></i>
-                                <span>Switch Portal / Module</span>
-                            </a>
-
-                            <a href="{{ route('change.password') }}"
-                                class="dropdown-item notify-item d-flex align-items-center gap-2 py-2">
-                                <i class="mdi mdi-lock-reset fs-16 text-primary"></i>
-                                <span>Change Password</span>
-                            </a>
+                                <a href="{{ route('change.password') }}"
+                                    class="dropdown-item notify-item d-flex align-items-center gap-2">
+                                    <div class="icon-bubble icon-bubble-primary">
+                                        <i class="mdi mdi-shield-key-outline fs-15"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block fw-semibold">Change Password</span>
+                                        <small class="text-muted d-block" style="font-size: 11px; margin-top: -2px;">Update your credentials</small>
+                                    </div>
+                                </a>
+                            </div>
 
                             <div class="dropdown-divider my-1"></div>
 
                             <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
                                 @csrf
                                 <button type="submit"
-                                    class="dropdown-item notify-item logout-menu-btn d-flex align-items-center gap-2 py-2">
-                                    <i class="mdi mdi-logout fs-16 text-danger"></i>
-                                    <span>Logout</span>
+                                    class="dropdown-item notify-item logout-menu-btn d-flex align-items-center gap-2">
+                                    <div class="icon-bubble icon-bubble-danger">
+                                        <i class="mdi mdi-logout-variant fs-15"></i>
+                                    </div>
+                                    <span class="fw-semibold">Sign Out</span>
                                 </button>
                             </form>
                         </div>
@@ -371,12 +392,21 @@
                         @endcanany
 
                         @can('booking_view')
-                            <li>
+                            <li class="{{ request()->routeIs('booking.*') ? 'menuitem-active' : '' }}">
                                 <a href="{{ route('booking.index') }}">
                                     <i data-feather="calendar"></i>
                                     <span>Booking</span>
                                 </a>
                             </li>
+                        @endcan
+
+                        @can('care_of_report_view')
+                        <li class="{{ request()->routeIs('report.care-of-person*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('report.care-of-person') }}">
+                                <i data-feather="users"></i>
+                                <span>Care of Persons Report</span>
+                            </a>
+                        </li>
                         @endcan
 
                         @can('person_report_view')

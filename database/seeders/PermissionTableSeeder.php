@@ -239,6 +239,7 @@ class PermissionTableSeeder extends Seeder
             // ── 28. REPORTS & MANIFESTS ─────────────────────────
             ['name' => 'person_report_view', 'guard_name' => 'web', 'group_name' => 'Reports'],
             ['name' => 'person_report_export', 'guard_name' => 'web', 'group_name' => 'Reports'],
+            ['name' => 'care_of_report_view', 'guard_name' => 'web', 'group_name' => 'Reports'],
             ['name' => 'flight_report_view', 'guard_name' => 'web', 'group_name' => 'Reports'],
             ['name' => 'flight_report_export', 'guard_name' => 'web', 'group_name' => 'Reports'],
             ['name' => 'rooming_list_report_view', 'guard_name' => 'web', 'group_name' => 'Reports'],
