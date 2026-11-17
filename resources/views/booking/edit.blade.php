@@ -600,6 +600,7 @@
                                 <i class="mdi mdi-information me-1"></i>
                                 Booking is for Company — client dropdown is hidden for main passenger.
                             </div>
+                            <div id="deletedPersonIdsContainer"></div>
                             <div id="personsList">
                                 @foreach ($booking->persons as $i => $person)
                                     <div class="person-card" id="person_card_{{ $i }}">
@@ -614,6 +615,7 @@
                                                 </button>
                                             </div>
                                         </div>
+                                        <input type="hidden" name="persons[{{ $i }}][id]" value="{{ $person->id }}">
                                         <input type="hidden" name="persons[{{ $i }}][room_number]" value="{{ $person->room_number ?? '' }}">
                                         <input type="hidden" name="persons[{{ $i }}][room_type]" value="{{ $person->room_type ?? '' }}">
                                         <input type="hidden" name="persons[{{ $i }}][hotel_name]" value="{{ $person->hotel_name ?? '' }}">
@@ -2656,6 +2658,7 @@
                         </button>
                     </div>
                 </div>
+                <input type="hidden" name="persons[${idx}][id]" value="">
                 <input type="hidden" name="persons[${idx}][room_number]" value="">
                 <input type="hidden" name="persons[${idx}][room_type]" value="">
                 <input type="hidden" name="persons[${idx}][hotel_name]" value="">
@@ -2806,6 +2809,71 @@
             syncVisas();
         }
 
+        function trackDeletedPersonId(id) {
+            if (!id) return;
+            let container = document.getElementById('deletedPersonIdsContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'deletedPersonIdsContainer';
+                container.style.display = 'none';
+                const f = document.querySelector('form[action*="booking"]') || document.body;
+                f.appendChild(container);
+            }
+            if (container.querySelector(`input[value="${id}"]`)) return;
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'deleted_person_ids[]';
+            inp.value = id;
+            container.appendChild(inp);
+        }
+
+        function syncRoomSharingWithPax(newPax) {
+            const inputIds = ['c_double_pax', 'c_triple_pax', 'c_quad_pax', 'a_double_pax', 'a_triple_pax', 'a_quad_pax'];
+            let totalMainPax = 0;
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) totalMainPax += (parseInt(el.value) || 0);
+            });
+
+            if (totalMainPax > newPax) {
+                let excess = totalMainPax - newPax;
+                for (const id of inputIds) {
+                    if (excess <= 0) break;
+                    const el = document.getElementById(id);
+                    if (el) {
+                        let currentVal = parseInt(el.value) || 0;
+                        if (currentVal > 0) {
+                            const reduceBy = Math.min(currentVal, excess);
+                            el.value = currentVal - reduceBy;
+                            excess -= reduceBy;
+                        }
+                    }
+                }
+            }
+
+            const azInputIds = ['az_double_pax', 'az_triple_pax', 'az_quad_pax'];
+            let totalAzPax = 0;
+            azInputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) totalAzPax += (parseInt(el.value) || 0);
+            });
+            if (totalAzPax > newPax) {
+                let azExcess = totalAzPax - newPax;
+                for (const id of azInputIds) {
+                    if (azExcess <= 0) break;
+                    const el = document.getElementById(id);
+                    if (el) {
+                        let currentVal = parseInt(el.value) || 0;
+                        if (currentVal > 0) {
+                            const reduceBy = Math.min(currentVal, azExcess);
+                            el.value = currentVal - reduceBy;
+                            azExcess -= reduceBy;
+                        }
+                    }
+                }
+            }
+        }
+
         function rebuildPersonsList(newPax) {
             const container = document.getElementById('personsList');
             const currentCards = container.querySelectorAll('.person-card');
@@ -2814,8 +2882,15 @@
             if (newPax < currentCount) {
                 for (let i = currentCount - 1; i >= newPax; i--) {
                     const card = document.getElementById('person_card_' + i);
-                    if (card) card.remove();
+                    if (card) {
+                        const idInp = card.querySelector('input[name*="[id]"]');
+                        if (idInp && idInp.value) {
+                            trackDeletedPersonId(idInp.value);
+                        }
+                        card.remove();
+                    }
                 }
+                reindexPersonCards();
                 return;
             }
 
@@ -2847,6 +2922,12 @@
                 return;
             }
 
+            // Track deleted person ID if existing in database
+            const idInput = card.querySelector('input[name*="[id]"]');
+            if (idInput && idInput.value) {
+                trackDeletedPersonId(idInput.value);
+            }
+
             card.remove();
 
             // Re-index remaining person cards
@@ -2859,17 +2940,29 @@
             const paxInput = document.getElementById('no_of_pax');
             if (paxInput) {
                 paxInput.value = newPax;
-                paxInput.dispatchEvent(new Event('input'));
             }
             const barPax = document.getElementById('bar_pax');
             if (barPax) {
                 barPax.innerText = newPax;
             }
+            const sumPax = document.getElementById('sum_pax');
+            if (sumPax) {
+                sumPax.innerText = newPax;
+            }
+
+            // Sync room sharing breakdown with newPax
+            syncRoomSharingWithPax(newPax);
+
+            // Recalculate package and room costs
+            if (typeof calculateMultiRoomCost === 'function') {
+                calculateMultiRoomCost();
+            } else if (typeof calcTotal === 'function') {
+                calcTotal();
+            }
 
             // Sync other tabs
             if (typeof syncFlightPersons === 'function') syncFlightPersons();
             if (typeof syncVisas === 'function') syncVisas();
-            if (typeof calcTotal === 'function') calcTotal();
         }
 
         function reindexPersonCards() {
@@ -2895,6 +2988,32 @@
                     badgeEl.innerText = `Person #${idx + 1}`;
                 }
 
+                // Update preview element id
+                const previewEl = card.querySelector('[id^="person_photo_preview_"]');
+                if (previewEl) {
+                    previewEl.id = `person_photo_preview_${idx}`;
+                }
+
+                // Ensure client dropdown is present for idx === 0 (if not company mode) and removed for idx > 0
+                if (isFirst && !companyMode) {
+                    if (!card.querySelector('.person-client-select')) {
+                        const rowEl = card.querySelector('.row');
+                        if (rowEl) {
+                            const clientDropdownHtml = `
+                                <div class="col-md-12 mb-2 person-client-wrapper">
+                                    <label class="form-label" style="font-size:12px;">Select Client to auto-fill</label>
+                                    <select class="form-select form-select-sm person-client-select" data-idx="0" onchange="fillPersonFromClient(this, 0)">
+                                        ${buildClientOptions(clientSelectEl ? clientSelectEl.value : '')}
+                                    </select>
+                                </div>`;
+                            rowEl.insertAdjacentHTML('afterbegin', clientDropdownHtml);
+                        }
+                    }
+                } else if (!isFirst) {
+                    const clientWrapper = card.querySelector('.person-client-wrapper');
+                    if (clientWrapper) clientWrapper.remove();
+                }
+
                 // Update input names and IDs for all elements inside this card
                 card.querySelectorAll('input, select, textarea').forEach(input => {
                     if (input.name) {
@@ -2912,7 +3031,7 @@
                     }
                     if (input.hasAttribute('onchange')) {
                         const onchange = input.getAttribute('onchange');
-                        input.setAttribute('onchange', onchange.replace(/,\s*\d+\)/, `, ${idx})`));
+                        input.setAttribute('onchange', onchange.replace(/,\s*\d+\)/, `, ${idx})`).replace(/\(this,\s*\d+\)/, `(this, ${idx})`));
                     }
                 });
             });
