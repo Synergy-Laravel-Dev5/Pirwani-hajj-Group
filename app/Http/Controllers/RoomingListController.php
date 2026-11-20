@@ -57,6 +57,9 @@ class RoomingListController extends Controller
     public function exportPdf(Request $request)
     {
         $this->authorize('rooming_list_report_export');
+        @set_time_limit(300);
+        @ini_set('memory_limit', '1024M');
+
         $data = $this->getFilteredRoomingData($request);
 
         $visibleCols = null;
@@ -70,13 +73,35 @@ class RoomingListController extends Controller
         }
         $data['visibleColumns'] = $visibleCols;
 
+        // Auto-optimize pilgrim photos into cached lightweight thumbnails for fast PDF rendering
+        $thumbDir = storage_path('app/temp_thumbnails');
+        if (!is_dir($thumbDir)) {
+            @mkdir($thumbDir, 0777, true);
+        }
+
+        if (!empty($data['groupedRooms'])) {
+            foreach ($data['groupedRooms'] as &$room) {
+                if (!empty($room['occupants'])) {
+                    foreach ($room['occupants'] as &$occ) {
+                        if (!empty($occ['photo'])) {
+                            $occ['photo'] = $this->getFastThumbnail($occ['photo'], $thumbDir, 120, 140);
+                        }
+                    }
+                }
+            }
+            unset($room);
+        }
+
         $paperOrientation = ($visibleCols && count($visibleCols) > 7) ? 'landscape' : 'portrait';
         $data['paperOrientation'] = $paperOrientation;
 
         $pdf = Pdf::loadView('reports.rooming_list_pdf', $data);
         $pdf->setPaper('A4', $paperOrientation);
         $pdf->setOption('isHtml5ParserEnabled', true);
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isFontSubsettingEnabled', true);
+        $pdf->setOption('defaultFont', 'Helvetica');
+        $pdf->setOption('dpi', 96);
 
         $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
         $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
@@ -100,7 +125,7 @@ class RoomingListController extends Controller
         $hotelString = is_array($data['hotelFilter'] ?? null) ? implode('_', $data['hotelFilter']) : ($data['hotelFilter'] ?? '');
         $hotelPart = !empty($hotelString) ? '_' . preg_replace('/[^A-Za-z0-9]/', '_', $hotelString) : '';
         $locPart = (!empty($data['locationFilter']) && $data['locationFilter'] !== 'all') ? '_' . strtoupper($data['locationFilter']) : '';
-        $fileName = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His') . '.xlsx';
+        $baseFilePart = 'Official_Rooming_List_Manifest' . $locPart . $hotelPart . '_' . date('Ymd_His');
 
         // Subtitle / Filters summary Block
         $filterSummary = 'Generated: ' . date('d M Y, h:i A');
@@ -120,8 +145,12 @@ class RoomingListController extends Controller
         $unassignedPilgrimsCount = $data['unassignedPilgrimsCount'] ?? 0;
         $totalBedsOccupied = $data['totalBedsOccupied'] ?? 0;
 
+        // Unified Excel file name (.xls extension for universal compatibility across older and newer Excel versions)
+        $fileName = $baseFilePart . '.xls';
+
+        // Check if PhpSpreadsheet is available. If unavailable, stream clean UTF-8 CSV format
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
-            $csvFileName = str_replace('.xlsx', '.csv', $fileName);
+            $csvFileName = str_replace(['.xlsx', '.xls'], '.csv', $fileName);
             return response()->streamDownload(function () use ($groupedRooms, $filterSummary, $roomTypeSummary, $roomTypeSummaryGrand, $totalAssignedRoomsCount, $unassignedPilgrimsCount, $totalBedsOccupied) {
                 $out = fopen('php://output', 'w');
                 // UTF-8 BOM so Excel opens Urdu/Arabic/English correctly without encoding issues
@@ -430,21 +459,16 @@ class RoomingListController extends Controller
                     $sheet->getRowDimension($currentRow)->setRowHeight(52);
                     $sheet->setCellValue('A' . $currentRow, $sr++);
 
-                    // Embed Photo in Column B
+                    // Embed Photo in Column B (use optimized thumbnail to ensure lightning fast save and older Excel compatibility)
                     $photoPath = !empty($occ['photo']) ? trim($occ['photo']) : null;
                     $photoFile = null;
 
                     if ($photoPath) {
-                        $rawClean = ltrim($photoPath, '/\\');
-                        $localPath = public_path($rawClean);
-                        if (file_exists($localPath) && @getimagesize($localPath)) {
-                            $photoFile = $localPath;
-                        } else {
-                            $cachedFile = $cacheDir . '/' . md5($rawClean) . '.jpg';
-                            if (file_exists($cachedFile) && filesize($cachedFile) > 0 && @getimagesize($cachedFile)) {
-                                $photoFile = $cachedFile;
-                            }
+                        $thumbDir = storage_path('app/temp_thumbnails');
+                        if (!is_dir($thumbDir)) {
+                            @mkdir($thumbDir, 0777, true);
                         }
+                        $photoFile = $this->getFastThumbnail($photoPath, $thumbDir, 120, 140);
                     }
 
                     if ($photoFile && file_exists($photoFile)) {
@@ -527,14 +551,104 @@ class RoomingListController extends Controller
             }
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'application/vnd.ms-excel',
             'Cache-Control' => 'max-age=0',
         ]);
+    }
+
+    /**
+     * Helper to create or fetch a lightweight cached thumbnail for high-speed rendering in PDF/Excel
+     */
+    private function getFastThumbnail(?string $photoPath, string $thumbDir, int $maxW = 120, int $maxH = 140): ?string
+    {
+        if (empty($photoPath)) {
+            return null;
+        }
+
+        $clean = ltrim($photoPath, '/\\');
+        $fullPath = null;
+        if (file_exists(public_path($clean))) {
+            $fullPath = public_path($clean);
+        } elseif (file_exists($photoPath)) {
+            $fullPath = $photoPath;
+        }
+
+        if (!$fullPath || !file_exists($fullPath)) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
+            return null;
+        }
+
+        $mtime = filemtime($fullPath);
+        $fileSize = filesize($fullPath);
+        $hash = md5($fullPath . '_' . $mtime . "_{$maxW}x{$maxH}");
+        $thumbPath = $thumbDir . '/' . $hash . '.jpg';
+
+        if (file_exists($thumbPath) && filesize($thumbPath) > 0) {
+            return $thumbPath;
+        }
+
+        // If original file is already very small (<= 25KB), directly use it to avoid expensive GD processing
+        if ($fileSize <= 25600 && in_array($ext, ['jpg', 'jpeg'])) {
+            return $fullPath;
+        }
+
+        $info = @getimagesize($fullPath);
+        if (!$info) {
+            return null;
+        }
+
+        $w = $info[0];
+        $h = $info[1];
+        if ($w <= 0 || $h <= 0) {
+            return null;
+        }
+
+        $ratio = min($maxW / $w, $maxH / $h, 1.0);
+        $newW = max(1, (int)round($w * $ratio));
+        $newH = max(1, (int)round($h * $ratio));
+
+        $srcImg = null;
+        switch ($info[2]) {
+            case IMAGETYPE_JPEG:
+                $srcImg = @imagecreatefromjpeg($fullPath);
+                break;
+            case IMAGETYPE_PNG:
+                $srcImg = @imagecreatefrompng($fullPath);
+                break;
+            case IMAGETYPE_WEBP:
+                $srcImg = function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($fullPath) : null;
+                break;
+            case IMAGETYPE_GIF:
+                $srcImg = @imagecreatefromgif($fullPath);
+                break;
+            default:
+                return null;
+        }
+
+        if (!$srcImg) {
+            return null;
+        }
+
+        $dstImg = imagecreatetruecolor($newW, $newH);
+        $white = imagecolorallocate($dstImg, 255, 255, 255);
+        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $white);
+
+        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $w, $h);
+        imagejpeg($dstImg, $thumbPath, 80);
+
+        imagedestroy($srcImg);
+        imagedestroy($dstImg);
+
+        return $thumbPath;
     }
 
     /**
@@ -1247,6 +1361,10 @@ class RoomingListController extends Controller
 
         $allBookings = $bookingQuery->orderBy('id', 'asc')->get();
 
+        // Preload all HotelRoomCapacity records into memory once to eliminate repetitive database queries in the loop
+        $allCapacities = HotelRoomCapacity::all();
+        $allRoomTypes = RoomType::where('status', 'active')->get();
+
         $groupedRooms = [];
         $unassignedOccupants = [];
         $alreadyAddedPersonIds = []; // Track persons added to prevent duplicates
@@ -1264,7 +1382,7 @@ class RoomingListController extends Controller
             $bId,
             $p,
             $roomGroupId = null
-        ) {
+        ) use ($allCapacities, $allRoomTypes) {
             $isPendingRoom = (strtoupper(trim($displayRoomNo)) === 'PENDING' || empty($displayRoomNo));
             $cleanDisplayNo = $isPendingRoom ? 'PENDING' : $displayRoomNo;
             $occData['room_number'] = $cleanDisplayNo;
@@ -1281,14 +1399,60 @@ class RoomingListController extends Controller
             }
 
             if (!isset($groupedRooms[$groupKey])) {
-                $baseCap = HotelRoomCapacity::resolveCapacity($hName, $cleanDisplayNo, $rType, $loc);
                 $customCap = null;
                 if (!$isPendingRoom) {
-                    $customCap = HotelRoomCapacity::where(function ($q) use ($cleanDisplayNo) {
-                        foreach (HotelRoomCapacity::normalizeRoomNumber($cleanDisplayNo) as $v) {
-                            $q->orWhereRaw('LOWER(TRIM(room_number)) = ?', [$v]);
+                    $variants = HotelRoomCapacity::normalizeRoomNumber($cleanDisplayNo);
+                    $normHotel = HotelRoomCapacity::normalizeHotelString($hName);
+                    $normLoc = strtolower(trim((string)$loc));
+
+                    $matchedCapacities = $allCapacities->filter(function ($rc) use ($variants) {
+                        $rcNum = strtolower(trim((string)$rc->room_number));
+                        return in_array($rcNum, $variants);
+                    });
+
+                    if ($matchedCapacities->isNotEmpty()) {
+                        if (!empty($normHotel)) {
+                            $customCap = $matchedCapacities->first(function ($rc) use ($normHotel) {
+                                $rNorm = HotelRoomCapacity::normalizeHotelString($rc->hotel_name);
+                                return !empty($rNorm) && ($rNorm === $normHotel || str_contains($rNorm, $normHotel) || str_contains($normHotel, $rNorm));
+                            });
                         }
-                    })->first();
+                        if (!$customCap && !empty($normLoc)) {
+                            $customCap = $matchedCapacities->first(function ($rc) use ($normLoc) {
+                                return strtolower(trim((string)$rc->location)) === $normLoc;
+                            });
+                        }
+                        if (!$customCap) {
+                            $customCap = $matchedCapacities->first();
+                        }
+                    }
+                }
+
+                $baseCap = 2;
+                if ($customCap && $customCap->bed_capacity > 0) {
+                    $baseCap = (int) $customCap->bed_capacity;
+                } else {
+                    $normType = strtolower(trim((string)$rType));
+                    $rt = $allRoomTypes->first(function ($t) use ($normType) {
+                        return strtolower(trim((string)$t->name)) === $normType || strtolower(trim((string)$t->code)) === $normType;
+                    });
+                    if ($rt && $rt->capacity > 0) {
+                        $baseCap = (int) $rt->capacity;
+                    } else {
+                        $baseCap = match ($normType) {
+                            'single'            => 1,
+                            'double'            => 2,
+                            'triple'            => 3,
+                            'quad'              => 4,
+                            'quint'             => 5,
+                            'sharing'           => 4,
+                            'suite'             => 2,
+                            'executive_suite'   => 2,
+                            'family_room'       => 4,
+                            'studio'            => 2,
+                            default             => 2,
+                        };
+                    }
                 }
 
                 $extraBeds = $customCap ? (int) $customCap->extra_beds : 0;

@@ -242,7 +242,7 @@
                                         <i class="mdi mdi-magnify"></i>
                                     </span>
                                     <input type="text" id="hajjiSearchFilter" class="form-control border-start-0"
-                                        placeholder="Search by Name, HB #, Passport, or Hajj ID...">
+                                        placeholder="Search by Name, HB #, Passport, Hajj ID, or Booking #..." autocomplete="off">
                                 </div>
                             </div>
                             <div class="col-md-6 text-md-end d-flex gap-2 justify-content-md-end align-items-center">
@@ -277,8 +277,24 @@
                                 </thead>
                                 <tbody class="fs-12">
                                     @forelse($availablePersons as $p)
+                                        @php
+                                            $pName = $p->given_name ? ($p->given_name . ' ' . $p->surname) : ($p->full_name ?? 'Pilgrim #' . $p->id);
+                                            $pHb = $p->hb_number ?: ($p->booking?->hb_number ?? 'HB' . str_pad($p->booking_id, 4, '0', STR_PAD_LEFT));
+                                            $searchMetadata = strtolower(implode(' ', array_filter([
+                                                $pName,
+                                                $pHb,
+                                                $p->hajj_id,
+                                                $p->passport_number,
+                                                '#' . $p->booking_id,
+                                                $p->booking_id,
+                                                $p->booking?->client?->name,
+                                                $p->gender,
+                                                $p->cnic
+                                            ])));
+                                        @endphp
                                         <tr class="hajji-row" style="cursor: pointer;"
-                                            data-person-id="{{ $p->id }}">
+                                            data-person-id="{{ $p->id }}"
+                                            data-search-text="{{ $searchMetadata }}">
                                             <td class="ps-3 py-2 text-center checkbox-cell" style="cursor: pointer;">
                                                 <input type="checkbox" name="person_ids[]" value="{{ $p->id }}"
                                                     class="form-check-input hajji-checkbox custom-big-checkbox"
@@ -286,7 +302,7 @@
                                             </td>
                                             <td class="py-2">
                                                 <span class="m-0 fw-bold text-dark d-block">
-                                                    {{ $p->given_name ? $p->given_name . ' ' . $p->surname : $p->full_name ?? 'Pilgrim #' . $p->id }}
+                                                    {{ $pName }}
                                                 </span>
                                                 @if ($p->gender)
                                                     <small class="text-muted text-capitalize">{{ $p->gender }}</small>
@@ -294,7 +310,7 @@
                                             </td>
                                             <td class="py-2">
                                                 <span class="badge bg-light text-dark border font-monospace px-2 py-1">
-                                                    {{ $p->hb_number ?: $p->booking?->hb_number ?? 'HB' . str_pad($p->booking_id, 4, '0', STR_PAD_LEFT) }}
+                                                    {{ $pHb }}
                                                 </span>
                                             </td>
                                             <td class="py-2">
@@ -314,13 +330,19 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr>
+                                        <tr id="noAvailableHajjisRow">
                                             <td colspan="6" class="text-center py-4 text-muted">
                                                 <i class="mdi mdi-check-all fs-24 text-success d-block mb-1"></i>
                                                 All registered Hajjis in bookings have already been assigned to this batch.
                                             </td>
                                         </tr>
                                     @endforelse
+                                    <tr id="noSearchMatchRow" style="display: none;">
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <i class="mdi mdi-magnify-close fs-24 text-warning d-block mb-1"></i>
+                                            No Hajjis found matching your search.
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -502,17 +524,30 @@
                 // Live Search Filter
                 if (searchInput) {
                     searchInput.addEventListener('input', function() {
-                        const query = this.value.toLowerCase().trim();
+                        const rawQuery = this.value.toLowerCase().trim();
+                        const terms = rawQuery.split(/\s+/).filter(Boolean);
                         const allRows = table.querySelectorAll('tbody tr.hajji-row');
+                        const noMatchRow = document.getElementById('noSearchMatchRow');
+                        let matchedCount = 0;
 
                         allRows.forEach(tr => {
-                            const text = tr.innerText.toLowerCase();
-                            if (text.indexOf(query) !== -1) {
+                            const searchMeta = tr.getAttribute('data-search-text') || tr.innerText.toLowerCase();
+                            
+                            // Check if every search term is contained in the row's text
+                            const isMatch = terms.length === 0 || terms.every(term => searchMeta.includes(term));
+                            
+                            if (isMatch) {
                                 tr.style.display = '';
+                                matchedCount++;
                             } else {
                                 tr.style.display = 'none';
                             }
                         });
+
+                        if (noMatchRow) {
+                            noMatchRow.style.display = (matchedCount === 0 && allRows.length > 0) ? '' : 'none';
+                        }
+
                         updateCount();
                     });
                 }

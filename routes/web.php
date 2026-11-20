@@ -33,6 +33,7 @@ use App\Http\Controllers\RoomTypeController;
 use App\Http\Controllers\CheckInReportController;
 use App\Http\Controllers\MaktabReportController;
 use App\Http\Controllers\PersonReportController;
+use App\Http\Controllers\CareOfPersonReportController;
 use App\Http\Controllers\FlightReportController;
 use App\Http\Controllers\RoomingListController;
 use App\Http\Controllers\HotelPersonReportController;
@@ -458,6 +459,13 @@ Route::middleware('auth')->group(function () {
                 Route::get('persons', 'index')->name('report.person');
                 Route::get('persons/export-pdf', 'exportPdf')->name('report.person.export-pdf');
                 Route::get('persons/export-excel', 'exportExcel')->name('report.person.export-excel');
+            });
+
+        Route::controller(CareOfPersonReportController::class)
+            ->prefix('reports')->group(function () {
+                Route::get('care-of-person', 'index')->name('report.care-of-person');
+                Route::get('care-of-person/export-pdf', 'exportPdf')->name('report.care-of-person.export-pdf');
+                Route::get('care-of-person/export-excel', 'exportExcel')->name('report.care-of-person.export-excel');
             });
 
         Route::controller(FlightReportController::class)
