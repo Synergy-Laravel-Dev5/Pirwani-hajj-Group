@@ -277,6 +277,172 @@
     const existingItems = @json($sale->items);
     let itemIndex = 0;
 
+    const HIJRI_MONTH_NAMES = {
+        1: 'MUHARRAM', 2: 'SAFAR', 3: 'RABI-I', 4: 'RABI-II',
+        5: 'JAMADI-I', 6: 'JAMADI-II', 7: 'RAJAB', 8: 'SHABAN',
+        9: 'RAMADAN', 10: 'SHAWWAL', 11: 'ZILQAIDA', 12: 'ZILHAJJ'
+    };
+
+    function kuwaitiHijri(year, month, day) {
+        let jd;
+        if ((year > 1582) || ((year === 1582) && (month > 10)) || ((year === 1582) && (month === 10) && (day > 14))) {
+            jd = Math.floor((1461 * (year + 4800 + Math.floor((month - 14) / 12))) / 4) +
+                 Math.floor((367 * (month - 2 - 12 * (Math.floor((month - 14) / 12)))) / 12) -
+                 Math.floor((3 * Math.floor((year + 4900 + Math.floor((month - 14) / 12)) / 100)) / 4) +
+                 day - 32075;
+        } else {
+            jd = 367 * year - Math.floor((7 * (year + 5001 + Math.floor((month - 9) / 7))) / 4) +
+                 Math.floor((275 * month) / 9) + day + 1729777;
+        }
+
+        let l = jd - 1948440 + 10632;
+        const n = Math.floor((l - 1) / 10631);
+        l = l - 10631 * n + 354;
+        const j = Math.floor((10985 - l) / 5316) * Math.floor((50 * l) / 17719) +
+                  Math.floor(l / 5670) * Math.floor((43 * l) / 15238);
+        l = l - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) -
+            Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+        const m = Math.floor((24 * l) / 709);
+        const d = l - Math.floor((709 * m) / 24);
+
+        const dd = String(d).padStart(2, '0');
+        const monthName = HIJRI_MONTH_NAMES[m] || ('M' + m);
+        return `${dd}-${monthName}`;
+    }
+
+    function gregorianToHijri(dateStr) {
+        if (!dateStr) return '';
+        try {
+            const parts = dateStr.trim().split('-');
+            if (parts.length !== 3) return '';
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            const d = parseInt(parts[2], 10);
+            if (isNaN(y) || isNaN(m) || isNaN(d)) return '';
+
+            // 1. Try modern browser Intl API (Saudi Umm Al-Qura)
+            if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+                try {
+                    const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+                    const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', {
+                        day: 'numeric',
+                        month: 'numeric',
+                        year: 'numeric'
+                    });
+                    const fParts = formatter.formatToParts(dateObj);
+                    let hDay = null, hMonth = null;
+                    for (const p of fParts) {
+                        if (p.type === 'day') hDay = parseInt(p.value, 10);
+                        if (p.type === 'month') hMonth = parseInt(p.value, 10);
+                    }
+                    if (hDay && hMonth && HIJRI_MONTH_NAMES[hMonth]) {
+                        const dd = String(hDay).padStart(2, '0');
+                        return `${dd}-${HIJRI_MONTH_NAMES[hMonth]}`;
+                    }
+                } catch (err) {}
+            }
+
+            // 2. Fallback to Kuwaiti mathematical formula
+            return kuwaitiHijri(y, m, d);
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function dateDiffInDays(checkInStr, checkOutStr) {
+        if (!checkInStr || !checkOutStr) return 0;
+        const pIn = checkInStr.trim().split('-');
+        const pOut = checkOutStr.trim().split('-');
+        if (pIn.length !== 3 || pOut.length !== 3) return 0;
+
+        const dIn = new Date(parseInt(pIn[0], 10), parseInt(pIn[1], 10) - 1, parseInt(pIn[2], 10));
+        const dOut = new Date(parseInt(pOut[0], 10), parseInt(pOut[1], 10) - 1, parseInt(pOut[2], 10));
+
+        const diffMs = dOut.getTime() - dIn.getTime();
+        return Math.round(diffMs / (1000 * 60 * 60 * 24));
+    }
+
+    function addDaysToDate(dateStr, days) {
+        if (!dateStr || isNaN(days)) return '';
+        const parts = dateStr.trim().split('-');
+        if (parts.length !== 3) return '';
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        d.setDate(d.getDate() + parseInt(days, 10));
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function recalculateRowAmount(row) {
+        if (!row) return;
+        const qty = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+        const nights = parseFloat(row.querySelector('.nights-input')?.value) || 0;
+        const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
+        const amt = qty * nights * rate;
+        const amtInp = row.querySelector('.amount-input');
+        if (amtInp) {
+            amtInp.value = amt.toFixed(2);
+        }
+        recalcTotals();
+    }
+
+    function handleDateChange(inputElem, dateStr) {
+        const row = inputElem.closest('.item-row');
+        if (!row) return;
+
+        const checkInInp = row.querySelector('.check-in-input');
+        const checkOutInp = row.querySelector('.check-out-input');
+        const hijriInInp = row.querySelector('.hijri-in-input');
+        const hijriOutInp = row.querySelector('.hijri-out-input');
+        const nightsInp = row.querySelector('.nights-input');
+
+        const isCheckIn = inputElem.classList.contains('check-in-input');
+        const isCheckOut = inputElem.classList.contains('check-out-input');
+
+        if (isCheckIn) {
+            if (dateStr) {
+                hijriInInp.value = gregorianToHijri(dateStr);
+            }
+            // If check-out is already chosen, calculate nights from check-out
+            if (checkOutInp && checkOutInp.value) {
+                const diff = dateDiffInDays(dateStr, checkOutInp.value);
+                if (diff > 0) {
+                    nightsInp.value = diff;
+                    recalculateRowAmount(row);
+                }
+            } else if (nightsInp && nightsInp.value && parseInt(nightsInp.value, 10) > 0 && dateStr) {
+                // If check out is not yet chosen, set check-out from nights
+                const newOut = addDaysToDate(dateStr, parseInt(nightsInp.value, 10));
+                if (newOut) {
+                    if (checkOutInp._flatpickr) {
+                        checkOutInp._flatpickr.setDate(newOut, false);
+                    } else {
+                        checkOutInp.value = newOut;
+                    }
+                    hijriOutInp.value = gregorianToHijri(newOut);
+                    recalculateRowAmount(row);
+                }
+            }
+        } else if (isCheckOut) {
+            if (dateStr) {
+                hijriOutInp.value = gregorianToHijri(dateStr);
+            }
+            // Auto calculate nights based on Check-Out!
+            if (checkInInp && checkInInp.value && dateStr) {
+                const diff = dateDiffInDays(checkInInp.value, dateStr);
+                if (diff > 0) {
+                    nightsInp.value = diff;
+                    recalculateRowAmount(row);
+                } else if (diff <= 0) {
+                    alert('Check-Out date must be after Check-In date (' + checkInInp.value + ')');
+                    nightsInp.value = 1;
+                    recalculateRowAmount(row);
+                }
+            }
+        }
+    }
+
     function renderItemRow(data = {}) {
         const idx = itemIndex++;
         const defaultHotel = data.hotel_name || '';
@@ -284,11 +450,19 @@
         const roomType = data.room_type || 'DOUBLE';
         const qty = data.quantity || 1;
         const mp = data.meal_plan || 'HALF BOARD';
-        const hijriIn = data.hijri_check_in || '';
-        const hijriOut = data.hijri_check_out || '';
         const cIn = data.check_in ? (typeof data.check_in === 'string' ? data.check_in.substring(0, 10) : data.check_in) : '';
         const cOut = data.check_out ? (typeof data.check_out === 'string' ? data.check_out.substring(0, 10) : data.check_out) : '';
-        const nights = data.no_of_nights || 1;
+        const hijriIn = data.hijri_check_in || (cIn ? gregorianToHijri(cIn) : '');
+        const hijriOut = data.hijri_check_out || (cOut ? gregorianToHijri(cOut) : '');
+        let nights = data.no_of_nights;
+        if (!nights || nights < 1) {
+            if (cIn && cOut) {
+                const d = dateDiffInDays(cIn, cOut);
+                nights = d > 0 ? d : 1;
+            } else {
+                nights = 1;
+            }
+        }
         const rate = data.rate_per_unit || 0;
         const amount = data.amount || (qty * nights * rate);
 
@@ -360,25 +534,31 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Check-In</label>
-                        <input type="text" name="items[${idx}][hijri_check_in]" class="form-control form-control-sm mb-1 text-primary fw-semibold"
-                            placeholder="Hijri (e.g. 22-ZILQAIDA)" value="${hijriIn}">
-                        <input type="text" name="items[${idx}][check_in]" class="form-control form-control-sm flatpickr-date"
-                            placeholder="Calendar Date" value="${cIn}">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <label class="form-label fs-11 text-muted mb-0 fw-semibold">Check-In</label>
+                            <span class="badge bg-light text-primary border fs-10 py-0 px-1">Hijri &amp; Date</span>
+                        </div>
+                        <input type="text" name="items[${idx}][hijri_check_in]" class="form-control form-control-sm mb-1 text-primary fw-bold hijri-in-input"
+                            placeholder="Hijri (e.g. 22-ZILQAIDA)" value="${hijriIn}" data-row="${idx}">
+                        <input type="text" name="items[${idx}][check_in]" class="form-control form-control-sm check-in-input flatpickr-date"
+                            placeholder="Calendar Date" value="${cIn}" data-row="${idx}">
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Check-Out</label>
-                        <input type="text" name="items[${idx}][hijri_check_out]" class="form-control form-control-sm mb-1 text-primary fw-semibold"
-                            placeholder="Hijri (e.g. 01-ZILHAJJ)" value="${hijriOut}">
-                        <input type="text" name="items[${idx}][check_out]" class="form-control form-control-sm flatpickr-date"
-                            placeholder="Calendar Date" value="${cOut}">
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <label class="form-label fs-11 text-muted mb-0 fw-semibold">Check-Out</label>
+                            <span class="badge bg-light text-primary border fs-10 py-0 px-1">Hijri &amp; Date</span>
+                        </div>
+                        <input type="text" name="items[${idx}][hijri_check_out]" class="form-control form-control-sm mb-1 text-primary fw-bold hijri-out-input"
+                            placeholder="Hijri (e.g. 01-ZILHAJJ)" value="${hijriOut}" data-row="${idx}">
+                        <input type="text" name="items[${idx}][check_out]" class="form-control form-control-sm check-out-input flatpickr-date"
+                            placeholder="Calendar Date" value="${cOut}" data-row="${idx}">
                     </div>
 
                     <div class="col-md-1">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Nights</label>
-                        <input type="number" min="1" name="items[${idx}][no_of_nights]" class="form-control form-control-sm text-center nights-input calc-trigger"
-                            value="${nights}" required data-row="${idx}">
+                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Nights <span class="badge bg-info-subtle text-info border fs-10 py-0">Auto</span></label>
+                        <input type="number" min="1" name="items[${idx}][no_of_nights]" class="form-control form-control-sm text-center fw-bold nights-input calc-trigger"
+                            value="${nights}" required data-row="${idx}" title="Auto calculated from Check-In & Check-Out">
                     </div>
 
                     <div class="col-md-2">
@@ -397,16 +577,32 @@
         `;
 
         document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', html);
-        initFlatpickr();
+        const newRow = document.getElementById(`row_${idx}`);
+        initFlatpickr(newRow);
         recalcTotals();
     }
 
-    function initFlatpickr() {
-        flatpickr(".flatpickr-date", {
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "m/d/Y",
-            allowInput: true
+    function initFlatpickr(scope = document) {
+        const inputs = scope.querySelectorAll('.flatpickr-date');
+        inputs.forEach(inp => {
+            if (inp._flatpickr) return;
+
+            flatpickr(inp, {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "m/d/Y",
+                allowInput: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    inp.value = dateStr;
+                    handleDateChange(inp, dateStr);
+                },
+                onClose: function(selectedDates, dateStr, instance) {
+                    if (dateStr) {
+                        inp.value = dateStr;
+                        handleDateChange(inp, dateStr);
+                    }
+                }
+            });
         });
     }
 
@@ -415,11 +611,14 @@
         document.querySelectorAll('.amount-input').forEach(inp => {
             total += parseFloat(inp.value) || 0;
         });
-        document.getElementById('grandTotalAmount').value = total.toFixed(2);
+        const totalElem = document.getElementById('grandTotalAmount');
+        if (totalElem) totalElem.value = total.toFixed(2);
 
-        const rec = parseFloat(document.getElementById('tillReceived').value) || 0;
+        const recElem = document.getElementById('tillReceived');
+        const rec = parseFloat(recElem ? recElem.value : 0) || 0;
         const bal = Math.max(0, total - rec);
-        document.getElementById('balanceRemaining').value = bal.toFixed(2);
+        const balElem = document.getElementById('balanceRemaining');
+        if (balElem) balElem.value = bal.toFixed(2);
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -478,6 +677,11 @@
         });
 
         container.addEventListener('change', function (e) {
+            // Check-in or Check-out date input changed directly
+            if (e.target.classList.contains('check-in-input') || e.target.classList.contains('check-out-input')) {
+                handleDateChange(e.target, e.target.value);
+            }
+
             if (e.target.classList.contains('hotel-select')) {
                 const rIdx = e.target.getAttribute('data-row');
                 const input = document.getElementById(`hotel_input_${rIdx}`);
@@ -509,16 +713,37 @@
         });
 
         container.addEventListener('input', function (e) {
+            // When nights changed directly, update Check-Out date and Hijri Check-Out automatically
+            if (e.target.classList.contains('nights-input')) {
+                const rIdx = e.target.getAttribute('data-row');
+                const row = document.getElementById(`row_${rIdx}`);
+                if (row) {
+                    const checkInInp = row.querySelector('.check-in-input');
+                    const checkOutInp = row.querySelector('.check-out-input');
+                    const hijriOutInp = row.querySelector('.hijri-out-input');
+                    const nights = parseInt(e.target.value, 10);
+
+                    if (checkInInp && checkInInp.value && nights > 0) {
+                        const newOut = addDaysToDate(checkInInp.value, nights);
+                        if (newOut) {
+                            if (checkOutInp._flatpickr) {
+                                checkOutInp._flatpickr.setDate(newOut, false);
+                            } else {
+                                checkOutInp.value = newOut;
+                            }
+                            if (hijriOutInp) {
+                                hijriOutInp.value = gregorianToHijri(newOut);
+                            }
+                        }
+                    }
+                }
+            }
+
             if (e.target.classList.contains('calc-trigger')) {
                 const rIdx = e.target.getAttribute('data-row');
                 const row = document.getElementById(`row_${rIdx}`);
                 if (row) {
-                    const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-                    const nights = parseFloat(row.querySelector('.nights-input').value) || 0;
-                    const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
-                    const amt = qty * nights * rate;
-                    row.querySelector('.amount-input').value = amt.toFixed(2);
-                    recalcTotals();
+                    recalculateRowAmount(row);
                 }
             } else if (e.target.classList.contains('amount-input')) {
                 recalcTotals();

@@ -215,6 +215,7 @@
                                                 <td class="fw-bold">{{ number_format($bookings->sum('total_amount')) }}</td>
                                                 <td class="fw-bold text-danger">{{ number_format($bookings->sum('balance')) }}</td>
                                                 <td colspan="2"></td>
+                                                
                                             </tr>
                                         </tfoot>
                                     </table>

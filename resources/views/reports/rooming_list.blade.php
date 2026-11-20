@@ -707,27 +707,28 @@
                 </div>
             </div>
 
+            @php
+                $activeLocKey = strtolower(trim(is_array($locationFilter ?? null) ? ($locationFilter[0] ?? 'all') : ($locationFilter ?? 'all')));
+                $activeLocTitle = match($activeLocKey) {
+                    'makkah'  => 'MAKKAH HOTEL ALLOCATION',
+                    'madinah' => 'MADINAH HOTEL ALLOCATION',
+                    'azizia'  => 'AZIZIA BUILDING ALLOCATION',
+                    'mina'    => 'MINA / ARAFAT CAMPS ALLOCATION',
+                    'other'   => 'OTHER / JEDDAH ALLOCATION',
+                    default   => 'ALL LOCATIONS & STAGES (MAKKAH / MADINAH / AZIZIA / MINA)',
+                };
+                $activeLocBadge = match($activeLocKey) {
+                    'makkah'  => 'bg-success text-white',
+                    'madinah' => 'bg-info text-dark',
+                    'azizia'  => 'bg-warning text-dark',
+                    'mina'    => 'bg-dark text-white',
+                    default   => 'bg-primary text-white',
+                };
+            @endphp
+
             {{-- OFFICIAL MANIFEST TABLE VIEW (EXACT MATCH TO PDF) --}}
             @if(($viewMode ?? 'manifest') === 'manifest')
                 <div class="card shadow-sm border-0 mb-4">
-                    @php
-                        $activeLocKey = strtolower(trim($locationFilter ?? 'all'));
-                        $activeLocTitle = match($activeLocKey) {
-                            'makkah'  => 'MAKKAH HOTEL ALLOCATION',
-                            'madinah' => 'MADINAH HOTEL ALLOCATION',
-                            'azizia'  => 'AZIZIA BUILDING ALLOCATION',
-                            'mina'    => 'MINA / ARAFAT CAMPS ALLOCATION',
-                            'other'   => 'OTHER / JEDDAH ALLOCATION',
-                            default   => 'ALL LOCATIONS & STAGES (MAKKAH / MADINAH / AZIZIA / MINA)',
-                        };
-                        $activeLocBadge = match($activeLocKey) {
-                            'makkah'  => 'bg-success text-white',
-                            'madinah' => 'bg-info text-dark',
-                            'azizia'  => 'bg-warning text-dark',
-                            'mina'    => 'bg-dark text-white',
-                            default   => 'bg-primary text-white',
-                        };
-                    @endphp
                     {{-- Prominent Location & Stage Header --}}
                     <div class="px-3 py-2 bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                         <div class="d-flex align-items-center flex-wrap gap-2">
