@@ -327,16 +327,65 @@ class CareOfPersonReportController extends Controller
     }
 
     /**
-     * Export Care of Persons Report as Excel (.xls stream)
+     * Export Care of Persons Report as Excel (.xls stream with pilgrim photos)
      */
     public function exportExcel(Request $request)
     {
         $this->authorize('care_of_report_view');
-        @set_time_limit(180);
+        @set_time_limit(240);
         @ini_set('memory_limit', '512M');
 
         $data = $this->getCareOfReportData($request);
         $grouped = $data['groupedByCareOf'];
+
+        $visibleCols = null;
+        if ($request->has('columns')) {
+            $raw = trim($request->get('columns'));
+            if ($raw === 'none' || $raw === '') {
+                $visibleCols = [];
+            } else {
+                $visibleCols = array_values(array_filter(array_map('trim', explode(',', $raw)), fn($v) => $v !== ''));
+            }
+        }
+
+        $showCol = function ($key) use ($visibleCols) {
+            if ($visibleCols === null) {
+                return true; // Show all columns by default
+            }
+            return in_array($key, $visibleCols);
+        };
+
+        // All column definitions matching Web and PDF report
+        $allCols = [
+            'sr'          => ['label' => '#',                     'width' => '35px',  'align' => 'center'],
+            'picture'     => ['label' => 'PHOTO',                 'width' => '55px',  'align' => 'center'],
+            'hajj-id'     => ['label' => 'HAJJ ID',               'width' => '80px',  'align' => 'center'],
+            'hb'          => ['label' => 'HB NUMBER',             'width' => '75px',  'align' => 'center'],
+            'name'        => ['label' => 'PILGRIM FULL NAME',     'width' => '170px', 'align' => 'left'],
+            'gender'      => ['label' => 'GENDER',                'width' => '70px',  'align' => 'center'],
+            'passport'    => ['label' => 'PASSPORT NO',           'width' => '100px', 'align' => 'center'],
+            'doi'         => ['label' => 'DOI',                   'width' => '85px',  'align' => 'center'],
+            'expiry'      => ['label' => 'EXPIRY',                'width' => '85px',  'align' => 'center'],
+            'cnic'        => ['label' => 'CNIC',                  'width' => '120px', 'align' => 'center'],
+            'phone'       => ['label' => 'PHONE',                 'width' => '105px', 'align' => 'center'],
+            'booking-ref' => ['label' => 'BOOKING REF / CLIENT',  'width' => '160px', 'align' => 'left'],
+            'package'     => ['label' => 'PACKAGE',               'width' => '130px', 'align' => 'left'],
+            'room'        => ['label' => 'ROOM ALLOCATION',       'width' => '120px', 'align' => 'center'],
+            'hotel'       => ['label' => 'HOTEL',                 'width' => '130px', 'align' => 'left'],
+            'camp'        => ['label' => 'MAKTAB / CAMP',         'width' => '110px', 'align' => 'left'],
+        ];
+
+        $activeCols = [];
+        foreach ($allCols as $colKey => $colDef) {
+            if ($showCol($colKey)) {
+                $activeCols[$colKey] = $colDef;
+            }
+        }
+        if (empty($activeCols)) {
+            $activeCols = $allCols;
+        }
+
+        $totalColsCount = count($activeCols);
 
         $careOfSuffix = '';
         if (!empty($data['selectedCareOf']) && $data['selectedCareOf'] !== 'all') {
@@ -345,24 +394,24 @@ class CareOfPersonReportController extends Controller
         $fileName = 'Care_Of_Persons_Report' . $careOfSuffix . '_' . date('Ymd_His') . '.xls';
         $filterSummary = 'Generated: ' . date('d M Y, h:i A') . ' | Care Of: ' . ($data['selectedCareOf'] ?: 'ALL') . ' | Groups: ' . $data['totalCareOfGroups'] . ' | Total Bookings: ' . $data['totalBookings'] . ' | Total Persons: ' . $data['totalPersons'];
 
-        return response()->streamDownload(function () use ($grouped, $filterSummary) {
+        return response()->streamDownload(function () use ($grouped, $filterSummary, $activeCols, $totalColsCount) {
             echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
             echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
             echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Care Of Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
             echo '<style>
                 body { font-family: Arial, sans-serif; }
                 table { border-collapse: collapse; width: 100%; }
-                th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle; height: 30px; font-size: 11px; }
+                th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle; height: 32px; font-size: 11px; }
                 td { border: 1px solid #CBD5E1; vertical-align: middle; padding: 6px; font-size: 11px; }
-                .careof-header { background-color: #0F172A; color: #F8FAFC; font-size: 13px; font-weight: bold; height: 32px; padding-left: 10px; }
+                .careof-header { background-color: #0F172A; color: #F3DC9B; font-size: 13px; font-weight: bold; height: 34px; padding-left: 10px; }
                 .booking-header { background-color: #E2E8F0; color: #0F172A; font-weight: bold; font-size: 11px; height: 26px; }
                 .center { text-align: center; }
                 .gender-male { color: #1E3A8A; font-weight: bold; }
                 .gender-female { color: #9D174D; font-weight: bold; }
             </style></head><body>';
             echo '<table>';
-            echo '<tr><th colspan="14" style="font-size: 16px; height: 38px; background-color: #0F172A; color: #D4AF37; border: none; text-align: center;">PIRWANI HAJJ GROUP - CARE OF PERSONS REPORT & BOOKING DETAILS</th></tr>';
-            echo '<tr><td colspan="14" style="text-align: center; font-style: italic; color: #475569; border: none; height: 24px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
+            echo '<tr><th colspan="' . $totalColsCount . '" style="font-size: 16px; height: 38px; background-color: #0F172A; color: #D4AF37; border: none; text-align: center;">PIRWANI HAJJ GROUP - CARE OF PERSONS REPORT & BOOKING DETAILS</th></tr>';
+            echo '<tr><td colspan="' . $totalColsCount . '" style="text-align: center; font-style: italic; color: #475569; border: none; height: 24px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
 
             foreach ($grouped as $careOfName => $bookings) {
                 $groupPax = $bookings->sum(function ($b) {
@@ -372,8 +421,8 @@ class CareOfPersonReportController extends Controller
                 $groupReceived = $bookings->sum('total_received');
                 $groupBalance = $bookings->sum('balance');
 
-                echo '<tr><td colspan="14" class="careof-header">'
-                    . 'CARE OF: ' . htmlspecialchars($careOfName)
+                echo '<tr><td colspan="' . $totalColsCount . '" class="careof-header">'
+                    . 'CARE OF: ' . htmlspecialchars(strtoupper($careOfName))
                     . ' &nbsp;|&nbsp; Bookings: ' . $bookings->count()
                     . ' &nbsp;|&nbsp; Total Pilgrims: ' . $groupPax
                     . ' &nbsp;|&nbsp; Total Amount: PKR ' . number_format($groupAmount)
@@ -385,35 +434,26 @@ class CareOfPersonReportController extends Controller
                     $clientName = $booking->booking_for === 'company' ? ($booking->company->company_name ?? 'N/A') : ($booking->client->name ?? 'N/A');
                     $voucher = $booking->voucher_number ?: ('UB' . str_pad($booking->id, 6, '0', STR_PAD_LEFT));
                     $pkgName = $booking->package->package_title ?? $booking->package->name ?? $booking->package_name ?? ucfirst($booking->package_type ?? 'N/A');
-                    $campName = $booking->camp ?: 'â€”';
+                    $campName = $booking->camp ?: '—';
 
-                    echo '<tr><td colspan="14" class="booking-header">'
+                    echo '<tr><td colspan="' . $totalColsCount . '" class="booking-header">'
                         . 'Booking #' . ($bIndex + 1) . ' | Ref: ' . htmlspecialchars($voucher)
                         . ' | Client: ' . htmlspecialchars($clientName)
                         . ' | Package: ' . htmlspecialchars($pkgName)
                         . ' | Camp: ' . htmlspecialchars($campName)
                         . ' | Pax: ' . $booking->persons->count()
-                        . ' | Amount: ' . number_format($booking->total_amount)
-                        . ' | Recv: ' . number_format($booking->total_received)
-                        . ' | Bal: ' . number_format($booking->balance)
+                        . ' | Amount: PKR ' . number_format($booking->total_amount)
+                        . ' | Recv: PKR ' . number_format($booking->total_received)
+                        . ' | Bal: PKR ' . number_format($booking->balance)
                         . '</td></tr>';
 
-                    echo '<tr>
-                        <th>#</th>
-                        <th>HAJJ ID</th>
-                        <th>HB NUMBER</th>
-                        <th>FULL NAME</th>
-                        <th>SURNAME / GIVEN</th>
-                        <th>GENDER</th>
-                        <th>PASSPORT NO</th>
-                        <th>DOI</th>
-                        <th>EXPIRY</th>
-                        <th>CNIC</th>
-                        <th>PHONE</th>
-                        <th>ROOM ALLOCATION</th>
-                        <th>HOTEL</th>
-                        <th>MAKTAB / CAMP</th>
-                    </tr>';
+                    // Table Column Headers
+                    echo '<tr>';
+                    foreach ($activeCols as $colKey => $colDef) {
+                        $thAlign = ($colDef['align'] === 'left') ? 'text-align: left; padding-left: 6px;' : 'text-align: center;';
+                        echo '<th style="width: ' . $colDef['width'] . '; ' . $thAlign . '">' . $colDef['label'] . '</th>';
+                    }
+                    echo '</tr>';
 
                     $pIndex = 1;
                     foreach ($booking->persons as $person) {
@@ -421,31 +461,109 @@ class CareOfPersonReportController extends Controller
                         $genderClass = ($gender === 'FEMALE') ? 'gender-female' : 'gender-male';
                         $roomInfo = ($person->room_number ? 'Room ' . $person->room_number : '') . ($person->room_type ? ' (' . $person->room_type . ')' : '');
 
-                        echo '<tr>';
-                        echo '<td class="center">' . $pIndex++ . '</td>';
-                        echo '<td class="center"><strong>' . htmlspecialchars($person->hajj_id ?? 'â€”') . '</strong></td>';
-                        echo '<td class="center">' . htmlspecialchars(\App\Models\BookingPerson::formatHbNumber($person->hb_number) ?: 'â€”') . '</td>';
-                        echo '<td><strong>' . htmlspecialchars($person->full_name ?? 'â€”') . '</strong></td>';
-                        echo '<td>' . htmlspecialchars(trim(($person->surname ?? '') . ' ' . ($person->given_name ?? '')) ?: 'â€”') . '</td>';
-                        echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($person->gender ?? 'â€”') . '</td>';
-                        echo '<td class="center"><strong>' . htmlspecialchars($person->passport_number ?? 'â€”') . '</strong></td>';
-                        echo '<td class="center">' . htmlspecialchars($person->date_of_issue ?: ($person->passport_issue_date ?: 'â€”')) . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($person->passport_expiry_date ?: 'â€”') . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($person->cnic ?: 'â€”') . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($person->phone ?: ($booking->phone ?: 'â€”')) . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($roomInfo ?: 'â€”') . '</td>';
-                        echo '<td>' . htmlspecialchars($person->hotel_name ?? 'â€”') . '</td>';
-                        echo '<td>' . htmlspecialchars($campName) . '</td>';
+                        echo '<tr style="height: 54px;">';
+                        foreach ($activeCols as $colKey => $colDef) {
+                            switch ($colKey) {
+                                case 'sr':
+                                    echo '<td class="center">' . $pIndex++ . '</td>';
+                                    break;
+
+                                case 'picture':
+                                    $photoUrl = null;
+                                    if (!empty($person->photo)) {
+                                        $photoVal = trim($person->photo);
+                                        if (str_starts_with($photoVal, 'http://') || str_starts_with($photoVal, 'https://')) {
+                                            $photoUrl = $photoVal;
+                                        } else {
+                                            $cleanPhoto = ltrim($photoVal, '/\\');
+                                            if (file_exists(public_path($cleanPhoto))) {
+                                                $photoUrl = asset($cleanPhoto);
+                                            } elseif (file_exists($photoVal)) {
+                                                $rel = ltrim(str_replace(public_path(), '', $photoVal), '/\\');
+                                                $photoUrl = asset($rel);
+                                            } else {
+                                                $photoUrl = asset($cleanPhoto);
+                                            }
+                                        }
+                                    }
+
+                                    if ($photoUrl) {
+                                        echo '<td class="center" style="height: 52px; width: 55px; text-align: center; vertical-align: middle; padding: 2px;">'
+                                            . '<img src="' . htmlspecialchars($photoUrl) . '" width="42" height="48" style="width: 42px; height: 48px; object-fit: cover; border-radius: 2px; display: block; margin: 0 auto;" alt="Photo">'
+                                            . '</td>';
+                                    } else {
+                                        echo '<td class="center" style="color: #94a3b8; font-size: 13px;">—</td>';
+                                    }
+                                    break;
+
+                                case 'hajj-id':
+                                    echo '<td class="center"><strong>' . htmlspecialchars($person->hajj_id ?? '—') . '</strong></td>';
+                                    break;
+
+                                case 'hb':
+                                    echo '<td class="center">' . htmlspecialchars(\App\Models\BookingPerson::formatHbNumber($person->hb_number) ?: '—') . '</td>';
+                                    break;
+
+                                case 'name':
+                                    echo '<td><strong>' . htmlspecialchars($person->full_name ?? '—') . '</strong></td>';
+                                    break;
+
+                                case 'gender':
+                                    echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($gender) . '</td>';
+                                    break;
+
+                                case 'passport':
+                                    echo '<td class="center"><strong>' . htmlspecialchars($person->passport_number ?? '—') . '</strong></td>';
+                                    break;
+
+                                case 'doi':
+                                    echo '<td class="center">' . htmlspecialchars($person->date_of_issue ?: ($person->passport_issue_date ?: '—')) . '</td>';
+                                    break;
+
+                                case 'expiry':
+                                    echo '<td class="center">' . htmlspecialchars($person->passport_expiry_date ?: '—') . '</td>';
+                                    break;
+
+                                case 'cnic':
+                                    echo '<td class="center">' . htmlspecialchars($person->cnic ?: '—') . '</td>';
+                                    break;
+
+                                case 'phone':
+                                    echo '<td class="center">' . htmlspecialchars($person->phone ?: ($booking->phone ?: '—')) . '</td>';
+                                    break;
+
+                                case 'booking-ref':
+                                    echo '<td>' . htmlspecialchars($voucher . ' | ' . $clientName) . '</td>';
+                                    break;
+
+                                case 'package':
+                                    echo '<td>' . htmlspecialchars($pkgName) . '</td>';
+                                    break;
+
+                                case 'room':
+                                    echo '<td class="center">' . htmlspecialchars($roomInfo ?: '—') . '</td>';
+                                    break;
+
+                                case 'hotel':
+                                    echo '<td>' . htmlspecialchars($person->hotel_name ?? '—') . '</td>';
+                                    break;
+
+                                case 'camp':
+                                    echo '<td>' . htmlspecialchars($campName) . '</td>';
+                                    break;
+                            }
+                        }
                         echo '</tr>';
                     }
                 }
-                echo '<tr><td colspan="14" style="height: 12px; background-color: #FFFFFF; border: none;"></td></tr>';
+                echo '<tr><td colspan="' . $totalColsCount . '" style="height: 14px; background-color: #FFFFFF; border: none;"></td></tr>';
             }
 
             echo '</table></body></html>';
         }, $fileName, [
             'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 }
