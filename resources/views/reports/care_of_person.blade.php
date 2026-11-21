@@ -810,7 +810,21 @@
                     });
 
                     if (!response.ok) {
-                        throw new Error(`Server returned status: ${response.status} ${response.statusText}`);
+                        let errorMsg = `Server returned status: ${response.status} ${response.statusText}`;
+                        try {
+                            const errJson = await response.json();
+                            if (errJson.error || errJson.message) {
+                                errorMsg += ' - ' + (errJson.error || errJson.message);
+                            }
+                        } catch (e) {
+                            try {
+                                const errTxt = await response.text();
+                                if (errTxt && errTxt.length < 300) {
+                                    errorMsg += ' - ' + errTxt.replace(/<[^>]+>/g, ' ').trim();
+                                }
+                            } catch (e2) {}
+                        }
+                        throw new Error(errorMsg);
                     }
 
                     const blob = await response.blob();
