@@ -855,12 +855,14 @@ class CareOfPersonReportController extends Controller
             echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
             echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Care Of Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
             echo '<style>
+                br { mso-data-placement: same-cell; }
                 body { font-family: Arial, Calibri, sans-serif; font-size: 11px; margin: 0; padding: 0; }
                 table { border-collapse: collapse; table-layout: fixed; width: 100%; }
                 th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000000; text-align: center; vertical-align: middle; height: 28px; font-size: 11px; padding: 4px; }
                 td { border: 1px solid #CBD5E1; vertical-align: middle; padding: 5px; font-size: 11px; }
                 .center { text-align: center; }
                 .fw-bold { font-weight: bold; }
+                .text-cell { mso-number-format: "\@"; }
                 .title-header { background-color: #071527; color: #F3DC9B; font-size: 14px; font-weight: bold; text-align: center; height: 38px; border: 1px solid #000000; }
                 .subtitle-header { background-color: #F8FAFC; color: #475569; font-size: 10px; font-style: italic; text-align: center; height: 22px; border: 1px solid #CBD5E1; }
                 .kpi-th { background-color: #F1F5F9; color: #64748B; font-size: 10px; font-weight: bold; border: 1px solid #CBD5E1; text-align: center; height: 22px; }
@@ -1007,11 +1009,11 @@ class CareOfPersonReportController extends Controller
                                     break;
 
                                 case 'hajj-id':
-                                    echo '<td class="center fw-bold">' . htmlspecialchars($person->hajj_id ?? '—') . '</td>';
+                                    echo '<td class="center fw-bold text-cell">' . htmlspecialchars($person->hajj_id ?? '—') . '</td>';
                                     break;
 
                                 case 'hb':
-                                    echo '<td class="center fw-bold">' . htmlspecialchars($hb ?: '—') . '</td>';
+                                    echo '<td class="center fw-bold text-cell">' . htmlspecialchars($hb ?: '—') . '</td>';
                                     break;
 
                                 case 'name':
@@ -1029,23 +1031,23 @@ class CareOfPersonReportController extends Controller
                                     break;
 
                                 case 'passport':
-                                    echo '<td class="center fw-bold">' . htmlspecialchars($person->passport_number ?? '—') . '</td>';
+                                    echo '<td class="center fw-bold text-cell">' . htmlspecialchars($person->passport_number ?? '—') . '</td>';
                                     break;
 
                                 case 'doi':
-                                    echo '<td class="center">' . htmlspecialchars($doi) . '</td>';
+                                    echo '<td class="center text-cell">' . htmlspecialchars($doi) . '</td>';
                                     break;
 
                                 case 'expiry':
-                                    echo '<td class="center">' . htmlspecialchars($person->passport_expiry_date ?? '—') . '</td>';
+                                    echo '<td class="center text-cell">' . htmlspecialchars($person->passport_expiry_date ?? '—') . '</td>';
                                     break;
 
                                 case 'cnic':
-                                    echo '<td class="center">' . htmlspecialchars($person->cnic ?? '—') . '</td>';
+                                    echo '<td class="center text-cell">' . htmlspecialchars($person->cnic ?? '—') . '</td>';
                                     break;
 
                                 case 'phone':
-                                    echo '<td class="center">' . htmlspecialchars($person->phone ?: ($booking->phone ?? '—')) . '</td>';
+                                    echo '<td class="center text-cell">' . htmlspecialchars($person->phone ?: ($booking->phone ?? '—')) . '</td>';
                                     break;
 
                                 case 'booking-ref':
