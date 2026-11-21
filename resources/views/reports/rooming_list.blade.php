@@ -3288,7 +3288,7 @@
                 const blob = await response.blob();
                 
                 // Get filename from header if available
-                let filename = (type === 'pdf') ? 'Official_Rooming_List_Manifest.pdf' : 'Official_Rooming_List_Manifest.xls';
+                let filename = (type === 'pdf') ? 'Official_Rooming_List_Manifest.pdf' : 'Official_Rooming_List_Manifest.xlsx';
                 const disposition = response.headers.get('content-disposition');
                 if (disposition && disposition.indexOf('filename=') !== -1) {
                     const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);

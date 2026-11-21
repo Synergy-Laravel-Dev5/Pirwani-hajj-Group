@@ -132,10 +132,36 @@ class HotelSaleController extends Controller
                     continue;
                 }
 
+                $checkIn = !empty($item['check_in']) ? date('Y-m-d', strtotime($item['check_in'])) : null;
+                $checkOut = !empty($item['check_out']) ? date('Y-m-d', strtotime($item['check_out'])) : null;
+
+                // Calculate nights from check-in & check-out dates
+                $nights = intval($item['no_of_nights'] ?? 0);
+                if ($checkIn && $checkOut) {
+                    $diffDays = (int)round((strtotime($checkOut) - strtotime($checkIn)) / 86400);
+                    if ($diffDays > 0) {
+                        $nights = $diffDays;
+                    }
+                }
+                $nights = max(1, $nights);
+
+                // Auto populate Hijri dates if not explicitly provided
+                $hijriIn = !empty($item['hijri_check_in']) ? trim($item['hijri_check_in']) : null;
+                if (empty($hijriIn) && $checkIn) {
+                    $hijriIn = HotelSale::gregorianToHijri($checkIn);
+                }
+
+                $hijriOut = !empty($item['hijri_check_out']) ? trim($item['hijri_check_out']) : null;
+                if (empty($hijriOut) && $checkOut) {
+                    $hijriOut = HotelSale::gregorianToHijri($checkOut);
+                }
+
                 $qty = max(1, intval($item['quantity'] ?? 1));
-                $nights = max(1, intval($item['no_of_nights'] ?? 1));
                 $rate = floatval($item['rate_per_unit'] ?? 0);
                 $amount = floatval($item['amount'] ?? ($qty * $nights * $rate));
+                if ($amount <= 0 && $rate > 0) {
+                    $amount = $qty * $nights * $rate;
+                }
 
                 $totalAmount += $amount;
 
@@ -148,10 +174,10 @@ class HotelSaleController extends Controller
                     'male_beds'       => intval($item['male_beds'] ?? 0),
                     'female_beds'     => intval($item['female_beds'] ?? 0),
                     'meal_plan'       => strtoupper(trim($item['meal_plan'] ?? 'HALF BOARD')),
-                    'check_in'        => !empty($item['check_in']) ? date('Y-m-d', strtotime($item['check_in'])) : null,
-                    'check_out'       => !empty($item['check_out']) ? date('Y-m-d', strtotime($item['check_out'])) : null,
-                    'hijri_check_in'  => !empty($item['hijri_check_in']) ? trim($item['hijri_check_in']) : null,
-                    'hijri_check_out' => !empty($item['hijri_check_out']) ? trim($item['hijri_check_out']) : null,
+                    'check_in'        => $checkIn,
+                    'check_out'       => $checkOut,
+                    'hijri_check_in'  => $hijriIn,
+                    'hijri_check_out' => $hijriOut,
                     'no_of_nights'    => $nights,
                     'rate_per_unit'   => $rate,
                     'amount'          => $amount,
@@ -257,10 +283,36 @@ class HotelSaleController extends Controller
                     continue;
                 }
 
+                $checkIn = !empty($item['check_in']) ? date('Y-m-d', strtotime($item['check_in'])) : null;
+                $checkOut = !empty($item['check_out']) ? date('Y-m-d', strtotime($item['check_out'])) : null;
+
+                // Calculate nights from check-in & check-out dates
+                $nights = intval($item['no_of_nights'] ?? 0);
+                if ($checkIn && $checkOut) {
+                    $diffDays = (int)round((strtotime($checkOut) - strtotime($checkIn)) / 86400);
+                    if ($diffDays > 0) {
+                        $nights = $diffDays;
+                    }
+                }
+                $nights = max(1, $nights);
+
+                // Auto populate Hijri dates if not explicitly provided
+                $hijriIn = !empty($item['hijri_check_in']) ? trim($item['hijri_check_in']) : null;
+                if (empty($hijriIn) && $checkIn) {
+                    $hijriIn = HotelSale::gregorianToHijri($checkIn);
+                }
+
+                $hijriOut = !empty($item['hijri_check_out']) ? trim($item['hijri_check_out']) : null;
+                if (empty($hijriOut) && $checkOut) {
+                    $hijriOut = HotelSale::gregorianToHijri($checkOut);
+                }
+
                 $qty = max(1, intval($item['quantity'] ?? 1));
-                $nights = max(1, intval($item['no_of_nights'] ?? 1));
                 $rate = floatval($item['rate_per_unit'] ?? 0);
                 $amount = floatval($item['amount'] ?? ($qty * $nights * $rate));
+                if ($amount <= 0 && $rate > 0) {
+                    $amount = $qty * $nights * $rate;
+                }
 
                 $totalAmount += $amount;
 
@@ -273,10 +325,10 @@ class HotelSaleController extends Controller
                     'male_beds'       => intval($item['male_beds'] ?? 0),
                     'female_beds'     => intval($item['female_beds'] ?? 0),
                     'meal_plan'       => strtoupper(trim($item['meal_plan'] ?? 'HALF BOARD')),
-                    'check_in'        => !empty($item['check_in']) ? date('Y-m-d', strtotime($item['check_in'])) : null,
-                    'check_out'       => !empty($item['check_out']) ? date('Y-m-d', strtotime($item['check_out'])) : null,
-                    'hijri_check_in'  => !empty($item['hijri_check_in']) ? trim($item['hijri_check_in']) : null,
-                    'hijri_check_out' => !empty($item['hijri_check_out']) ? trim($item['hijri_check_out']) : null,
+                    'check_in'        => $checkIn,
+                    'check_out'       => $checkOut,
+                    'hijri_check_in'  => $hijriIn,
+                    'hijri_check_out' => $hijriOut,
                     'no_of_nights'    => $nights,
                     'rate_per_unit'   => $rate,
                     'amount'          => $amount,

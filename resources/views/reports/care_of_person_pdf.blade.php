@@ -83,6 +83,7 @@
             border-collapse: collapse;
             margin-bottom: 6px;
             page-break-inside: auto;
+            table-layout: fixed;
         }
         .manifest-table th {
             background-color: #f1f5f9;
@@ -91,15 +92,19 @@
             font-weight: bold;
             text-align: center;
             vertical-align: middle;
-            padding: 4px 3px;
+            padding: 4px 2px;
             border: 1px solid #000;
             text-transform: uppercase;
+            overflow: hidden;
         }
         .manifest-table td {
-            padding: 3px 3px;
+            padding: 3px 2px;
             vertical-align: middle;
             font-size: 8px;
             border: 0.75px solid #000;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow: hidden;
         }
         .haji-photo {
             width: 26px;
@@ -160,6 +165,40 @@
             }
             return in_array($key, $visibleColumns);
         };
+
+        // Proportional column weights so columns dynamically scale to 100% with no empty space gap
+        $colWeights = [
+            'sr'          => 4,
+            'picture'     => 6,
+            'hajj-id'     => 9,
+            'hb'          => 9,
+            'name'        => 24,
+            'gender'      => 8,
+            'passport'    => 12,
+            'doi'         => 9,
+            'expiry'      => 9,
+            'cnic'        => 12,
+            'phone'       => 11,
+            'booking-ref' => 13,
+            'package'     => 13,
+            'room'        => 9,
+            'hotel'       => 11,
+            'camp'        => 9,
+        ];
+
+        $totalActiveWeight = 0;
+        $activeColCount = 0;
+        foreach ($colWeights as $colK => $w) {
+            if ($showCol($colK)) {
+                $totalActiveWeight += $w;
+                $activeColCount++;
+            }
+        }
+
+        $getColWidth = function($key) use ($colWeights, $totalActiveWeight) {
+            if ($totalActiveWeight <= 0 || !isset($colWeights[$key])) return 'auto';
+            return round(($colWeights[$key] / $totalActiveWeight) * 100, 1) . '%';
+        };
     @endphp
 
     @foreach($groupedByCareOf as $careOfName => $bookings)
@@ -188,22 +227,22 @@
         <table class="manifest-table">
             <thead>
                 <tr>
-                    @if($showCol('sr')) <th style="width: 20px;">#</th> @endif
-                    @if($showCol('picture')) <th style="width: 28px;">PHOTO</th> @endif
-                    @if($showCol('hajj-id')) <th style="width: 55px;">HAJJ ID</th> @endif
-                    @if($showCol('hb')) <th style="width: 50px;">HB #</th> @endif
-                    @if($showCol('name')) <th style="text-align: left;">PILGRIM NAME</th> @endif
-                    @if($showCol('gender')) <th style="width: 40px;">GENDER</th> @endif
-                    @if($showCol('passport')) <th style="width: 65px;">PASSPORT</th> @endif
-                    @if($showCol('doi')) <th style="width: 55px;">DOI</th> @endif
-                    @if($showCol('expiry')) <th style="width: 55px;">EXPIRY</th> @endif
-                    @if($showCol('cnic')) <th style="width: 75px;">CNIC</th> @endif
-                    @if($showCol('phone')) <th style="width: 70px;">PHONE</th> @endif
-                    @if($showCol('booking-ref')) <th style="width: 80px;">BOOKING REF</th> @endif
-                    @if($showCol('package')) <th style="width: 75px;">PACKAGE</th> @endif
-                    @if($showCol('room')) <th style="width: 70px;">ROOM</th> @endif
-                    @if($showCol('hotel')) <th style="width: 70px;">HOTEL</th> @endif
-                    @if($showCol('camp')) <th style="width: 65px;">CAMP</th> @endif
+                    @if($showCol('sr')) <th style="width: {{ $getColWidth('sr') }};">#</th> @endif
+                    @if($showCol('picture')) <th style="width: {{ $getColWidth('picture') }};">PHOTO</th> @endif
+                    @if($showCol('hajj-id')) <th style="width: {{ $getColWidth('hajj-id') }};">HAJJ ID</th> @endif
+                    @if($showCol('hb')) <th style="width: {{ $getColWidth('hb') }};">HB #</th> @endif
+                    @if($showCol('name')) <th style="width: {{ $getColWidth('name') }}; text-align: left; padding-left: 4px;">PILGRIM NAME</th> @endif
+                    @if($showCol('gender')) <th style="width: {{ $getColWidth('gender') }};">GENDER</th> @endif
+                    @if($showCol('passport')) <th style="width: {{ $getColWidth('passport') }};">PASSPORT</th> @endif
+                    @if($showCol('doi')) <th style="width: {{ $getColWidth('doi') }};">DOI</th> @endif
+                    @if($showCol('expiry')) <th style="width: {{ $getColWidth('expiry') }};">EXPIRY</th> @endif
+                    @if($showCol('cnic')) <th style="width: {{ $getColWidth('cnic') }};">CNIC</th> @endif
+                    @if($showCol('phone')) <th style="width: {{ $getColWidth('phone') }};">PHONE</th> @endif
+                    @if($showCol('booking-ref')) <th style="width: {{ $getColWidth('booking-ref') }};">BOOKING REF</th> @endif
+                    @if($showCol('package')) <th style="width: {{ $getColWidth('package') }};">PACKAGE</th> @endif
+                    @if($showCol('room')) <th style="width: {{ $getColWidth('room') }};">ROOM</th> @endif
+                    @if($showCol('hotel')) <th style="width: {{ $getColWidth('hotel') }};">HOTEL</th> @endif
+                    @if($showCol('camp')) <th style="width: {{ $getColWidth('camp') }};">CAMP</th> @endif
                 </tr>
             </thead>
             <tbody>
@@ -269,7 +308,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="16" class="center" style="padding: 5px;">No pilgrims found for this Care of person.</td>
+                        <td colspan="{{ max(1, $activeColCount) }}" class="center" style="padding: 5px;">No pilgrims found for this Care of person.</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -145,91 +145,54 @@ class RoomingListController extends Controller
         $unassignedPilgrimsCount = $data['unassignedPilgrimsCount'] ?? 0;
         $totalBedsOccupied = $data['totalBedsOccupied'] ?? 0;
 
-        // Unified Excel file name (.xls extension for universal compatibility across older and newer Excel versions)
-        $fileName = $baseFilePart . '.xls';
+        // Unified Excel file name (.xlsx extension for standard OpenXML format)
+        $fileName = $baseFilePart . '.xlsx';
 
-        // Check if PhpSpreadsheet is available. If unavailable, stream clean HTML table format with photos
+        // Check if PhpSpreadsheet is available. If unavailable, stream clean UTF-8 CSV format
         if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
+            $csvFileName = str_replace(['.xlsx', '.xls'], '.csv', $fileName);
             return response()->streamDownload(function () use ($groupedRooms, $filterSummary, $roomTypeSummary, $roomTypeSummaryGrand, $totalAssignedRoomsCount, $unassignedPilgrimsCount, $totalBedsOccupied) {
-                echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-                echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
-                echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Rooming Manifest</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
-                echo '<style>
-                    body { font-family: Arial, sans-serif; }
-                    table { border-collapse: collapse; width: 100%; }
-                    th { background-color: #1E293B; color: #FFFFFF; font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle; height: 35px; }
-                    td { border: 1px solid #CBD5E1; vertical-align: middle; padding: 6px; }
-                    .center { text-align: center; }
-                    .room-no { font-weight: bold; color: #DC2626; font-size: 14px; text-align: center; }
-                    .gender-male { color: #1E3A8A; font-weight: bold; }
-                    .gender-female { color: #9D174D; font-weight: bold; }
-                    .room-divider { border-top: 2px solid #000000 !important; }
-                </style></head><body>';
-                echo '<table>';
-                echo '<tr><th colspan="25" style="font-size: 16px; height: 40px; background-color: #F8FAFC; color: #1E293B; border: none;">PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT</th></tr>';
-                echo '<tr><td colspan="25" style="text-align: center; font-style: italic; color: #64748B; border: none; height: 25px;">' . htmlspecialchars($filterSummary) . '</td></tr>';
-                echo '</table>';
+                $out = fopen('php://output', 'w');
+                // UTF-8 BOM so Excel opens Urdu/Arabic/English correctly without encoding issues
+                fwrite($out, "\xEF\xBB\xBF");
+
+                // Title Block
+                fputcsv($out, ['PIRWANI HAJJ GROUP - OFFICIAL ROOMING LIST & MANIFEST REPORT']);
+                fputcsv($out, [$filterSummary]);
+                fputcsv($out, []);
 
                 // Room Type Breakdown Summary Table
                 if (!empty($roomTypeSummary)) {
-                    echo '<br><table style="width: auto; border: 1.5px solid #000; margin-bottom: 15px;">';
-                    echo '<tr><th colspan="5" style="background-color: #0F172A; color: #FFFFFF; font-size: 12px; text-align: left; padding: 6px;">ROOM TYPE BREAKDOWN SUMMARY</th></tr>';
-                    echo '<tr style="background-color: #1E293B; color: #FFFFFF;">
-                        <th style="padding: 5px; text-align: left;">ROOM CATEGORY</th>
-                        <th style="padding: 5px; text-align: center;">ALLOCATED ROOMS</th>
-                        <th style="padding: 5px; text-align: center;">ALLOCATED PAX</th>
-                        <th style="padding: 5px; text-align: center;">PENDING PAX</th>
-                        <th style="padding: 5px; text-align: center; background-color: #1E3A8A;">TOTAL PILGRIMS (PAX)</th>
-                    </tr>';
+                    fputcsv($out, ['ROOM TYPE BREAKDOWN SUMMARY']);
+                    fputcsv($out, ['ROOM CATEGORY', 'ALLOCATED ROOMS', 'ALLOCATED PAX', 'PENDING PAX', 'TOTAL PILGRIMS (PAX)']);
                     foreach ($roomTypeSummary as $key => $sum) {
                         if (($sum['total_pax'] ?? 0) > 0 || ($sum['assigned_rooms'] ?? 0) > 0) {
-                            echo '<tr>';
-                            echo '<td style="font-weight: bold; padding: 4px 6px;">' . htmlspecialchars($sum['name'] ?? $key) . '</td>';
-                            echo '<td style="text-align: center;">' . ($sum['assigned_rooms'] ?? 0) . '</td>';
-                            echo '<td style="text-align: center;">' . ($sum['assigned_pax'] ?? 0) . '</td>';
-                            echo '<td style="text-align: center;">' . ($sum['pending_pax'] ?? 0) . '</td>';
-                            echo '<td style="text-align: center; font-weight: bold; background-color: #EFF6FF;">' . ($sum['total_pax'] ?? 0) . '</td>';
-                            echo '</tr>';
+                            fputcsv($out, [
+                                $sum['name'] ?? $key,
+                                $sum['assigned_rooms'] ?? 0,
+                                $sum['assigned_pax'] ?? 0,
+                                $sum['pending_pax'] ?? 0,
+                                $sum['total_pax'] ?? 0,
+                            ]);
                         }
                     }
-                    echo '<tr style="background-color: #E2E8F0; font-weight: bold; border-top: 2px solid #000;">
-                        <td style="padding: 5px 6px;">GRAND TOTAL</td>
-                        <td style="text-align: center;">' . $totalAssignedRoomsCount . '</td>
-                        <td style="text-align: center;">' . ($roomTypeSummaryGrand['assigned_pax'] ?? 0) . '</td>
-                        <td style="text-align: center;">' . $unassignedPilgrimsCount . '</td>
-                        <td style="text-align: center; background-color: #DBEAFE;">' . $totalBedsOccupied . '</td>
-                    </tr>';
-                    echo '</table><br>';
+                    fputcsv($out, [
+                        'GRAND TOTAL',
+                        $totalAssignedRoomsCount,
+                        $roomTypeSummaryGrand['assigned_pax'] ?? 0,
+                        $unassignedPilgrimsCount,
+                        $totalBedsOccupied,
+                    ]);
+                    fputcsv($out, []);
                 }
 
-                echo '<table>';
-                echo '<tr>
-                    <th>SR</th>
-                    <th>PICTURE</th>
-                    <th>HAJJ ID</th>
-                    <th>HB NUMBER</th>
-                    <th>PASSPORT NO</th>
-                    <th>DATE OF ISSUE</th>
-                    <th>PASSPORT EXPIRY</th>
-                    <th>PILGRIM FULL NAME</th>
-                    <th>GIVEN NAME</th>
-                    <th>SURNAME</th>
-                    <th>GENDER</th>
-                    <th>LOCATION</th>
-                    <th>HOTEL / BUILDING</th>
-                    <th>ROOM TYPE</th>
-                    <th>ROOM NUMBER</th>
-                    <th>TOTAL BEDS</th>
-                    <th>OCCUPIED</th>
-                    <th>AVAILABLE</th>
-                    <th>ROOM GENDER</th>
-                    <th>BOOKING REF</th>
-                    <th>CLIENT / AGENT</th>
-                    <th>PHONE</th>
-                    <th>CHECK IN</th>
-                    <th>CHECK OUT</th>
-                    <th>ROOM NOTES</th>
-                </tr>';
+                // Manifest Headers
+                fputcsv($out, [
+                    'SR', 'HAJJ ID', 'HB NUMBER', 'PASSPORT NO', 'DATE OF ISSUE', 'PASSPORT EXPIRY',
+                    'PILGRIM FULL NAME', 'GIVEN NAME', 'SURNAME', 'GENDER', 'LOCATION', 'HOTEL / BUILDING',
+                    'ROOM TYPE', 'ROOM NUMBER', 'TOTAL BEDS', 'OCCUPIED', 'AVAILABLE', 'ROOM GENDER',
+                    'BOOKING REF', 'CLIENT / AGENT', 'PHONE', 'CHECK IN', 'CHECK OUT', 'ROOM NOTES'
+                ]);
 
                 $sr = 1;
                 foreach ($groupedRooms as $room) {
@@ -240,84 +203,49 @@ class RoomingListController extends Controller
                     $roomTypeExp = (!empty($room['is_assigned']) && !empty($room['room_type'])) ? $room['room_type'] : '—';
 
                     if (empty($room['occupants'])) {
-                        echo '<tr class="room-divider">';
-                        echo '<td class="center">' . ($sr++) . '</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td><em>(Empty Room)</em></td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
-                        echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($roomTypeExp) . '</td>';
-                        echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
-                        echo '<td class="center">' . $room['total_capacity'] . '</td>';
-                        echo '<td class="center">0</td>';
-                        echo '<td class="center">' . $room['total_capacity'] . '</td>';
-                        echo '<td class="center">' . htmlspecialchars($room['room_gender'] ?? 'Any') . '</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">—</td>';
-                        echo '<td class="center">' . ($room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—') . '</td>';
-                        echo '<td class="center">' . ($room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—') . '</td>';
-                        echo '<td>' . htmlspecialchars($room['notes'] ?? '') . '</td>';
-                        echo '</tr>';
+                        fputcsv($out, [
+                            $sr++, '—', '—', '—', '—', '—', '(Empty Room)', '—', '—', '—',
+                            $locLabel, $room['hotel_name'], $roomTypeExp, $roomDisplayNo,
+                            $room['total_capacity'], 0, $room['total_capacity'], $room['room_gender'] ?? 'Any',
+                            '—', '—', '—',
+                            $room['check_in_min'] ? date('d M Y', strtotime($room['check_in_min'])) : '—',
+                            $room['check_out_max'] ? date('d M Y', strtotime($room['check_out_max'])) : '—',
+                            $room['notes'] ?? ''
+                        ]);
                     } else {
-                        foreach ($room['occupants'] as $occIdx => $occ) {
-                            $isTop = ($occIdx === 0) ? ' class="room-divider"' : '';
-                            $occGender = strtoupper($occ['gender'] ?? 'MALE');
-                            $genderClass = ($occGender === 'FEMALE') ? 'gender-female' : 'gender-male';
-
-                            $photoUrl = null;
-                            if (!empty($occ['photo'])) {
-                                $rawPhoto = ltrim($occ['photo'], '/\\');
-                                if (file_exists(public_path($rawPhoto))) {
-                                    $photoUrl = asset($rawPhoto);
-                                }
-                            }
-
-                            echo '<tr' . $isTop . '>';
-                            echo '<td class="center">' . ($sr++) . '</td>';
-                            if ($photoUrl) {
-                                echo '<td class="center" style="height: 52px;"><img src="' . htmlspecialchars($photoUrl) . '" width="42" height="48" style="object-fit: cover; border-radius: 3px;"></td>';
-                            } else {
-                                echo '<td class="center">—</td>';
-                            }
-                            echo '<td class="center">' . htmlspecialchars(!empty($occ['hajj_id']) ? $occ['hajj_id'] : '—') . '</td>';
-                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars(!empty($occ['hb_number']) ? $occ['hb_number'] : '—') . '</td>';
-                            echo '<td class="center" style="font-weight: bold;">' . htmlspecialchars($occ['passport'] ?? '—') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['date_of_issue'] ?? '—') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['passport_expiry_date'] ?? '—') . '</td>';
-                            echo '<td><strong>' . htmlspecialchars($occ['name'] ?? '—') . '</strong></td>';
-                            echo '<td>' . htmlspecialchars($occ['given_name'] ?? '—') . '</td>';
-                            echo '<td>' . htmlspecialchars($occ['surname'] ?? '—') . '</td>';
-                            echo '<td class="center ' . $genderClass . '">' . htmlspecialchars($occGender) . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($locLabel) . '</td>';
-                            echo '<td>' . htmlspecialchars($room['hotel_name']) . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($roomTypeExp) . '</td>';
-                            echo '<td class="room-no">' . htmlspecialchars($roomDisplayNo) . '</td>';
-                            echo '<td class="center">' . $room['total_capacity'] . '</td>';
-                            echo '<td class="center">' . $room['occupied_beds'] . '</td>';
-                            echo '<td class="center">' . $room['available_beds'] . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($room['room_gender'] ?? 'Any') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['booking_number'] ?? '—') . '</td>';
-                            echo '<td>' . htmlspecialchars($occ['client_name'] ?? '—') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['phone'] ?? '—') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['check_in'] ?? '—') . '</td>';
-                            echo '<td class="center">' . htmlspecialchars($occ['check_out'] ?? '—') . '</td>';
-                            echo '<td>' . htmlspecialchars($room['notes'] ?? '') . '</td>';
-                            echo '</tr>';
+                        foreach ($room['occupants'] as $occ) {
+                            fputcsv($out, [
+                                $sr++,
+                                !empty($occ['hajj_id']) ? $occ['hajj_id'] : '—',
+                                !empty($occ['hb_number']) ? $occ['hb_number'] : '—',
+                                $occ['passport'] ?? '—',
+                                $occ['date_of_issue'] ?? '—',
+                                $occ['passport_expiry_date'] ?? '—',
+                                $occ['name'] ?? '—',
+                                $occ['given_name'] ?? '—',
+                                $occ['surname'] ?? '—',
+                                strtoupper($occ['gender'] ?? 'MALE'),
+                                $locLabel,
+                                $room['hotel_name'],
+                                $roomTypeExp,
+                                $roomDisplayNo,
+                                $room['total_capacity'],
+                                $room['occupied_beds'],
+                                $room['available_beds'],
+                                $room['room_gender'] ?? 'Any',
+                                $occ['booking_number'] ?? '—',
+                                $occ['client_name'] ?? '—',
+                                $occ['phone'] ?? '—',
+                                $occ['check_in'] ?? '—',
+                                $occ['check_out'] ?? '—',
+                                $room['notes'] ?? ''
+                            ]);
                         }
                     }
                 }
-                echo '</table></body></html>';
-            }, $fileName, [
-                'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
+                fclose($out);
+            }, $csvFileName, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
                 'Cache-Control' => 'max-age=0',
             ]);
         }
@@ -623,12 +551,12 @@ class RoomingListController extends Controller
             }
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $fileName, [
-            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Cache-Control' => 'max-age=0',
         ]);
     }

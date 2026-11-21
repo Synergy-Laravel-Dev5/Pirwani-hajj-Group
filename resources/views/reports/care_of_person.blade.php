@@ -817,7 +817,7 @@
 
                     // Get filename from header if available
                     let filename = (type === 'pdf') ? 'Care_Of_Persons_Report.pdf' :
-                        'Care_Of_Persons_Report.xls';
+                        'Care_Of_Persons_Report.xlsx';
                     const disposition = response.headers.get('content-disposition');
                     if (disposition && disposition.indexOf('filename=') !== -1) {
                         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
