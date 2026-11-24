@@ -231,6 +231,8 @@
                                                     <strong>{{ $item->hotel_name }}</strong>:
                                                     @if($item->allotment_basis === 'bed' || strtoupper($item->room_type) === 'BED')
                                                         <span class="badge bg-soft-warning text-warning border">BED: {{ $item->quantity }} Beds</span>
+                                                    @elseif($item->allotment_basis === 'per_night')
+                                                        <span class="badge bg-soft-info text-info border">{{ $item->room_type }}: {{ $item->quantity }} (Per Night)</span>
                                                     @else
                                                         <span class="badge bg-soft-success text-success border">{{ $item->room_type }}: {{ $item->quantity }} Rooms</span>
                                                     @endif

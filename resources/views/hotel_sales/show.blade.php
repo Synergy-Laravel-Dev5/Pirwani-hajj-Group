@@ -330,7 +330,7 @@
                     <th style="width: 12%;">Check In</th>
                     <th style="width: 12%;">Check Out</th>
                     <th style="width: 7%;">NIGHTS</th>
-                    <th style="width: 14%;">RATE PER {{ $sale->items->contains('allotment_basis', 'bed') ? 'UNIT' : 'ROOM' }}</th>
+                    <th style="width: 14%;">RATE PER {{ ($sale->items->contains('allotment_basis', 'bed') || $sale->items->contains('allotment_basis', 'per_night')) ? 'UNIT' : 'ROOM' }}</th>
                     <th style="width: 12%;">AMOUNT ({{ $sale->currency }})</th>
                 </tr>
             </thead>
@@ -351,6 +351,9 @@
                                 <span class="badge bg-warning text-dark border">BED</span>
                             @else
                                 {{ strtoupper($item->room_type) }}
+                                @if($item->allotment_basis === 'per_night')
+                                    <span class="badge bg-info text-dark ms-1" style="font-size: 9px;">PER NIGHT</span>
+                                @endif
                             @endif
                         </td>
                         <td class="text-center fw-bold">{{ $item->quantity }}</td>

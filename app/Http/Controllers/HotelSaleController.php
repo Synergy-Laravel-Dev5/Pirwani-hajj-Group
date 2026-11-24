@@ -156,20 +156,44 @@ class HotelSaleController extends Controller
                     $hijriOut = HotelSale::gregorianToHijri($checkOut);
                 }
 
+                $allotmentBasis = strtolower(trim($item['allotment_basis'] ?? 'room'));
+                if (!in_array($allotmentBasis, ['room', 'bed', 'per_night'])) {
+                    $allotmentBasis = 'room';
+                }
+
                 $qty = max(1, intval($item['quantity'] ?? 1));
                 $rate = floatval($item['rate_per_unit'] ?? 0);
-                $amount = floatval($item['amount'] ?? ($qty * $nights * $rate));
+
+                if ($allotmentBasis === 'per_night') {
+                    $calculatedAmount = $qty * $nights * $rate;
+                } else {
+                    // 'room' or 'bed' basis: Total stay/contract rate, does not multiply by nights
+                    $calculatedAmount = $qty * $rate;
+                }
+
+                $amount = floatval($item['amount'] ?? $calculatedAmount);
                 if ($amount <= 0 && $rate > 0) {
-                    $amount = $qty * $nights * $rate;
+                    $amount = $calculatedAmount;
                 }
 
                 $totalAmount += $amount;
 
+                // Handle room_type (array if multi-select, or string)
+                $rawRoomType = $item['room_type'] ?? 'DOUBLE';
+                if (is_array($rawRoomType)) {
+                    $roomTypeStr = implode(', ', array_filter(array_map('trim', $rawRoomType)));
+                } else {
+                    $roomTypeStr = trim($rawRoomType);
+                }
+                if (empty($roomTypeStr)) {
+                    $roomTypeStr = ($allotmentBasis === 'bed') ? 'BED' : 'DOUBLE';
+                }
+
                 $itemsData[] = [
                     'hotel_id'        => !empty($item['hotel_id']) ? $item['hotel_id'] : null,
                     'hotel_name'      => trim($item['hotel_name']),
-                    'allotment_basis' => $item['allotment_basis'] ?? 'room',
-                    'room_type'       => strtoupper(trim($item['room_type'] ?? 'DOUBLE')),
+                    'allotment_basis' => $allotmentBasis,
+                    'room_type'       => strtoupper(trim($roomTypeStr)),
                     'quantity'        => $qty,
                     'male_beds'       => intval($item['male_beds'] ?? 0),
                     'female_beds'     => intval($item['female_beds'] ?? 0),
@@ -307,20 +331,44 @@ class HotelSaleController extends Controller
                     $hijriOut = HotelSale::gregorianToHijri($checkOut);
                 }
 
+                $allotmentBasis = strtolower(trim($item['allotment_basis'] ?? 'room'));
+                if (!in_array($allotmentBasis, ['room', 'bed', 'per_night'])) {
+                    $allotmentBasis = 'room';
+                }
+
                 $qty = max(1, intval($item['quantity'] ?? 1));
                 $rate = floatval($item['rate_per_unit'] ?? 0);
-                $amount = floatval($item['amount'] ?? ($qty * $nights * $rate));
+
+                if ($allotmentBasis === 'per_night') {
+                    $calculatedAmount = $qty * $nights * $rate;
+                } else {
+                    // 'room' or 'bed' basis: Total stay/contract rate, does not multiply by nights
+                    $calculatedAmount = $qty * $rate;
+                }
+
+                $amount = floatval($item['amount'] ?? $calculatedAmount);
                 if ($amount <= 0 && $rate > 0) {
-                    $amount = $qty * $nights * $rate;
+                    $amount = $calculatedAmount;
                 }
 
                 $totalAmount += $amount;
 
+                // Handle room_type (array if multi-select, or string)
+                $rawRoomType = $item['room_type'] ?? 'DOUBLE';
+                if (is_array($rawRoomType)) {
+                    $roomTypeStr = implode(', ', array_filter(array_map('trim', $rawRoomType)));
+                } else {
+                    $roomTypeStr = trim($rawRoomType);
+                }
+                if (empty($roomTypeStr)) {
+                    $roomTypeStr = ($allotmentBasis === 'bed') ? 'BED' : 'DOUBLE';
+                }
+
                 $itemsData[] = [
                     'hotel_id'        => !empty($item['hotel_id']) ? $item['hotel_id'] : null,
                     'hotel_name'      => trim($item['hotel_name']),
-                    'allotment_basis' => $item['allotment_basis'] ?? 'room',
-                    'room_type'       => strtoupper(trim($item['room_type'] ?? 'DOUBLE')),
+                    'allotment_basis' => $allotmentBasis,
+                    'room_type'       => strtoupper(trim($roomTypeStr)),
                     'quantity'        => $qty,
                     'male_beds'       => intval($item['male_beds'] ?? 0),
                     'female_beds'     => intval($item['female_beds'] ?? 0),

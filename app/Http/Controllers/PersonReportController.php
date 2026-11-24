@@ -140,9 +140,13 @@ class PersonReportController extends Controller
         $cnicCount      = $persons->filter(fn($p) => !empty($p->cnic) && trim($p->cnic) !== '-')->count();
         $photoCount     = $persons->filter(fn($p) => !empty($p->photo))->count();
 
-        // Dropdown Data
-        $packages = Package::latest()->get();
-        $distinctCamps = Booking::whereNotNull('camp')->where('camp', '!=', '')->distinct()->pluck('camp')->toArray();
+        // Dropdown Data (cached for performance)
+        $packages = \Illuminate\Support\Facades\Cache::remember('person_report_packages', 300, function () {
+            return Package::latest()->get();
+        });
+        $distinctCamps = \Illuminate\Support\Facades\Cache::remember('person_report_distinct_camps', 180, function () {
+            return Booking::whereNotNull('camp')->where('camp', '!=', '')->distinct()->pluck('camp')->toArray();
+        });
 
         return compact(
             'persons',

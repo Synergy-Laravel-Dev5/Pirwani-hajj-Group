@@ -524,16 +524,21 @@ class HotelPersonReportController extends Controller
         // Sort hotel breakdown by most persons
         uasort($hotelBreakdown, fn($a, $b) => $b['persons'] <=> $a['persons']);
 
-        // Registered and distinct dropdown options (excluding raw building / camp strings)
-        $registeredHotels   = Hotel::orderBy('name')->get();
-        $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->where('hotel_name', '!=', '')->pluck('hotel_name')->toArray();
-        $allHotelOptions    = array_values(array_unique(array_filter(array_merge($registeredHotels->pluck('name')->toArray(), $distinctHotelNames))));
-        $allHotelOptions    = array_values(array_filter($allHotelOptions, function($h) {
-            return !preg_match('/^(building|bulding|buildin|camp|azizia|azizya|mina)\b/i', trim($h));
-        }));
-        sort($allHotelOptions);
+        // Registered and distinct dropdown options (cached for performance)
+        $allHotelOptions = \Illuminate\Support\Facades\Cache::remember('hotel_person_options', 180, function () {
+            $registeredHotels   = Hotel::orderBy('name')->get();
+            $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->where('hotel_name', '!=', '')->pluck('hotel_name')->toArray();
+            $merged = array_values(array_unique(array_filter(array_merge($registeredHotels->pluck('name')->toArray(), $distinctHotelNames))));
+            $filtered = array_values(array_filter($merged, function($h) {
+                return !preg_match('/^(building|bulding|buildin|camp|azizia|azizya|mina)\b/i', trim($h));
+            }));
+            sort($filtered);
+            return $filtered;
+        });
 
-        $packages = Package::latest()->get();
+        $packages = \Illuminate\Support\Facades\Cache::remember('hotel_person_packages', 300, function () {
+            return Package::latest()->get();
+        });
 
         return compact(
             'hotelStays',

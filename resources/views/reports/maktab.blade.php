@@ -658,14 +658,7 @@
                                         @foreach($persons as $occIdx => $p)
                                             @php
                                                 $pIsFemale = strtolower($p->gender ?? '') === 'female';
-                                                $pPhotoUrl = null;
-                                                if (!empty($p->photo)) {
-                                                    if (file_exists(public_path($p->photo))) {
-                                                        $pPhotoUrl = asset($p->photo);
-                                                    } else {
-                                                        $pPhotoUrl = 'https://pirwanitravels.com.pk/' . ltrim($p->photo, '/');
-                                                    }
-                                                }
+                                                $pPhotoUrl = !empty($p->photo) ? asset($p->photo) : null;
                                             @endphp
                                             <tr class="{{ $occIdx === 0 ? 'room-divider-row' : '' }}">
                                                 {{-- SR --}}

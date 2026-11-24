@@ -465,14 +465,7 @@
                                         $isFemale = strtolower($person->gender ?? '') === 'female';
                                         
                                         // Photo URL resolution
-                                        $photoUrl = null;
-                                        if (!empty($person->photo)) {
-                                            if (file_exists(public_path($person->photo))) {
-                                                $photoUrl = asset($person->photo);
-                                            } else {
-                                                $photoUrl = 'https://pirwanitravels.com.pk/' . ltrim($person->photo, '/');
-                                            }
-                                        }
+                                        $photoUrl = !empty($person->photo) ? asset($person->photo) : null;
 
                                         // Age calculation
                                         $age = null;

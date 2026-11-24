@@ -864,8 +864,11 @@
 
                                                 {{-- Photo Thumbnail --}}
                                                 <td class="text-center p-1 col-picture">
-                                                    @if(!empty($person->photo) && file_exists(public_path($person->photo)))
-                                                        <img src="{{ asset($person->photo) }}" alt="{{ $person->full_name }}" class="haji-photo">
+                                                    @if(!empty($person->photo))
+                                                        <img src="{{ asset($person->photo) }}" alt="{{ $person->full_name }}" class="haji-photo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                                        <div class="haji-photo-placeholder" style="display: none;">
+                                                            <i class="mdi {{ strtoupper($person->gender ?? '') === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-20"></i>
+                                                        </div>
                                                     @else
                                                         <div class="haji-photo-placeholder">
                                                             <i class="mdi {{ strtoupper($person->gender ?? '') === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-20"></i>

@@ -467,11 +467,14 @@ class MaktabReportController extends Controller
         $totalFemalePilgrims = BookingPerson::whereIn('booking_id', $allBookingIds)
             ->whereRaw('LOWER(TRIM(gender)) = ?', ['female'])->count();
 
-        // Distinct camps from DB to populate dropdown
-        $distinctCamps = Booking::whereNotNull('camp')->where('camp', '!=', '')->distinct()->pluck('camp')->toArray();
+        // Distinct camps and locations (cached for performance)
+        $distinctCamps = \Illuminate\Support\Facades\Cache::remember('maktab_distinct_camps', 180, function () {
+            return Booking::whereNotNull('camp')->where('camp', '!=', '')->distinct()->pluck('camp')->toArray();
+        });
 
-        // Distinct locations from DB to populate dropdown
-        $distinctLocations = BookingHotel::whereNotNull('location')->where('location', '!=', '')->distinct()->pluck('location')->toArray();
+        $distinctLocations = \Illuminate\Support\Facades\Cache::remember('maktab_distinct_locations', 180, function () {
+            return BookingHotel::whereNotNull('location')->where('location', '!=', '')->distinct()->pluck('location')->toArray();
+        });
 
         return compact(
             'hotelStays',

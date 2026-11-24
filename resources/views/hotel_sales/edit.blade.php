@@ -17,6 +17,25 @@
         border-color: #001030;
         box-shadow: 0 2px 8px rgba(0,16,48,0.06);
     }
+    .select2-container--bootstrap-5 .select2-selection--multiple,
+    .select2-container--default .select2-selection--multiple {
+        min-height: 31px;
+        padding: 1px 4px;
+        font-size: 11px;
+        border-color: #ced4da;
+        border-radius: 0.25rem;
+    }
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice,
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        font-size: 11px;
+        padding: 0 5px;
+        margin-top: 2px;
+        margin-bottom: 2px;
+        background-color: #e0f2fe;
+        border-color: #bae6fd;
+        color: #0369a1;
+        line-height: 1.4;
+    }
 </style>
 
 <div class="content-page">
@@ -376,10 +395,20 @@
 
     function recalculateRowAmount(row) {
         if (!row) return;
+        const basis = row.querySelector('.basis-select')?.value || 'room';
         const qty = parseFloat(row.querySelector('.qty-input')?.value) || 0;
         const nights = parseFloat(row.querySelector('.nights-input')?.value) || 0;
         const rate = parseFloat(row.querySelector('.rate-input')?.value) || 0;
-        const amt = qty * nights * rate;
+
+        let amt = 0;
+        if (basis === 'per_night') {
+            // Per Night Basis: Qty * Nights * Rate per night
+            amt = qty * (nights > 0 ? nights : 1) * rate;
+        } else {
+            // Room Basis or Bed Basis: Total stay rate, does not multiply by nights
+            amt = qty * rate;
+        }
+
         const amtInp = row.querySelector('.amount-input');
         if (amtInp) {
             amtInp.value = amt.toFixed(2);
@@ -447,7 +476,16 @@
         const idx = itemIndex++;
         const defaultHotel = data.hotel_name || '';
         const basis = data.allotment_basis || 'room';
-        const roomType = data.room_type || 'DOUBLE';
+
+        let selectedTypes = [];
+        if (Array.isArray(data.room_type)) {
+            selectedTypes = data.room_type.map(t => String(t).toUpperCase().trim());
+        } else if (typeof data.room_type === 'string' && data.room_type.trim() !== '') {
+            selectedTypes = data.room_type.split(',').map(t => t.toUpperCase().trim());
+        } else {
+            selectedTypes = (basis === 'bed') ? ['BED'] : ['DOUBLE'];
+        }
+
         const qty = data.quantity || 1;
         const mp = data.meal_plan || 'HALF BOARD';
         const cIn = data.check_in ? (typeof data.check_in === 'string' ? data.check_in.substring(0, 10) : data.check_in) : '';
@@ -464,7 +502,31 @@
             }
         }
         const rate = data.rate_per_unit || 0;
-        const amount = data.amount || (qty * nights * rate);
+        let amount = data.amount;
+        if (amount === undefined || amount === null) {
+            if (basis === 'per_night') {
+                amount = qty * nights * rate;
+            } else {
+                amount = qty * rate;
+            }
+        }
+
+        let badgeClass = 'bg-primary';
+        let badgeLabel = 'ROOM BASIS';
+        let qtyLabel = 'Room Qty';
+        let rateLabel = 'Rate Per Room';
+
+        if (basis === 'bed') {
+            badgeClass = 'bg-warning text-dark';
+            badgeLabel = 'BED BASIS';
+            qtyLabel = 'Beds Qty';
+            rateLabel = 'Rate Per Bed';
+        } else if (basis === 'per_night') {
+            badgeClass = 'bg-info text-dark';
+            badgeLabel = 'PER NIGHT BASIS';
+            qtyLabel = 'Qty';
+            rateLabel = 'Rate Per Night';
+        }
 
         let hotelOptions = '<option value="">-- Select Hotel or Type Custom --</option>';
         hotelsList.forEach(h => {
@@ -475,8 +537,8 @@
         const html = `
             <div class="item-row" id="row_${idx}">
                 <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
-                    <span class="badge ${basis === 'bed' ? 'bg-warning text-dark' : 'bg-primary'} fs-11">
-                        Row #${idx + 1} • <span class="row-basis-badge">${basis.toUpperCase()} BASIS</span>
+                    <span class="badge ${badgeClass} fs-11">
+                        Row #${idx + 1} • <span class="row-basis-badge">${badgeLabel}</span>
                     </span>
                     <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 fs-12 remove-row-btn" data-row="${idx}">
                         <i class="mdi mdi-close"></i> Remove
@@ -495,28 +557,29 @@
 
                     <div class="col-md-2">
                         <label class="form-label fs-11 text-muted mb-0 fw-semibold">Allotment Basis</label>
-                        <select name="items[${idx}][allotment_basis]" class="form-select form-select-sm basis-select" data-row="${idx}">
+                        <select name="items[${idx}][allotment_basis]" class="form-select form-select-sm basis-select calc-trigger" data-row="${idx}">
                             <option value="room" ${basis === 'room' ? 'selected' : ''}>Room Basis</option>
                             <option value="bed" ${basis === 'bed' ? 'selected' : ''}>Bed Basis</option>
+                            <option value="per_night" ${basis === 'per_night' ? 'selected' : ''}>Per Night Basis</option>
                         </select>
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Room / Bed Type</label>
-                        <select name="items[${idx}][room_type]" class="form-select form-select-sm room-type-select" id="room_type_${idx}">
-                            <option value="DOUBLE" ${roomType.toUpperCase() === 'DOUBLE' ? 'selected' : ''}>DOUBLE</option>
-                            <option value="TRIPLE" ${roomType.toUpperCase() === 'TRIPLE' ? 'selected' : ''}>TRIPLE</option>
-                            <option value="QUAD" ${roomType.toUpperCase() === 'QUAD' ? 'selected' : ''}>QUAD</option>
-                            <option value="QUINT" ${roomType.toUpperCase() === 'QUINT' ? 'selected' : ''}>QUINT</option>
-                            <option value="SINGLE" ${roomType.toUpperCase() === 'SINGLE' ? 'selected' : ''}>SINGLE</option>
-                            <option value="BED" ${roomType.toUpperCase() === 'BED' ? 'selected' : ''}>BED (Bed Basis)</option>
-                            <option value="SHARING" ${roomType.toUpperCase() === 'SHARING' ? 'selected' : ''}>SHARING</option>
-                            <option value="SUITE" ${roomType.toUpperCase() === 'SUITE' ? 'selected' : ''}>SUITE</option>
+                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Room / Bed Type <span class="badge bg-light text-muted border fs-10 py-0">Multi</span></label>
+                        <select name="items[${idx}][room_type][]" multiple class="form-select form-select-sm select2-room-type" id="room_type_${idx}" data-row="${idx}" data-placeholder="Select Room Types">
+                            <option value="DOUBLE" ${selectedTypes.includes('DOUBLE') ? 'selected' : ''}>DOUBLE</option>
+                            <option value="TRIPLE" ${selectedTypes.includes('TRIPLE') ? 'selected' : ''}>TRIPLE</option>
+                            <option value="QUAD" ${selectedTypes.includes('QUAD') ? 'selected' : ''}>QUAD</option>
+                            <option value="QUINT" ${selectedTypes.includes('QUINT') ? 'selected' : ''}>QUINT</option>
+                            <option value="SINGLE" ${selectedTypes.includes('SINGLE') ? 'selected' : ''}>SINGLE</option>
+                            <option value="BED" ${selectedTypes.includes('BED') ? 'selected' : ''}>BED</option>
+                            <option value="SHARING" ${selectedTypes.includes('SHARING') ? 'selected' : ''}>SHARING</option>
+                            <option value="SUITE" ${selectedTypes.includes('SUITE') ? 'selected' : ''}>SUITE</option>
                         </select>
                     </div>
 
                     <div class="col-md-1">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold" id="qty_lbl_${idx}">${basis === 'bed' ? 'Beds Qty' : 'Room Qty'}</label>
+                        <label class="form-label fs-11 text-muted mb-0 fw-semibold qty-lbl" id="qty_lbl_${idx}">${qtyLabel}</label>
                         <input type="number" min="1" name="items[${idx}][quantity]" class="form-control form-control-sm text-center fw-bold qty-input calc-trigger"
                             value="${qty}" required data-row="${idx}">
                     </div>
@@ -562,7 +625,7 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Rate Per ${basis === 'bed' ? 'Bed' : 'Room'}</label>
+                        <label class="form-label fs-11 text-muted mb-0 fw-semibold rate-lbl" id="rate_lbl_${idx}">${rateLabel}</label>
                         <input type="number" step="0.01" min="0" name="items[${idx}][rate_per_unit]" class="form-control form-control-sm text-end rate-input calc-trigger"
                             value="${rate}" placeholder="0.00" data-row="${idx}">
                     </div>
@@ -577,6 +640,19 @@
         `;
 
         document.getElementById('itemsContainer').insertAdjacentHTML('beforeend', html);
+
+        // Initialize Select2 on room type multi-select
+        if (window.jQuery && typeof jQuery.fn.select2 !== 'undefined') {
+            $(`#room_type_${idx}`).select2({
+                placeholder: 'Select Room Types',
+                width: '100%',
+                closeOnSelect: false
+            });
+        }
+        const newRow = document.getElementById(`row_${idx}`);
+        initFlatpickr(newRow);
+        recalcTotals();
+    }
         const newRow = document.getElementById(`row_${idx}`);
         initFlatpickr(newRow);
         recalcTotals();
@@ -670,6 +746,9 @@
                 const rIdx = btn.getAttribute('data-row');
                 const rowElem = document.getElementById(`row_${rIdx}`);
                 if (rowElem) {
+                    if (window.jQuery && $(`#room_type_${rIdx}`).data('select2')) {
+                        $(`#room_type_${rIdx}`).select2('destroy');
+                    }
                     rowElem.remove();
                     recalcTotals();
                 }
@@ -682,6 +761,7 @@
                 handleDateChange(e.target, e.target.value);
             }
 
+            // Hotel select
             if (e.target.classList.contains('hotel-select')) {
                 const rIdx = e.target.getAttribute('data-row');
                 const input = document.getElementById(`hotel_input_${rIdx}`);
@@ -693,21 +773,42 @@
                 }
             }
 
+            // Basis select
             if (e.target.classList.contains('basis-select')) {
                 const rIdx = e.target.getAttribute('data-row');
                 const basis = e.target.value;
                 const roomTypeSelect = document.getElementById(`room_type_${rIdx}`);
                 const qtyLbl = document.getElementById(`qty_lbl_${rIdx}`);
+                const rateLbl = document.getElementById(`rate_lbl_${rIdx}`);
                 const badge = document.querySelector(`#row_${rIdx} .row-basis-badge`);
+                const badgeContainer = badge ? badge.closest('.badge') : null;
+                const row = document.getElementById(`row_${rIdx}`);
 
                 if (basis === 'bed') {
-                    roomTypeSelect.value = 'BED';
-                    qtyLbl.textContent = 'Beds Qty';
+                    if (window.jQuery && $(roomTypeSelect).data('select2')) {
+                        $(roomTypeSelect).val(['BED']).trigger('change');
+                    } else if (roomTypeSelect) {
+                        Array.from(roomTypeSelect.options).forEach(opt => opt.selected = (opt.value === 'BED'));
+                    }
+                    if (qtyLbl) qtyLbl.textContent = 'Beds Qty';
+                    if (rateLbl) rateLbl.textContent = 'Rate Per Bed';
                     if (badge) badge.textContent = 'BED BASIS';
+                    if (badgeContainer) badgeContainer.className = 'badge bg-warning text-dark fs-11';
+                } else if (basis === 'per_night') {
+                    if (qtyLbl) qtyLbl.textContent = 'Qty';
+                    if (rateLbl) rateLbl.textContent = 'Rate Per Night';
+                    if (badge) badge.textContent = 'PER NIGHT BASIS';
+                    if (badgeContainer) badgeContainer.className = 'badge bg-info text-dark fs-11';
                 } else {
-                    if (roomTypeSelect.value === 'BED') roomTypeSelect.value = 'DOUBLE';
-                    qtyLbl.textContent = 'Room Qty';
+                    // room basis
+                    if (qtyLbl) qtyLbl.textContent = 'Room Qty';
+                    if (rateLbl) rateLbl.textContent = 'Rate Per Room';
                     if (badge) badge.textContent = 'ROOM BASIS';
+                    if (badgeContainer) badgeContainer.className = 'badge bg-primary fs-11';
+                }
+
+                if (row) {
+                    recalculateRowAmount(row);
                 }
             }
         });

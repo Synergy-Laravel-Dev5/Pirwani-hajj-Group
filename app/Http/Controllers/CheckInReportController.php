@@ -565,11 +565,21 @@ class CheckInReportController extends Controller
             ->whereDate('check_out', '>=', $today)
             ->count();
 
-        // Dropdown Data
-        $registeredHotels = Hotel::orderBy('name')->get();
-        $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
-        $allHotelOptions = $registeredHotels->pluck('name')->merge($distinctHotelNames)->unique()->filter()->sort()->values();
-        $packages = Package::latest()->get();
+        // Dropdown Data (cached for performance)
+        $allHotelOptions = \Illuminate\Support\Facades\Cache::remember('checkin_all_hotels', 180, function () {
+            $registeredHotels = Hotel::orderBy('name')->get();
+            $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
+            return $registeredHotels->pluck('name')->merge($distinctHotelNames)->unique()->filter()->sort()->values();
+        });
+        $registeredHotels = \Illuminate\Support\Facades\Cache::remember('checkin_reg_hotels', 180, function () {
+            return Hotel::orderBy('name')->get();
+        });
+        $distinctHotelNames = \Illuminate\Support\Facades\Cache::remember('checkin_distinct_hotels', 180, function () {
+            return BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
+        });
+        $packages = \Illuminate\Support\Facades\Cache::remember('checkin_packages', 300, function () {
+            return Package::latest()->get();
+        });
 
         return compact(
             'hotelStays',

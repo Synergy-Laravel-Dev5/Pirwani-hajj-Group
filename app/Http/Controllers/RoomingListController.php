@@ -26,22 +26,31 @@ class RoomingListController extends Controller
         $this->authorize('rooming_list_report_view');
         $data = $this->getFilteredRoomingData($request);
 
-        $registeredHotels = Hotel::orderBy('name')->get();
-        $distinctHotelNames = BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
-        $packages = \App\Models\Package::orderBy('name')->orderBy('package_title')->get();
-        $roomTypes = RoomType::where('status', 'active')->orderBy('capacity')->get();
-        if ($roomTypes->isEmpty()) {
-            $roomTypes = collect([
-                (object)['name' => 'Single', 'code' => 'single', 'capacity' => 1],
-                (object)['name' => 'Double', 'code' => 'double', 'capacity' => 2],
-                (object)['name' => 'Triple', 'code' => 'triple', 'capacity' => 3],
-                (object)['name' => 'Quad', 'code' => 'quad', 'capacity' => 4],
-                (object)['name' => 'Quint', 'code' => 'quint', 'capacity' => 5],
-                (object)['name' => 'Six', 'code' => 'six', 'capacity' => 6],
-                (object)['name' => 'Sharing', 'code' => 'sharing', 'capacity' => 4],
-                (object)['name' => 'Suite', 'code' => 'suite', 'capacity' => 2],
-            ]);
-        }
+        $registeredHotels = \Illuminate\Support\Facades\Cache::remember('rooming_registered_hotels', 180, function () {
+            return Hotel::orderBy('name')->get();
+        });
+        $distinctHotelNames = \Illuminate\Support\Facades\Cache::remember('rooming_distinct_hotels', 180, function () {
+            return BookingHotel::select('hotel_name')->distinct()->whereNotNull('hotel_name')->pluck('hotel_name');
+        });
+        $packages = \Illuminate\Support\Facades\Cache::remember('rooming_packages', 300, function () {
+            return \App\Models\Package::orderBy('name')->orderBy('package_title')->get();
+        });
+        $roomTypes = \Illuminate\Support\Facades\Cache::remember('rooming_room_types', 300, function () {
+            $types = RoomType::where('status', 'active')->orderBy('capacity')->get();
+            if ($types->isEmpty()) {
+                $types = collect([
+                    (object)['name' => 'Single', 'code' => 'single', 'capacity' => 1],
+                    (object)['name' => 'Double', 'code' => 'double', 'capacity' => 2],
+                    (object)['name' => 'Triple', 'code' => 'triple', 'capacity' => 3],
+                    (object)['name' => 'Quad', 'code' => 'quad', 'capacity' => 4],
+                    (object)['name' => 'Quint', 'code' => 'quint', 'capacity' => 5],
+                    (object)['name' => 'Six', 'code' => 'six', 'capacity' => 6],
+                    (object)['name' => 'Sharing', 'code' => 'sharing', 'capacity' => 4],
+                    (object)['name' => 'Suite', 'code' => 'suite', 'capacity' => 2],
+                ]);
+            }
+            return $types;
+        });
 
         return view('reports.rooming_list', array_merge($data, compact(
             'registeredHotels',
@@ -1361,9 +1370,37 @@ class RoomingListController extends Controller
 
         $allBookings = $bookingQuery->orderBy('id', 'asc')->get();
 
-        // Preload all HotelRoomCapacity records into memory once to eliminate repetitive database queries in the loop
+        // Preload and index all HotelRoomCapacity records into a high-speed O(1) hash map
         $allCapacities = HotelRoomCapacity::all();
+        $capacityLookup = [];
+        foreach ($allCapacities as $rc) {
+            $numVariants = HotelRoomCapacity::normalizeRoomNumber((string)$rc->room_number);
+            $rNorm = HotelRoomCapacity::normalizeHotelString($rc->hotel_name);
+            $lNorm = strtolower(trim((string)$rc->location));
+            foreach ($numVariants as $v) {
+                if (!empty($rNorm)) {
+                    $capacityLookup["{$v}__hotel__{$rNorm}"] = $rc;
+                }
+                if (!empty($lNorm)) {
+                    $capacityLookup["{$v}__loc__{$lNorm}"] = $rc;
+                }
+                if (!isset($capacityLookup["{$v}__any"])) {
+                    $capacityLookup["{$v}__any"] = $rc;
+                }
+            }
+        }
+
+        // Preload active room types into an O(1) capacity lookup map
         $allRoomTypes = RoomType::where('status', 'active')->get();
+        $roomTypeCapacityMap = [];
+        foreach ($allRoomTypes as $t) {
+            $nKey = strtolower(trim((string)$t->name));
+            $cKey = strtolower(trim((string)$t->code));
+            if ($t->capacity > 0) {
+                if ($nKey) $roomTypeCapacityMap[$nKey] = (int)$t->capacity;
+                if ($cKey) $roomTypeCapacityMap[$cKey] = (int)$t->capacity;
+            }
+        }
 
         $groupedRooms = [];
         $unassignedOccupants = [];
@@ -1382,7 +1419,7 @@ class RoomingListController extends Controller
             $bId,
             $p,
             $roomGroupId = null
-        ) use ($allCapacities, $allRoomTypes) {
+        ) use ($capacityLookup, $roomTypeCapacityMap) {
             $isPendingRoom = (strtoupper(trim($displayRoomNo)) === 'PENDING' || empty($displayRoomNo));
             $cleanDisplayNo = $isPendingRoom ? 'PENDING' : $displayRoomNo;
             $occData['room_number'] = $cleanDisplayNo;
@@ -1405,25 +1442,31 @@ class RoomingListController extends Controller
                     $normHotel = HotelRoomCapacity::normalizeHotelString($hName);
                     $normLoc = strtolower(trim((string)$loc));
 
-                    $matchedCapacities = $allCapacities->filter(function ($rc) use ($variants) {
-                        $rcNum = strtolower(trim((string)$rc->room_number));
-                        return in_array($rcNum, $variants);
-                    });
-
-                    if ($matchedCapacities->isNotEmpty()) {
-                        if (!empty($normHotel)) {
-                            $customCap = $matchedCapacities->first(function ($rc) use ($normHotel) {
-                                $rNorm = HotelRoomCapacity::normalizeHotelString($rc->hotel_name);
-                                return !empty($rNorm) && ($rNorm === $normHotel || str_contains($rNorm, $normHotel) || str_contains($normHotel, $rNorm));
-                            });
+                    // O(1) Lookup: Match room + hotel first
+                    if (!empty($normHotel)) {
+                        foreach ($variants as $v) {
+                            if (isset($capacityLookup["{$v}__hotel__{$normHotel}"])) {
+                                $customCap = $capacityLookup["{$v}__hotel__{$normHotel}"];
+                                break;
+                            }
                         }
-                        if (!$customCap && !empty($normLoc)) {
-                            $customCap = $matchedCapacities->first(function ($rc) use ($normLoc) {
-                                return strtolower(trim((string)$rc->location)) === $normLoc;
-                            });
+                    }
+                    // O(1) Lookup: Match room + location second
+                    if (!$customCap && !empty($normLoc)) {
+                        foreach ($variants as $v) {
+                            if (isset($capacityLookup["{$v}__loc__{$normLoc}"])) {
+                                $customCap = $capacityLookup["{$v}__loc__{$normLoc}"];
+                                break;
+                            }
                         }
-                        if (!$customCap) {
-                            $customCap = $matchedCapacities->first();
+                    }
+                    // O(1) Lookup: Match room number any
+                    if (!$customCap) {
+                        foreach ($variants as $v) {
+                            if (isset($capacityLookup["{$v}__any"])) {
+                                $customCap = $capacityLookup["{$v}__any"];
+                                break;
+                            }
                         }
                     }
                 }
@@ -1433,11 +1476,8 @@ class RoomingListController extends Controller
                     $baseCap = (int) $customCap->bed_capacity;
                 } else {
                     $normType = strtolower(trim((string)$rType));
-                    $rt = $allRoomTypes->first(function ($t) use ($normType) {
-                        return strtolower(trim((string)$t->name)) === $normType || strtolower(trim((string)$t->code)) === $normType;
-                    });
-                    if ($rt && $rt->capacity > 0) {
-                        $baseCap = (int) $rt->capacity;
+                    if (isset($roomTypeCapacityMap[$normType])) {
+                        $baseCap = $roomTypeCapacityMap[$normType];
                     } else {
                         $baseCap = match ($normType) {
                             'single'            => 1,

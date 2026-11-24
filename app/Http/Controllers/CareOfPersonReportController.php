@@ -121,16 +121,20 @@ class CareOfPersonReportController extends Controller
         $totalReceived = $allBookings->sum('total_received');
         $totalBalance  = $allBookings->sum('balance');
 
-        // Dropdown filter data
-        $distinctCareOfList = Booking::whereNotNull('care_of')
-            ->where('care_of', '!=', '')
-            ->whereNull('deleted_at')
-            ->whereNotIn('status', ['cancelled', 'rejected'])
-            ->distinct()
-            ->orderBy('care_of', 'asc')
-            ->pluck('care_of');
+        // Dropdown filter data (cached for high performance)
+        $distinctCareOfList = \Illuminate\Support\Facades\Cache::remember('distinct_care_of_list_v2', 120, function () {
+            return Booking::whereNotNull('care_of')
+                ->where('care_of', '!=', '')
+                ->whereNull('deleted_at')
+                ->whereNotIn('status', ['cancelled', 'rejected'])
+                ->distinct()
+                ->orderBy('care_of', 'asc')
+                ->pluck('care_of');
+        });
 
-        $packages = Package::latest()->get();
+        $packages = \Illuminate\Support\Facades\Cache::remember('packages_list_v2', 300, function () {
+            return Package::latest()->get();
+        });
 
         return compact(
             'groupedByCareOf',
@@ -417,14 +421,19 @@ class CareOfPersonReportController extends Controller
         }
         $filterSummary .= ' | Total Groups: ' . $data['totalCareOfGroups'] . ' | Total Bookings: ' . $data['totalBookings'] . ' | Total Pilgrims: ' . $data['totalPersons'];
 
-        $thumbDir = storage_path('app/temp_thumbnails');
+        $storageDir = storage_path('app');
+        if (!is_dir($storageDir)) {
+            @mkdir($storageDir, 0777, true);
+        }
+        $tempDir = (is_dir($storageDir) && is_writable($storageDir)) ? $storageDir : sys_get_temp_dir();
+        $thumbDir = $tempDir . '/temp_thumbnails';
         if (!is_dir($thumbDir)) {
             @mkdir($thumbDir, 0777, true);
         }
 
         // =========================================================================
         // ENGINE 1: Native OpenXML (.xlsx with embedded photo drawings)
-        // Uses project storage path to guarantee compatibility without open_basedir issues
+        // Uses project storage path or system temp to guarantee zero open_basedir issues
         // =========================================================================
         if (class_exists(\ZipArchive::class)) {
             try {
@@ -433,7 +442,7 @@ class CareOfPersonReportController extends Controller
                 $firstCol = 'A';
                 $lastCol = $this->colLetter($colCount);
 
-                $tempZipPath = storage_path('app/care_of_' . uniqid() . '.xlsx');
+                $tempZipPath = $tempDir . '/care_of_' . uniqid() . '.xlsx';
                 @unlink($tempZipPath);
 
                 $zip = new \ZipArchive();
@@ -450,6 +459,8 @@ class CareOfPersonReportController extends Controller
   <Default Extension="jpg" ContentType="image/jpeg"/>
   <Default Extension="jpeg" ContentType="image/jpeg"/>
   <Default Extension="png" ContentType="image/png"/>
+  <Default Extension="webp" ContentType="image/webp"/>
+  <Default Extension="gif" ContentType="image/gif"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
@@ -668,26 +679,22 @@ class CareOfPersonReportController extends Controller
 
                                     $r0 = $curRow - 1; // 0-based row
                                     $c0 = $picColIdx;  // 0-based col
-                                    $drawingsXmlArr[] = '  <xdr:twoCellAnchor editAs="oneCell">
+                                    // Robust oneCellAnchor: 38px (361950 EMUs) x 46px (438150 EMUs), centered with 8px left and 4px top offset
+                                    $drawingsXmlArr[] = '  <xdr:oneCellAnchor>
     <xdr:from>
       <xdr:col>' . $c0 . '</xdr:col>
-      <xdr:colOff>80000</xdr:colOff>
+      <xdr:colOff>76200</xdr:colOff>
       <xdr:row>' . $r0 . '</xdr:row>
-      <xdr:rowOff>25000</xdr:rowOff>
+      <xdr:rowOff>38100</xdr:rowOff>
     </xdr:from>
-    <xdr:to>
-      <xdr:col>' . $c0 . '</xdr:col>
-      <xdr:colOff>580000</xdr:colOff>
-      <xdr:row>' . $r0 . '</xdr:row>
-      <xdr:rowOff>480000</xdr:rowOff>
-    </xdr:to>
+    <xdr:ext cx="361950" cy="438150"/>
     <xdr:pic>
       <xdr:nvPicPr>
         <xdr:cNvPr id="' . $mediaCount . '" name="Photo ' . $mediaCount . '"/>
         <xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr>
       </xdr:nvPicPr>
       <xdr:blipFill>
-        <a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId' . $mediaCount . '"/>
+        <a:blip r:embed="rId' . $mediaCount . '"/>
         <a:stretch><a:fillRect/></a:stretch>
       </xdr:blipFill>
       <xdr:spPr>
@@ -695,7 +702,7 @@ class CareOfPersonReportController extends Controller
       </xdr:spPr>
     </xdr:pic>
     <xdr:clientData/>
-  </xdr:twoCellAnchor>';
+  </xdr:oneCellAnchor>';
                                 }
 
                                 $pRowCells = '';
@@ -779,7 +786,7 @@ class CareOfPersonReportController extends Controller
                         $zip->addFromString('xl/drawings/_rels/drawing1.xml.rels', $drawRelsXml);
 
                         $drawingXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 ' . implode("\n", $drawingsXmlArr) . '
 </xdr:wsDr>';
                         $zip->addFromString('xl/drawings/drawing1.xml', $drawingXml);
@@ -828,7 +835,8 @@ class CareOfPersonReportController extends Controller
                         return response()->download($tempZipPath, $fileName, [
                             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-                            'Cache-Control' => 'max-age=0',
+                            'Access-Control-Expose-Headers' => 'Content-Disposition, Content-Type',
+                            'Cache-Control' => 'max-age=0, must-revalidate',
                         ])->deleteFileAfterSend(true);
                     }
                 }
@@ -991,14 +999,15 @@ class CareOfPersonReportController extends Controller
                                         $mime = ($ext === 'png') ? 'image/png' : 'image/jpeg';
                                         $imgRaw = @file_get_contents($photoFile);
                                         if ($imgRaw) {
-                                            $imagesToEmbed[] = [
+                                            $imgItem = [
                                                 'cid' => $cid,
                                                 'filename' => "photo_{$imgCounter}.{$ext}",
                                                 'mime' => $mime,
                                                 'data' => base64_encode($imgRaw),
                                             ];
+                                            $imagesToEmbed[] = $imgItem;
                                             echo '<td class="center" style="padding: 2px; height: 52px; width: 65px; text-align: center; vertical-align: middle;">'
-                                                . '<img src="cid:' . $cid . '" width="38" height="46" style="width: 38px; height: 46px; object-fit: cover; border-radius: 2px; display: block; margin: 0 auto;" alt="Photo">'
+                                                . '<img src="http://report.local/' . $imgItem['filename'] . '" width="38" height="46" style="width: 38px; height: 46px; object-fit: cover; border-radius: 2px; display: block; margin: 0 auto;" alt="Photo">'
                                                 . '</td>';
                                         } else {
                                             echo '<td class="center" style="color: #94A3B8;">—</td>';
@@ -1097,8 +1106,8 @@ class CareOfPersonReportController extends Controller
                 echo "--{$boundary}\r\n";
                 echo "Content-Type: {$img['mime']}\r\n";
                 echo "Content-Transfer-Encoding: base64\r\n";
-                echo "Content-ID: <{$img['cid']}>\r\n";
-                echo "Content-Location: http://report.local/{$img['filename']}\r\n\r\n";
+                echo "Content-Location: http://report.local/{$img['filename']}\r\n";
+                echo "Content-ID: <{$img['cid']}>\r\n\r\n";
                 echo chunk_split($img['data']) . "\r\n";
             }
 
@@ -1106,7 +1115,8 @@ class CareOfPersonReportController extends Controller
         }, $fileName, [
             'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-            'Cache-Control' => 'max-age=0',
+            'Access-Control-Expose-Headers' => 'Content-Disposition, Content-Type',
+            'Cache-Control' => 'max-age=0, must-revalidate',
         ]);
     }
 }

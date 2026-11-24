@@ -459,9 +459,13 @@
                                                 <td class="col-sr text-center fw-bold">{{ $loop->iteration }}</td>
 
                                                 <td class="col-picture text-center">
-                                                    @if (!empty($person->photo) && file_exists(public_path($person->photo)))
+                                                    @if (!empty($person->photo))
                                                         <img src="{{ asset($person->photo) }}" class="haji-photo"
-                                                            alt="Photo">
+                                                            alt="Photo"
+                                                            onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                                        <div class="haji-photo-placeholder" style="display: none;">
+                                                            <i class="mdi mdi-account"></i>
+                                                        </div>
                                                     @else
                                                         <div class="haji-photo-placeholder">
                                                             <i class="mdi mdi-account"></i>
@@ -830,8 +834,9 @@
                     const blob = await response.blob();
 
                     // Get filename from header if available
+                    const contentType = response.headers.get('content-type') || '';
                     let filename = (type === 'pdf') ? 'Care_Of_Persons_Report.pdf' :
-                        'Care_Of_Persons_Report.xlsx';
+                        ((contentType.includes('ms-excel') || contentType.includes('html')) ? 'Care_Of_Persons_Report.xls' : 'Care_Of_Persons_Report.xlsx');
                     const disposition = response.headers.get('content-disposition');
                     if (disposition && disposition.indexOf('filename=') !== -1) {
                         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);

@@ -184,29 +184,20 @@
                         </li>
                         @endcan
 
+                        @canany(['client_view', 'client_create'])
+                        <li class="{{ request()->routeIs('client.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('client.index') }}">
+                                <i data-feather="user-plus"></i>
+                                <span>Clients</span>
+                            </a>
+                        </li>
+                        @endcanany
+
                         @can('room_inventory_view')
                         <li class="{{ request()->routeIs('room-inventory.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('room-inventory.index') }}">
                                 <i data-feather="home"></i>
                                 <span>Rooming List & Stock</span>
-                            </a>
-                        </li>
-                        @endcan
-
-                        @can('hotel_person_report_view')
-                        <li class="{{ request()->routeIs('report.hotel-person') ? 'menuitem-active' : '' }}">
-                            <a href="{{ route('report.hotel-person') }}">
-                                <i data-feather="home"></i>
-                                <span>Hotel Person Report</span>
-                            </a>
-                        </li>
-                        @endcan
-
-                        @can('rooming_list_report_view')
-                        <li class="{{ request()->routeIs('report.rooming-list') ? 'menuitem-active' : '' }}">
-                            <a href="{{ route('report.rooming-list') }}">
-                                <i data-feather="grid"></i>
-                                <span>Room Allocation Report</span>
                             </a>
                         </li>
                         @endcan

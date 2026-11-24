@@ -1057,8 +1057,11 @@
                                                         @endif
                                                     </td>
                                                     <td class="text-center p-1 col-picture">
-                                                        @if(!empty($occ['photo']) && file_exists(public_path($occ['photo'])))
-                                                            <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo">
+                                                        @if(!empty($occ['photo']))
+                                                            <img src="{{ asset($occ['photo']) }}" alt="{{ $occ['name'] }}" class="haji-photo" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                                            <div class="haji-photo-placeholder" style="display: none;">
+                                                                 <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-24"></i>
+                                                            </div>
                                                         @else
                                                             <div class="haji-photo-placeholder">
                                                                  <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-24"></i>
@@ -1338,8 +1341,9 @@
                                                             @endif
                                                         </td>
                                                         <td style="width: 40px;">
-                                                            @if(!empty($occ['photo']) && file_exists(public_path($occ['photo'])))
-                                                                <img src="{{ asset($occ['photo']) }}" class="rounded" style="width: 32px; height: 36px; object-fit: cover;">
+                                                            @if(!empty($occ['photo']))
+                                                                <img src="{{ asset($occ['photo']) }}" class="rounded" style="width: 32px; height: 36px; object-fit: cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                                                                <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-18" style="display: none;"></i>
                                                             @else
                                                                 <i class="mdi {{ strtoupper($occ['gender']) === 'FEMALE' ? 'mdi-account-female text-danger' : 'mdi-account text-primary' }} fs-18"></i>
                                                             @endif
