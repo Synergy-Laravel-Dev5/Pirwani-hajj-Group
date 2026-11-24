@@ -12,9 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bookings', function (Blueprint $table) {
-            $table->string('app_password')->nullable()->after('balance');
-            $table->string('app_password_plain', 20)->nullable()->after('app_password');
-            $table->timestamp('app_last_login_at')->nullable()->after('app_password_plain');
+            if (!Schema::hasColumn('bookings', 'app_password')) {
+                $table->string('app_password')->nullable()->after('balance');
+            }
+            if (!Schema::hasColumn('bookings', 'app_password_plain')) {
+                $table->string('app_password_plain', 20)->nullable()->after('app_password');
+            }
+            if (!Schema::hasColumn('bookings', 'app_last_login_at')) {
+                $table->timestamp('app_last_login_at')->nullable()->after('app_password_plain');
+            }
         });
     }
 

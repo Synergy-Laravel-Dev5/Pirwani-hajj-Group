@@ -41,6 +41,11 @@ class HotelSale extends Model
         return $this->belongsTo(Client::class, 'client_id');
     }
 
+    public function hotelClient()
+    {
+        return $this->belongsTo(HotelClient::class, 'hotel_client_id');
+    }
+
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id');

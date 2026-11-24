@@ -8,6 +8,7 @@ use App\Models\Hotel;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\Client;
+use App\Models\HotelClient;
 use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,6 +80,7 @@ class HotelSaleController extends Controller
         $companies = Company::orderBy('company_name')->get();
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
         $clients = Client::orderBy('name')->get();
+        $hotelClients = HotelClient::where('status', 'active')->orderBy('name')->get();
         $roomTypes = RoomType::where('status', 'active')->orderBy('capacity')->get();
 
         $nextInvoiceNumber = HotelSale::generateInvoiceNumber();
@@ -100,6 +102,7 @@ class HotelSaleController extends Controller
             'companies',
             'suppliers',
             'clients',
+            'hotelClients',
             'roomTypes',
             'nextInvoiceNumber',
             'defaultTerms',
@@ -112,7 +115,7 @@ class HotelSaleController extends Controller
     {
         $this->authorize('hotel_sale_create');
         $request->validate([
-            'sale_for'      => 'required|in:company,supplier,client',
+            'sale_for'      => 'required|in:hotel_client,company,supplier,client',
             'customer_name' => 'required|string|max:255',
             'invoice_date'  => 'required|date',
             'items'         => 'required|array|min:1',
@@ -228,6 +231,7 @@ class HotelSaleController extends Controller
                 'sale_for'            => $request->sale_for,
                 'supplier_id'         => $supplierId,
                 'company_id'          => $companyId,
+                'hotel_client_id'     => $request->sale_for === 'hotel_client' ? $request->hotel_client_id : null,
                 'client_id'           => $request->sale_for === 'client' ? $request->client_id : null,
                 'customer_name'       => $request->customer_name,
                 'attn'                => $request->attn ?: null,
@@ -266,21 +270,22 @@ class HotelSaleController extends Controller
     public function show($id)
     {
         $this->authorize('hotel_sale_show');
-        $sale = HotelSale::with(['items.hotel', 'company', 'client'])->findOrFail($id);
+        $sale = HotelSale::with(['items.hotel', 'company', 'client', 'hotelClient', 'supplier'])->findOrFail($id);
         return view('hotel_sales.show', compact('sale'));
     }
 
     public function edit($id)
     {
         $this->authorize('hotel_sale_edit');
-        $sale = HotelSale::with(['items', 'supplier', 'company', 'client'])->findOrFail($id);
+        $sale = HotelSale::with(['items', 'supplier', 'company', 'client', 'hotelClient'])->findOrFail($id);
         $hotels = Hotel::where('status', 'active')->orWhereNull('status')->orderBy('name')->get();
         $companies = Company::orderBy('company_name')->get();
         $suppliers = Supplier::where('status', 'active')->orderBy('name')->get();
         $clients = Client::orderBy('name')->get();
+        $hotelClients = HotelClient::where('status', 'active')->orderBy('name')->get();
         $roomTypes = RoomType::where('status', 'active')->orderBy('capacity')->get();
 
-        return view('hotel_sales.edit', compact('sale', 'hotels', 'companies', 'suppliers', 'clients', 'roomTypes'));
+        return view('hotel_sales.edit', compact('sale', 'hotels', 'companies', 'suppliers', 'clients', 'hotelClients', 'roomTypes'));
     }
 
     public function update(Request $request, $id)
@@ -289,7 +294,7 @@ class HotelSaleController extends Controller
         $sale = HotelSale::findOrFail($id);
 
         $request->validate([
-            'sale_for'      => 'required|in:company,supplier,client',
+            'sale_for'      => 'required|in:hotel_client,company,supplier,client',
             'customer_name' => 'required|string|max:255',
             'invoice_date'  => 'required|date',
             'items'         => 'required|array|min:1',
@@ -398,6 +403,7 @@ class HotelSaleController extends Controller
                 'sale_for'            => $request->sale_for,
                 'supplier_id'         => $supplierId,
                 'company_id'          => $companyId,
+                'hotel_client_id'     => $request->sale_for === 'hotel_client' ? $request->hotel_client_id : null,
                 'client_id'           => $request->sale_for === 'client' ? $request->client_id : null,
                 'customer_name'       => $request->customer_name,
                 'attn'                => $request->attn ?: null,

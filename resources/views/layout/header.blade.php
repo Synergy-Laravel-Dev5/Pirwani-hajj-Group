@@ -184,14 +184,12 @@
                         </li>
                         @endcan
 
-                        @canany(['client_view', 'client_create'])
-                        <li class="{{ request()->routeIs('client.*') ? 'menuitem-active' : '' }}">
-                            <a href="{{ route('client.index') }}">
-                                <i data-feather="user-plus"></i>
-                                <span>Clients</span>
+                        <li class="{{ request()->routeIs('hotel-clients.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('hotel-clients.index') }}">
+                                <i data-feather="users"></i>
+                                <span>Hotel Clients</span>
                             </a>
                         </li>
-                        @endcanany
 
                         @can('room_inventory_view')
                         <li class="{{ request()->routeIs('room-inventory.*') ? 'menuitem-active' : '' }}">

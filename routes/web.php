@@ -40,6 +40,7 @@ use App\Http\Controllers\HotelPersonReportController;
 use App\Http\Controllers\BusAssignmentController;
 use App\Http\Controllers\PilgrimPassController;
 use App\Http\Controllers\HotelSaleController;
+use App\Http\Controllers\HotelClientController;
 use App\Http\Controllers\MobileOps\GalleryController;
 use App\Http\Controllers\MobileOps\HajjBookController;
 use App\Http\Controllers\MobileOps\HujjajGuidelineController;
@@ -213,6 +214,18 @@ Route::middleware('auth')->group(function () {
                 Route::get('edit/{id}',    'edit')->name('hotel-sales.edit');
                 Route::put('update/{id}',  'update')->name('hotel-sales.update');
                 Route::delete('delete/{id}', 'destroy')->name('hotel-sales.delete');
+            });
+
+        Route::controller(HotelClientController::class)
+            ->prefix('hotel-clients')
+            ->group(function () {
+                Route::get('/',            'index')->name('hotel-clients.index');
+                Route::get('create',       'create')->name('hotel-clients.create');
+                Route::post('store',       'store')->name('hotel-clients.store');
+                Route::get('edit/{id}',    'edit')->name('hotel-clients.edit');
+                Route::put('update/{id}',  'update')->name('hotel-clients.update');
+                Route::delete('delete/{id}', 'destroy')->name('hotel-clients.delete');
+                Route::get('api/list',     'apiList')->name('hotel-clients.api-list');
             });
 
         Route::controller(ExpenseController::class)
