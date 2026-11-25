@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html><body><div id="out"></div><script>
+const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+const HIJRI_MONTH_NAMES = { 1: 'MUHARRAM', 2: 'SAFAR', 3: 'RABI-I', 4: 'RABI-II', 5: 'JAMADI-I', 6: 'JAMADI-II', 7: 'RAJAB', 8: 'SHABAN', 9: 'RAMADAN', 10: 'SHAWWAL', 11: 'ZILQAIDA', 12: 'ZILHAJJ' };
+let res = [];
+for (let d = 20; d <= 30; d++) {
+    let dt = '2027-04-' + String(d).padStart(2, '0');
+    let dateObj = new Date(Date.UTC(2027, 3, d, 12, 0, 0));
+    let fParts = formatter.formatToParts(dateObj);
+    let hDay = null, hMonth = null, hYear = null;
+    for (const p of fParts) {
+        if (p.type === 'day') hDay = parseInt(p.value, 10);
+        if (p.type === 'month') hMonth = parseInt(p.value, 10);
+        if (p.type === 'year') hYear = parseInt(p.value, 10);
+    }
+    res.push(dt + ' -> ' + hDay + '-' + HIJRI_MONTH_NAMES[hMonth] + ' ' + hYear);
+}
+for (let d = 1; d <= 31; d++) {
+    let dt = '2027-05-' + String(d).padStart(2, '0');
+    let dateObj = new Date(Date.UTC(2027, 4, d, 12, 0, 0));
+    let fParts = formatter.formatToParts(dateObj);
+    let hDay = null, hMonth = null, hYear = null;
+    for (const p of fParts) {
+        if (p.type === 'day') hDay = parseInt(p.value, 10);
+        if (p.type === 'month') hMonth = parseInt(p.value, 10);
+        if (p.type === 'year') hYear = parseInt(p.value, 10);
+    }
+    res.push(dt + ' -> ' + hDay + '-' + HIJRI_MONTH_NAMES[hMonth] + ' ' + hYear);
+}
+document.getElementById('out').innerText = res.join('\n');
+</script></body></html>

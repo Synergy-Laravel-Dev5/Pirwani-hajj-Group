@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html><head></head><body><div id="out">2027-04-20 -&gt; 13-ZILQAIDA 1448<br>2027-04-21 -&gt; 14-ZILQAIDA 1448<br>2027-04-22 -&gt; 15-ZILQAIDA 1448<br>2027-04-23 -&gt; 16-ZILQAIDA 1448<br>2027-04-24 -&gt; 17-ZILQAIDA 1448<br>2027-04-25 -&gt; 18-ZILQAIDA 1448<br>2027-04-26 -&gt; 19-ZILQAIDA 1448<br>2027-04-27 -&gt; 20-ZILQAIDA 1448<br>2027-04-28 -&gt; 21-ZILQAIDA 1448<br>2027-04-29 -&gt; 22-ZILQAIDA 1448<br>2027-04-30 -&gt; 23-ZILQAIDA 1448<br>2027-05-01 -&gt; 24-ZILQAIDA 1448<br>2027-05-02 -&gt; 25-ZILQAIDA 1448<br>2027-05-03 -&gt; 26-ZILQAIDA 1448<br>2027-05-04 -&gt; 27-ZILQAIDA 1448<br>2027-05-05 -&gt; 28-ZILQAIDA 1448<br>2027-05-06 -&gt; 29-ZILQAIDA 1448<br>2027-05-07 -&gt; 1-ZILHAJJ 1448<br>2027-05-08 -&gt; 2-ZILHAJJ 1448<br>2027-05-09 -&gt; 3-ZILHAJJ 1448<br>2027-05-10 -&gt; 4-ZILHAJJ 1448<br>2027-05-11 -&gt; 5-ZILHAJJ 1448<br>2027-05-12 -&gt; 6-ZILHAJJ 1448<br>2027-05-13 -&gt; 7-ZILHAJJ 1448<br>2027-05-14 -&gt; 8-ZILHAJJ 1448<br>2027-05-15 -&gt; 9-ZILHAJJ 1448<br>2027-05-16 -&gt; 10-ZILHAJJ 1448<br>2027-05-17 -&gt; 11-ZILHAJJ 1448<br>2027-05-18 -&gt; 12-ZILHAJJ 1448<br>2027-05-19 -&gt; 13-ZILHAJJ 1448<br>2027-05-20 -&gt; 14-ZILHAJJ 1448<br>2027-05-21 -&gt; 15-ZILHAJJ 1448<br>2027-05-22 -&gt; 16-ZILHAJJ 1448<br>2027-05-23 -&gt; 17-ZILHAJJ 1448<br>2027-05-24 -&gt; 18-ZILHAJJ 1448<br>2027-05-25 -&gt; 19-ZILHAJJ 1448<br>2027-05-26 -&gt; 20-ZILHAJJ 1448<br>2027-05-27 -&gt; 21-ZILHAJJ 1448<br>2027-05-28 -&gt; 22-ZILHAJJ 1448<br>2027-05-29 -&gt; 23-ZILHAJJ 1448<br>2027-05-30 -&gt; 24-ZILHAJJ 1448<br>2027-05-31 -&gt; 25-ZILHAJJ 1448</div><script>
+const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+const HIJRI_MONTH_NAMES = { 1: 'MUHARRAM', 2: 'SAFAR', 3: 'RABI-I', 4: 'RABI-II', 5: 'JAMADI-I', 6: 'JAMADI-II', 7: 'RAJAB', 8: 'SHABAN', 9: 'RAMADAN', 10: 'SHAWWAL', 11: 'ZILQAIDA', 12: 'ZILHAJJ' };
+let res = [];
+for (let d = 20; d <= 30; d++) {
+    let dt = '2027-04-' + String(d).padStart(2, '0');
+    let dateObj = new Date(Date.UTC(2027, 3, d, 12, 0, 0));
+    let fParts = formatter.formatToParts(dateObj);
+    let hDay = null, hMonth = null, hYear = null;
+    for (const p of fParts) {
+        if (p.type === 'day') hDay = parseInt(p.value, 10);
+        if (p.type === 'month') hMonth = parseInt(p.value, 10);
+        if (p.type === 'year') hYear = parseInt(p.value, 10);
+    }
+    res.push(dt + ' -> ' + hDay + '-' + HIJRI_MONTH_NAMES[hMonth] + ' ' + hYear);
+}
+for (let d = 1; d <= 31; d++) {
+    let dt = '2027-05-' + String(d).padStart(2, '0');
+    let dateObj = new Date(Date.UTC(2027, 4, d, 12, 0, 0));
+    let fParts = formatter.formatToParts(dateObj);
+    let hDay = null, hMonth = null, hYear = null;
+    for (const p of fParts) {
+        if (p.type === 'day') hDay = parseInt(p.value, 10);
+        if (p.type === 'month') hMonth = parseInt(p.value, 10);
+        if (p.type === 'year') hYear = parseInt(p.value, 10);
+    }
+    res.push(dt + ' -> ' + hDay + '-' + HIJRI_MONTH_NAMES[hMonth] + ' ' + hYear);
+}
+document.getElementById('out').innerText = res.join('\n');
+</script>
+</body></html>

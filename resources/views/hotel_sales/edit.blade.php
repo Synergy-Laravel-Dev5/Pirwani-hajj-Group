@@ -422,30 +422,44 @@
         9: 'RAMADAN', 10: 'SHAWWAL', 11: 'ZILQAIDA', 12: 'ZILHAJJ'
     };
 
+    // Exact Umm Al-Qura month start dates for Hajj / Umrah seasons (1446-1450 AH)
+    // Synchronized with official Saudi calendar and Maghrib date transition
+    const UMM_AL_QURA_MONTH_STARTS = {
+        '1447-09': '2026-02-18', '1447-10': '2026-03-20', '1447-11': '2026-04-18', '1447-12': '2026-05-18',
+        '1448-01': '2026-06-16', '1448-02': '2026-07-16', '1448-03': '2026-08-14', '1448-04': '2026-09-13',
+        '1448-05': '2026-10-12', '1448-06': '2026-11-11', '1448-07': '2026-12-10', '1448-08': '2027-01-09',
+        '1448-09': '2027-02-08', '1448-10': '2027-03-10',
+        '1448-11': '2027-04-08', // 21 Zilqaida = 2027-04-28!
+        '1448-12': '2027-05-07', // 01 Zilhajj = 2027-05-07, 08 Zilhajj = 2027-05-14
+        '1449-01': '2027-06-06', '1449-11': '2028-03-28', '1449-12': '2028-04-26',
+        '1450-01': '2028-05-26', '1450-11': '2029-04-16', '1450-12': '2029-05-15'
+    };
+
     function kuwaitiHijri(year, month, day) {
         let jd;
+        const y = year, m = month, d = day;
         if ((year > 1582) || ((year === 1582) && (month > 10)) || ((year === 1582) && (month === 10) && (day > 14))) {
-            jd = Math.floor((1461 * (year + 4800 + Math.floor((month - 14) / 12))) / 4) +
-                 Math.floor((367 * (month - 2 - 12 * (Math.floor((month - 14) / 12)))) / 12) -
-                 Math.floor((3 * Math.floor((year + 4900 + Math.floor((month - 14) / 12)) / 100)) / 4) +
-                 day - 32075;
+            jd = Math.trunc((1461 * (y + 4800 + Math.trunc((m - 14) / 12))) / 4) +
+                 Math.trunc((367 * (m - 2 - 12 * Math.trunc((m - 14) / 12))) / 12) -
+                 Math.trunc((3 * Math.trunc((y + 4900 + Math.trunc((m - 14) / 12)) / 100)) / 4) +
+                 d - 32075;
         } else {
-            jd = 367 * year - Math.floor((7 * (year + 5001 + Math.floor((month - 9) / 7))) / 4) +
-                 Math.floor((275 * month) / 9) + day + 1729777;
+            jd = 367 * y - Math.trunc((7 * (y + 5001 + Math.trunc((m - 9) / 7))) / 4) +
+                 Math.trunc((275 * m) / 9) + d + 1729777;
         }
 
         let l = jd - 1948440 + 10632;
-        const n = Math.floor((l - 1) / 10631);
+        const n = Math.trunc((l - 1) / 10631);
         l = l - 10631 * n + 354;
-        const j = Math.floor((10985 - l) / 5316) * Math.floor((50 * l) / 17719) +
-                  Math.floor(l / 5670) * Math.floor((43 * l) / 15238);
-        l = l - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) -
-            Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
-        const m = Math.floor((24 * l) / 709);
-        const d = l - Math.floor((709 * m) / 24);
+        const j = Math.trunc((10985 - l) / 5316) * Math.trunc((50 * l) / 17719) +
+                  Math.trunc(l / 5670) * Math.trunc((43 * l) / 15238);
+        l = l - Math.trunc((30 - j) / 15) * Math.trunc((17719 * j) / 50) -
+            Math.trunc(j / 16) * Math.trunc((15238 * j) / 43) + 29;
+        const hm = Math.trunc((24 * l) / 709);
+        const hd = l - Math.trunc((709 * hm) / 24);
 
-        const dd = String(d).padStart(2, '0');
-        const monthName = HIJRI_MONTH_NAMES[m] || ('M' + m);
+        const dd = String(hd).padStart(2, '0');
+        const monthName = HIJRI_MONTH_NAMES[hm] || ('M' + hm);
         return `${dd}-${monthName}`;
     }
 
@@ -459,13 +473,35 @@
             const d = parseInt(parts[2], 10);
             if (isNaN(y) || isNaN(m) || isNaN(d)) return '';
 
+            const targetDate = `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+            // 1. Check Umm Al-Qura month start table
+            const keys = Object.keys(UMM_AL_QURA_MONTH_STARTS).sort();
+            for (let i = 0; i < keys.length; i++) {
+                const currKey = keys[i];
+                const currDate = UMM_AL_QURA_MONTH_STARTS[currKey];
+                const nextDate = keys[i + 1] ? UMM_AL_QURA_MONTH_STARTS[keys[i + 1]] : null;
+
+                if (targetDate >= currDate && (!nextDate || targetDate < nextDate)) {
+                    const d1 = new Date(currDate + 'T00:00:00Z');
+                    const d2 = new Date(targetDate + 'T00:00:00Z');
+                    const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+                    const hDay = diffDays + 1;
+                    const hMonth = parseInt(currKey.split('-')[1], 10);
+                    const dd = String(hDay).padStart(2, '0');
+                    return `${dd}-${HIJRI_MONTH_NAMES[hMonth] || ('M' + hMonth)}`;
+                }
+            }
+
+            // 2. Try modern browser Intl API (Saudi Umm Al-Qura) with explicit UTC timezone
             if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
                 try {
                     const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
                     const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', {
                         day: 'numeric',
                         month: 'numeric',
-                        year: 'numeric'
+                        year: 'numeric',
+                        timeZone: 'UTC'
                     });
                     const fParts = formatter.formatToParts(dateObj);
                     let hDay = null, hMonth = null;
@@ -480,7 +516,69 @@
                 } catch (err) {}
             }
 
+            // 3. Fallback to Kuwaiti mathematical formula
             return kuwaitiHijri(y, m, d);
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function hijriToGregorian(hijriStr, defaultYear = 1448) {
+        if (!hijriStr) return '';
+        try {
+            let clean = hijriStr.toUpperCase().trim();
+            clean = clean.replace(/HIJRI|\/|\\/g, ' ');
+
+            let hy = defaultYear;
+            const ym = clean.match(/\b(14\d{2})\b/);
+            if (ym) {
+                hy = parseInt(ym[1], 10);
+                clean = clean.replace(ym[0], ' ');
+            }
+
+            const dm = clean.match(/(\d{1,2})/);
+            if (!dm) return '';
+            const hd = parseInt(dm[1], 10);
+
+            let hm = 0;
+            if (clean.includes('MUHAR')) hm = 1;
+            else if (clean.includes('SAF')) hm = 2;
+            else if (clean.includes('RABI-I') || clean.includes('RABI 1') || clean.includes('RABI-1') || clean.includes('RABI-UL-AWWAL')) hm = 3;
+            else if (clean.includes('RABI-II') || clean.includes('RABI 2') || clean.includes('RABI-2') || clean.includes('RABI-US-SANI')) hm = 4;
+            else if (clean.includes('JAMADI-I') || clean.includes('JAMADI 1') || clean.includes('JAMADI-1')) hm = 5;
+            else if (clean.includes('JAMADI-II') || clean.includes('JAMADI 2') || clean.includes('JAMADI-2')) hm = 6;
+            else if (clean.includes('RAJ')) hm = 7;
+            else if (clean.includes('SHA') && !clean.includes('SHAW')) hm = 8;
+            else if (clean.includes('RAM')) hm = 9;
+            else if (clean.includes('SHAW')) hm = 10;
+            else if (clean.includes('ZILQ') || clean.includes('QAIDA') || clean.includes('QADH')) hm = 11;
+            else if (clean.includes('ZILH') || clean.includes('HAJJ') || clean.includes('HIJJ')) hm = 12;
+
+            if (hm === 0) return '';
+
+            // 1. Check Umm Al-Qura table
+            const key = `${hy}-${String(hm).padStart(2, '0')}`;
+            if (UMM_AL_QURA_MONTH_STARTS[key]) {
+                const startDate = UMM_AL_QURA_MONTH_STARTS[key];
+                const d = new Date(startDate + 'T00:00:00Z');
+                d.setUTCDate(d.getUTCDate() + (hd - 1));
+                return d.toISOString().substring(0, 10);
+            }
+
+            // 2. Fallback to Julian Day conversion
+            const jd = Math.trunc((11 * hy + 3) / 30) + 354 * hy + 30 * hm - Math.trunc((hm - 1) / 2) + hd + 1948440 - 385;
+            let l = jd + 68569;
+            const n = Math.trunc((4 * l) / 146097);
+            l = l - Math.trunc((146097 * n + 3) / 4);
+            const i = Math.trunc((4000 * (l + 1)) / 1461001);
+            l = l - Math.trunc((1461 * i) / 4) + 31;
+            const j = Math.trunc((80 * l) / 2447);
+            const day = l - Math.trunc((2447 * j) / 80);
+            l = Math.trunc(j / 11);
+            const month = j + 2 - 12 * l;
+            const year = 100 * (n - 49) + i + l;
+
+            return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         } catch (e) {
             return '';
         }
@@ -975,6 +1073,65 @@
         syncHotelToRooms(hIdx);
     }
 
+    function handleHijriDateChange(inputElem) {
+        const card = inputElem.closest('.hotel-card');
+        if (!card) return;
+        const hIdx = card.getAttribute('data-hotel-idx');
+
+        const checkInInp = card.querySelector('.hotel-check-in');
+        const checkOutInp = card.querySelector('.hotel-check-out');
+        const hijriInInp = card.querySelector('.hotel-hijri-in');
+        const hijriOutInp = card.querySelector('.hotel-hijri-out');
+        const nightsInp = card.querySelector('.hotel-nights-input');
+
+        const isHijriIn = inputElem.classList.contains('hotel-hijri-in');
+        const isHijriOut = inputElem.classList.contains('hotel-hijri-out');
+
+        if (isHijriIn) {
+            const hVal = (hijriInInp.value || '').trim();
+            const gDate = hijriToGregorian(hVal);
+            if (gDate) {
+                if (checkInInp._flatpickr) {
+                    checkInInp._flatpickr.setDate(gDate, false);
+                } else {
+                    checkInInp.value = gDate;
+                }
+                const nights = parseInt(nightsInp.value, 10) || 1;
+                if (!checkOutInp.value || dateDiffInDays(gDate, checkOutInp.value) <= 0) {
+                    const newOut = addDaysToDate(gDate, nights);
+                    if (newOut) {
+                        if (checkOutInp._flatpickr) {
+                            checkOutInp._flatpickr.setDate(newOut, false);
+                        } else {
+                            checkOutInp.value = newOut;
+                        }
+                        hijriOutInp.value = gregorianToHijri(newOut);
+                    }
+                } else {
+                    nightsInp.value = dateDiffInDays(gDate, checkOutInp.value);
+                }
+                syncHotelToRooms(hIdx);
+            }
+        } else if (isHijriOut) {
+            const hVal = (hijriOutInp.value || '').trim();
+            const gDate = hijriToGregorian(hVal);
+            if (gDate) {
+                if (checkOutInp._flatpickr) {
+                    checkOutInp._flatpickr.setDate(gDate, false);
+                } else {
+                    checkOutInp.value = gDate;
+                }
+                if (checkInInp && checkInInp.value) {
+                    const diff = dateDiffInDays(checkInInp.value, gDate);
+                    if (diff > 0) {
+                        nightsInp.value = diff;
+                    }
+                }
+                syncHotelToRooms(hIdx);
+            }
+        }
+    }
+
     function initFlatpickr(scope = document) {
         const inputs = scope.querySelectorAll('.flatpickr-date');
         inputs.forEach(inp => {
@@ -1252,6 +1409,17 @@
                 if (card) {
                     syncHotelToRooms(card.getAttribute('data-hotel-idx'));
                 }
+            }
+
+            // Hijri Date input changed
+            if (e.target.classList.contains('hotel-hijri-in') || e.target.classList.contains('hotel-hijri-out')) {
+                handleHijriDateChange(e.target);
+            }
+        });
+
+        container.addEventListener('focusout', function (e) {
+            if (e.target.classList.contains('hotel-hijri-in') || e.target.classList.contains('hotel-hijri-out')) {
+                handleHijriDateChange(e.target);
             }
         });
 

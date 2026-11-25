@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head></head><body><div id="out">d1 (new Date('2027-04-28')) [Local TZ]: 11/21/1448 AH<br>d1 (new Date('2027-04-28')) [UTC TZ]: 11/21/1448 AH<br>d1 (new Date('2027-04-28')) [Saudi TZ]: 11/21/1448 AH<br>d2 (new Date(2027, 3, 28)) [Local TZ]: 11/21/1448 AH<br>d2 (new Date(2027, 3, 28)) [UTC TZ]: 11/20/1448 AH<br>d2 (new Date(2027, 3, 28)) [Saudi TZ]: 11/20/1448 AH<br>d3 (UTC noon) [Local TZ]: 11/21/1448 AH<br>d3 (UTC noon) [UTC TZ]: 11/21/1448 AH<br>d3 (UTC noon) [Saudi TZ]: 11/21/1448 AH</div><script>
+const HIJRI_MONTH_NAMES = { 1: 'MUHARRAM', 2: 'SAFAR', 3: 'RABI-I', 4: 'RABI-II', 5: 'JAMADI-I', 6: 'JAMADI-II', 7: 'RAJAB', 8: 'SHABAN', 9: 'RAMADAN', 10: 'SHAWWAL', 11: 'ZILQAIDA', 12: 'ZILHAJJ' };
+
+// Test 1: new Date('2027-04-28') -> parsed as UTC midnight
+const d1 = new Date('2027-04-28'); // In UTC: 2027-04-28 00:00:00. In local PKT (UTC+5): 05:00:00 on Apr 28. But in Americas: Apr 27!
+// Test 2: new Date(2027, 3, 28) -> parsed as local midnight
+const d2 = new Date(2027, 3, 28); // In local PKT: 2027-04-28 00:00:00. In UTC: 2027-04-27 19:00:00!
+// Test 3: new Date(Date.UTC(2027, 3, 28, 12, 0, 0)) -> UTC noon
+
+const formatterLocal = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+const formatterUTC = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const formatterSaudi = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: 'Asia/Riyadh' });
+
+let lines = [];
+lines.push("d1 (new Date('2027-04-28')) [Local TZ]: " + formatterLocal.format(d1));
+lines.push("d1 (new Date('2027-04-28')) [UTC TZ]: " + formatterUTC.format(d1));
+lines.push("d1 (new Date('2027-04-28')) [Saudi TZ]: " + formatterSaudi.format(d1));
+
+lines.push("d2 (new Date(2027, 3, 28)) [Local TZ]: " + formatterLocal.format(d2));
+lines.push("d2 (new Date(2027, 3, 28)) [UTC TZ]: " + formatterUTC.format(d2));
+lines.push("d2 (new Date(2027, 3, 28)) [Saudi TZ]: " + formatterSaudi.format(d2));
+
+lines.push("d3 (UTC noon) [Local TZ]: " + formatterLocal.format(new Date(Date.UTC(2027, 3, 28, 12, 0, 0))));
+lines.push("d3 (UTC noon) [UTC TZ]: " + formatterUTC.format(new Date(Date.UTC(2027, 3, 28, 12, 0, 0))));
+lines.push("d3 (UTC noon) [Saudi TZ]: " + formatterSaudi.format(new Date(Date.UTC(2027, 3, 28, 12, 0, 0))));
+
+document.getElementById('out').innerText = lines.join('\n');
+</script>
+</body></html>
