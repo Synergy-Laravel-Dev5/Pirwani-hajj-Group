@@ -459,9 +459,9 @@
                                                 <td class="col-sr text-center fw-bold">{{ $loop->iteration }}</td>
 
                                                 <td class="col-picture text-center">
-                                                    @if (!empty($person->photo))
+                                                    @if (!empty($person->photo) && !empty($person->photo_exists))
                                                         <img src="{{ asset($person->photo) }}" class="haji-photo"
-                                                            alt="Photo"
+                                                            alt="Photo" width="44" height="48" loading="lazy" decoding="async"
                                                             onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                                                         <div class="haji-photo-placeholder" style="display: none;">
                                                             <i class="mdi mdi-account"></i>

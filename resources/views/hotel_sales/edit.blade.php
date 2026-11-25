@@ -681,7 +681,7 @@
             </td>
             <td>
                 <div class="input-group input-group-sm">
-                    <input type="number" min="1" name="items[${rIdx}][quantity]" class="form-control form-control-sm text-center fw-bold room-qty-input" value="${qty}" required>
+                    <input type="number" min="1" step="1" name="items[${rIdx}][quantity]" class="form-control form-control-sm text-center fw-bold room-qty-input" value="${qty || 1}" required>
                     <span class="input-group-text qty-unit-text fs-11">${basis === 'bed' ? 'Beds' : 'Rooms'}</span>
                 </div>
             </td>
@@ -1163,6 +1163,31 @@
         });
 
         document.getElementById('tillReceived').addEventListener('input', recalcTotals);
+
+        // Auto-fix empty quantity on blur
+        container.addEventListener('blur', function (e) {
+            if (e.target && e.target.classList.contains('room-qty-input')) {
+                const val = parseInt(e.target.value, 10);
+                if (isNaN(val) || val < 1) {
+                    e.target.value = 1;
+                    const row = e.target.closest('.room-type-row');
+                    if (row) recalcRowAmount(row.getAttribute('data-row-idx'));
+                }
+            }
+        }, true);
+
+        // Ensure all quantities are valid integers on form submit
+        const editForm = document.querySelector('form');
+        if (editForm) {
+            editForm.addEventListener('submit', function () {
+                document.querySelectorAll('.room-qty-input').forEach(inp => {
+                    const val = parseInt(inp.value, 10);
+                    if (isNaN(val) || val < 1) {
+                        inp.value = 1;
+                    }
+                });
+            });
+        }
 
         // Preload existing items grouped by hotel
         if (existingItems && existingItems.length > 0) {

@@ -24,12 +24,21 @@ class CareOfPersonReportController extends Controller
         $search         = $request->get('search');
 
         // Query bookings that have a care_of value, active (not deleted, not cancelled/rejected)
-        $bookingsQuery = Booking::with([
-            'client',
-            'company',
-            'package',
+        $bookingsQuery = Booking::select([
+            'id', 'voucher_number', 'care_of', 'total_amount', 'total_received',
+            'balance', 'camp', 'phone', 'booking_for', 'client_id', 'company_id',
+            'package_id', 'package_name', 'package_type', 'status', 'deleted_at'
+        ])->with([
+            'client:id,name,phone',
+            'company:id,company_name',
+            'package:id,package_title,name',
             'persons' => function ($q) {
-                $q->orderBy('id', 'asc');
+                $q->select([
+                    'id', 'booking_id', 'full_name', 'given_name', 'surname', 'father_name',
+                    'gender', 'passport_number', 'date_of_issue', 'passport_issue_date',
+                    'passport_expiry_date', 'cnic', 'phone', 'hajj_id', 'hb_number',
+                    'room_number', 'room_type', 'hotel_name', 'photo'
+                ])->orderBy('id', 'asc');
             }
         ])
             ->whereNotNull('care_of')
@@ -136,6 +145,22 @@ class CareOfPersonReportController extends Controller
             return Package::latest()->get();
         });
 
+        // Memoized check for photo file existence on disk (prevents hundreds of 404 image requests on browser)
+        $checkedPhotos = [];
+        foreach ($allBookings as $booking) {
+            foreach ($booking->persons as $person) {
+                if (!empty($person->photo)) {
+                    $pRaw = $person->photo;
+                    if (!isset($checkedPhotos[$pRaw])) {
+                        $checkedPhotos[$pRaw] = ($this->resolvePhotoPath($pRaw) !== null);
+                    }
+                    $person->photo_exists = $checkedPhotos[$pRaw];
+                } else {
+                    $person->photo_exists = false;
+                }
+            }
+        }
+
         return compact(
             'groupedByCareOf',
             'allBookings',
@@ -183,29 +208,50 @@ class CareOfPersonReportController extends Controller
     }
 
     /**
-     * Helper to create or fetch a lightweight cached thumbnail for high-speed rendering in PDF
+     * Resolve full disk path of a photo robustly across candidate paths
      */
-    private function getFastThumbnail(?string $photoPath, string $thumbDir, int $maxW = 100, int $maxH = 120): ?string
+    private function resolvePhotoPath(?string $photoPath): ?string
     {
         if (empty($photoPath)) {
             return null;
         }
 
         $clean = ltrim($photoPath, '/\\');
-        $fullPath = null;
-        if (file_exists(public_path($clean))) {
-            $fullPath = public_path($clean);
-        } elseif (file_exists($photoPath)) {
-            $fullPath = $photoPath;
+        $candidates = [
+            public_path($clean),
+            $clean,
+            $photoPath,
+            public_path('uploads/' . $clean),
+            public_path('storage/' . $clean),
+            storage_path('app/public/' . $clean),
+            storage_path('app/' . $clean),
+            base_path($clean),
+        ];
+
+        foreach ($candidates as $cand) {
+            if (!empty($cand) && file_exists($cand) && is_file($cand)) {
+                return $cand;
+            }
         }
 
-        if (!$fullPath || !file_exists($fullPath)) {
+        return null;
+    }
+
+    /**
+     * Helper to create or fetch a lightweight cached thumbnail for high-speed rendering in PDF and Excel
+     * Never drops a photo if it exists on disk!
+     */
+    private function getFastThumbnail(?string $photoPath, string $thumbDir, int $maxW = 100, int $maxH = 120): ?string
+    {
+        $fullPath = $this->resolvePhotoPath($photoPath);
+        if (!$fullPath) {
             return null;
         }
 
         $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-            return null;
+        $supported = ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp', 'png', 'webp', 'gif', 'bmp'];
+        if (!in_array($ext, $supported)) {
+            return $fullPath; // Fallback to raw file if extension is unknown but exists
         }
 
         $mtime = filemtime($fullPath);
@@ -222,54 +268,61 @@ class CareOfPersonReportController extends Controller
             return $fullPath;
         }
 
-        $info = @getimagesize($fullPath);
-        if (!$info) {
-            return null;
-        }
+        try {
+            $info = @getimagesize($fullPath);
+            $imageType = $info ? ($info[2] ?? null) : null;
 
-        $w = $info[0];
-        $h = $info[1];
-        if ($w <= 0 || $h <= 0) {
-            return null;
-        }
-
-        $ratio = min($maxW / $w, $maxH / $h, 1.0);
-        $newW = max(1, (int)round($w * $ratio));
-        $newH = max(1, (int)round($h * $ratio));
-
-        $srcImg = null;
-        switch ($info[2]) {
-            case IMAGETYPE_JPEG:
+            $srcImg = null;
+            if ($imageType === IMAGETYPE_JPEG || in_array($ext, ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp'])) {
                 $srcImg = @imagecreatefromjpeg($fullPath);
-                break;
-            case IMAGETYPE_PNG:
+            } elseif ($imageType === IMAGETYPE_PNG || $ext === 'png') {
                 $srcImg = @imagecreatefrompng($fullPath);
-                break;
-            case IMAGETYPE_WEBP:
+            } elseif ($imageType === IMAGETYPE_WEBP || $ext === 'webp') {
                 $srcImg = function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($fullPath) : null;
-                break;
-            case IMAGETYPE_GIF:
+            } elseif ($imageType === IMAGETYPE_GIF || $ext === 'gif') {
                 $srcImg = @imagecreatefromgif($fullPath);
-                break;
-            default:
-                return null;
+            } elseif (defined('IMAGETYPE_BMP') && $imageType === IMAGETYPE_BMP || $ext === 'bmp') {
+                $srcImg = function_exists('imagecreatefrombmp') ? @imagecreatefrombmp($fullPath) : null;
+            }
+
+            // Universal fallback if specific type loader failed
+            if (!$srcImg && function_exists('imagecreatefromstring')) {
+                $rawContent = @file_get_contents($fullPath);
+                if ($rawContent) {
+                    $srcImg = @imagecreatefromstring($rawContent);
+                }
+            }
+
+            if (!$srcImg) {
+                return $fullPath; // Fallback to raw file so photo is never lost!
+            }
+
+            $w = imagesx($srcImg);
+            $h = imagesy($srcImg);
+            if ($w <= 0 || $h <= 0) {
+                imagedestroy($srcImg);
+                return $fullPath;
+            }
+
+            $ratio = min($maxW / $w, $maxH / $h, 1.0);
+            $newW = max(1, (int)round($w * $ratio));
+            $newH = max(1, (int)round($h * $ratio));
+
+            $dstImg = imagecreatetruecolor($newW, $newH);
+            $white = imagecolorallocate($dstImg, 255, 255, 255);
+            imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $white);
+
+            imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $w, $h);
+            imagejpeg($dstImg, $thumbPath, 80);
+
+            imagedestroy($srcImg);
+            imagedestroy($dstImg);
+
+            return file_exists($thumbPath) ? $thumbPath : $fullPath;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Thumbnail generation error for {$fullPath}: " . $e->getMessage());
+            return $fullPath; // Always fallback so photo is never omitted!
         }
-
-        if (!$srcImg) {
-            return null;
-        }
-
-        $dstImg = imagecreatetruecolor($newW, $newH);
-        $white = imagecolorallocate($dstImg, 255, 255, 255);
-        imagefilledrectangle($dstImg, 0, 0, $newW, $newH, $white);
-
-        imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newW, $newH, $w, $h);
-        imagejpeg($dstImg, $thumbPath, 75);
-
-        imagedestroy($srcImg);
-        imagedestroy($dstImg);
-
-        return $thumbPath;
     }
 
     /**
@@ -458,9 +511,12 @@ class CareOfPersonReportController extends Controller
   <Default Extension="xml" ContentType="application/xml"/>
   <Default Extension="jpg" ContentType="image/jpeg"/>
   <Default Extension="jpeg" ContentType="image/jpeg"/>
+  <Default Extension="jfif" ContentType="image/jpeg"/>
+  <Default Extension="pjpeg" ContentType="image/jpeg"/>
   <Default Extension="png" ContentType="image/png"/>
   <Default Extension="webp" ContentType="image/webp"/>
   <Default Extension="gif" ContentType="image/gif"/>
+  <Default Extension="bmp" ContentType="image/bmp"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
@@ -670,9 +726,13 @@ class CareOfPersonReportController extends Controller
 
                                 // Resolve thumbnail/photo
                                 $photoPath = $this->getFastThumbnail($person->photo, $thumbDir, 120, 140);
+                                if (!$photoPath && !empty($person->photo)) {
+                                    $photoPath = $this->resolvePhotoPath($person->photo);
+                                }
                                 if ($picColIdx !== false && $photoPath && file_exists($photoPath)) {
                                     $mediaCount++;
-                                    $ext = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION)) ?: 'jpg';
+                                    $rawExt = strtolower(pathinfo($photoPath, PATHINFO_EXTENSION)) ?: 'jpg';
+                                    $ext = in_array($rawExt, ['jfif', 'pjpeg', 'pjp']) ? 'jpg' : $rawExt;
                                     $mediaName = "image{$mediaCount}.{$ext}";
                                     $zip->addFile($photoPath, "xl/media/{$mediaName}");
                                     $drawingRelsArr[] = '<Relationship Id="rId' . $mediaCount . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/' . $mediaName . '"/>';
@@ -690,7 +750,7 @@ class CareOfPersonReportController extends Controller
     <xdr:ext cx="361950" cy="438150"/>
     <xdr:pic>
       <xdr:nvPicPr>
-        <xdr:cNvPr id="' . $mediaCount . '" name="Photo ' . $mediaCount . '"/>
+        <xdr:cNvPr id="' . ($mediaCount + 1) . '" name="Photo ' . $mediaCount . '"/>
         <xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr>
       </xdr:nvPicPr>
       <xdr:blipFill>
@@ -992,11 +1052,15 @@ class CareOfPersonReportController extends Controller
 
                                 case 'picture':
                                     $photoFile = $this->getFastThumbnail($person->photo, $thumbDir, 120, 140);
+                                    if (!$photoFile && !empty($person->photo)) {
+                                        $photoFile = $this->resolvePhotoPath($person->photo);
+                                    }
                                     if ($photoFile && file_exists($photoFile)) {
                                         $imgCounter++;
                                         $cid = "photo_{$imgCounter}";
-                                        $ext = strtolower(pathinfo($photoFile, PATHINFO_EXTENSION)) ?: 'jpg';
-                                        $mime = ($ext === 'png') ? 'image/png' : 'image/jpeg';
+                                        $rawExt = strtolower(pathinfo($photoFile, PATHINFO_EXTENSION)) ?: 'jpg';
+                                        $ext = in_array($rawExt, ['jfif', 'pjpeg', 'pjp']) ? 'jpg' : $rawExt;
+                                        $mime = ($ext === 'png') ? 'image/png' : (($ext === 'gif') ? 'image/gif' : 'image/jpeg');
                                         $imgRaw = @file_get_contents($photoFile);
                                         if ($imgRaw) {
                                             $imgItem = [

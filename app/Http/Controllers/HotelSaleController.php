@@ -114,13 +114,30 @@ class HotelSaleController extends Controller
     public function store(Request $request)
     {
         $this->authorize('hotel_sale_create');
+
+        // Sanitize items: ensure quantity defaults to 1 if empty or invalid
+        if ($request->has('items') && is_array($request->items)) {
+            $cleaned = $request->items;
+            foreach ($cleaned as $k => $item) {
+                if (!isset($item['quantity']) || $item['quantity'] === '' || $item['quantity'] === null) {
+                    $cleaned[$k]['quantity'] = 1;
+                } else {
+                    $cleaned[$k]['quantity'] = max(1, intval($item['quantity']));
+                }
+            }
+            $request->merge(['items' => $cleaned]);
+        }
+
         $request->validate([
-            'sale_for'      => 'required|in:hotel_client,company,supplier,client',
-            'customer_name' => 'required|string|max:255',
-            'invoice_date'  => 'required|date',
-            'items'         => 'required|array|min:1',
+            'sale_for'           => 'required|in:hotel_client,company,supplier,client',
+            'customer_name'      => 'required|string|max:255',
+            'invoice_date'       => 'required|date',
+            'items'              => 'required|array|min:1',
             'items.*.hotel_name' => 'required|string',
-            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.quantity'   => 'nullable|numeric|min:1',
+        ], [
+            'items.*.quantity.min'        => 'Quantity must be at least 1.',
+            'items.*.hotel_name.required' => 'Please provide hotel name.',
         ]);
 
         DB::beginTransaction();
@@ -293,13 +310,29 @@ class HotelSaleController extends Controller
         $this->authorize('hotel_sale_edit');
         $sale = HotelSale::findOrFail($id);
 
+        // Sanitize items: ensure quantity defaults to 1 if empty or invalid
+        if ($request->has('items') && is_array($request->items)) {
+            $cleaned = $request->items;
+            foreach ($cleaned as $k => $item) {
+                if (!isset($item['quantity']) || $item['quantity'] === '' || $item['quantity'] === null) {
+                    $cleaned[$k]['quantity'] = 1;
+                } else {
+                    $cleaned[$k]['quantity'] = max(1, intval($item['quantity']));
+                }
+            }
+            $request->merge(['items' => $cleaned]);
+        }
+
         $request->validate([
-            'sale_for'      => 'required|in:hotel_client,company,supplier,client',
-            'customer_name' => 'required|string|max:255',
-            'invoice_date'  => 'required|date',
-            'items'         => 'required|array|min:1',
+            'sale_for'           => 'required|in:hotel_client,company,supplier,client',
+            'customer_name'      => 'required|string|max:255',
+            'invoice_date'       => 'required|date',
+            'items'              => 'required|array|min:1',
             'items.*.hotel_name' => 'required|string',
-            'items.*.quantity'   => 'required|integer|min:1',
+            'items.*.quantity'   => 'nullable|numeric|min:1',
+        ], [
+            'items.*.quantity.min'        => 'Quantity must be at least 1.',
+            'items.*.hotel_name.required' => 'Please provide hotel name.',
         ]);
 
         DB::beginTransaction();

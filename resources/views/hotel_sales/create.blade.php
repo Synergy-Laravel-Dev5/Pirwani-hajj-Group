@@ -693,7 +693,7 @@
             </td>
             <td>
                 <div class="input-group input-group-sm">
-                    <input type="number" min="1" name="items[${rIdx}][quantity]" class="form-control form-control-sm text-center fw-bold room-qty-input" value="${qty}" required>
+                    <input type="number" min="1" step="1" name="items[${rIdx}][quantity]" class="form-control form-control-sm text-center fw-bold room-qty-input" value="${qty || 1}" required>
                     <span class="input-group-text qty-unit-text fs-11">${basis === 'bed' ? 'Beds' : 'Rooms'}</span>
                 </div>
             </td>
@@ -1247,16 +1247,74 @@
 
         document.getElementById('tillReceived').addEventListener('input', recalcTotals);
 
-        // Render at least one hotel card by default
-        renderHotelCard({
-            hotel_name: 'SWISSOTEL MAKKAH',
-            allotment_basis: 'room',
-            meal_plan: 'HALF BOARD',
-            no_of_nights: 5,
-            room_types: [
-                { room_type: 'DOUBLE', quantity: 10, rate_per_unit: 0 }
-            ]
-        });
+        // Auto-fix empty quantity on blur
+        container.addEventListener('blur', function (e) {
+            if (e.target && e.target.classList.contains('room-qty-input')) {
+                const val = parseInt(e.target.value, 10);
+                if (isNaN(val) || val < 1) {
+                    e.target.value = 1;
+                    const row = e.target.closest('.room-type-row');
+                    if (row) recalcRowAmount(row.getAttribute('data-row-idx'));
+                }
+            }
+        }, true);
+
+        // Ensure all quantities are valid integers on form submit
+        const mainForm = document.querySelector('form');
+        if (mainForm) {
+            mainForm.addEventListener('submit', function () {
+                document.querySelectorAll('.room-qty-input').forEach(inp => {
+                    const val = parseInt(inp.value, 10);
+                    if (isNaN(val) || val < 1) {
+                        inp.value = 1;
+                    }
+                });
+            });
+        }
+
+        // Render from old input if validation failed, otherwise default card
+        const oldItems = @json(old('items', []));
+        if (oldItems && Object.keys(oldItems).length > 0) {
+            const rawList = Array.isArray(oldItems) ? oldItems : Object.values(oldItems);
+            const hotelGroups = [];
+            rawList.forEach(item => {
+                if (!item) return;
+                const hName = item.hotel_name || '';
+                let grp = hotelGroups.find(g => g.hotel_name === hName && g.check_in === item.check_in && g.check_out === item.check_out);
+                if (!grp) {
+                    grp = {
+                        hotel_name: hName,
+                        hotel_id: item.hotel_id,
+                        allotment_basis: item.allotment_basis || 'room',
+                        meal_plan: item.meal_plan || 'HALF BOARD',
+                        check_in: item.check_in,
+                        check_out: item.check_out,
+                        hijri_check_in: item.hijri_check_in,
+                        hijri_check_out: item.hijri_check_out,
+                        no_of_nights: item.no_of_nights || 1,
+                        room_types: []
+                    };
+                    hotelGroups.push(grp);
+                }
+                grp.room_types.push({
+                    room_type: item.room_type || 'DOUBLE',
+                    quantity: item.quantity || 1,
+                    rate_per_unit: item.rate_per_unit || 0,
+                    amount: item.amount
+                });
+            });
+            hotelGroups.forEach(grp => renderHotelCard(grp));
+        } else {
+            renderHotelCard({
+                hotel_name: 'SWISSOTEL MAKKAH',
+                allotment_basis: 'room',
+                meal_plan: 'HALF BOARD',
+                no_of_nights: 5,
+                room_types: [
+                    { room_type: 'DOUBLE', quantity: 10, rate_per_unit: 0 }
+                ]
+            });
+        }
     });
 
 </script>
