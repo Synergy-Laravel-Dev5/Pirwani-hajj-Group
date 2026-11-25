@@ -13,6 +13,7 @@ use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class HotelSaleController extends Controller
 {
@@ -289,6 +290,32 @@ class HotelSaleController extends Controller
         $this->authorize('hotel_sale_show');
         $sale = HotelSale::with(['items.hotel', 'company', 'client', 'hotelClient', 'supplier'])->findOrFail($id);
         return view('hotel_sales.show', compact('sale'));
+    }
+
+    public function downloadPdf($id)
+    {
+        $this->authorize('hotel_sale_show');
+        $sale = HotelSale::with(['items.hotel', 'company', 'client', 'hotelClient', 'supplier'])->findOrFail($id);
+
+        $logoPath = public_path('assets/images/PIRWANI PNG FILE.png');
+        $logoBase64 = '';
+        if (file_exists($logoPath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
+        $pdf = Pdf::loadView('hotel_sales.pdf', compact('sale', 'logoBase64'));
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('defaultFont', 'DejaVu Sans');
+
+        $safeInvoice = preg_replace('/[^A-Za-z0-9_\-]/', '_', $sale->invoice_number ?: 'Invoice_' . $sale->id);
+        $fileName = 'Hotel_Reservation_' . $safeInvoice . '.pdf';
+
+        if (request()->has('stream')) {
+            return $pdf->stream($fileName);
+        }
+        return $pdf->download($fileName);
     }
 
     public function edit($id)

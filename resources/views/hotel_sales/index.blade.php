@@ -260,6 +260,9 @@
                                                 <a href="{{ route('hotel-sales.show', $sale->id) }}" class="btn btn-primary btn-sm" title="View & Print Voucher">
                                                     <i class="mdi mdi-printer"></i>
                                                 </a>
+                                                <a href="{{ route('hotel-sales.download-pdf', $sale->id) }}" class="btn btn-danger btn-sm" title="Download PDF">
+                                                    <i class="mdi mdi-file-pdf-box"></i>
+                                                </a>
                                                 @endcan
                                                 @can('hotel_sale_edit')
                                                 <a href="{{ route('hotel-sales.edit', $sale->id) }}" class="btn btn-outline-secondary btn-sm" title="Edit">

@@ -211,6 +211,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('create',       'create')->name('hotel-sales.create');
                 Route::post('store',       'store')->name('hotel-sales.store');
                 Route::get('show/{id}',    'show')->name('hotel-sales.show');
+                Route::get('pdf/{id}',     'downloadPdf')->name('hotel-sales.download-pdf');
                 Route::get('edit/{id}',    'edit')->name('hotel-sales.edit');
                 Route::put('update/{id}',  'update')->name('hotel-sales.update');
                 Route::delete('delete/{id}', 'destroy')->name('hotel-sales.delete');

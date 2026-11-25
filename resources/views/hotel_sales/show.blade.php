@@ -221,6 +221,9 @@
                 <a href="{{ route('hotel-sales.edit', $sale->id) }}" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-pencil me-1"></i> Edit Invoice
                 </a>
+                <a href="{{ route('hotel-sales.download-pdf', $sale->id) }}" class="btn btn-danger btn-sm px-3 fw-bold">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                </a>
                 <button onclick="window.print()" class="btn btn-dark btn-sm px-3 fw-bold">
                     <i class="bi bi-printer me-1"></i> Print / Save as PDF
                 </button>
