@@ -345,6 +345,70 @@
     </div>
 </div>
 
+<!-- Mini Modal: Quick Add New Hotel -->
+<div class="modal fade" id="quickAddHotelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="quickAddHotelForm">
+                @csrf
+                <div class="modal-header bg-dark text-white py-2 px-3">
+                    <h5 class="modal-title fs-15 fw-bold text-white">
+                        <i class="mdi mdi-office-building-plus me-1 text-warning"></i> Quick Add New Hotel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label fs-12 fw-bold text-uppercase text-dark mb-1">Hotel Name <span class="text-danger">*</span></label>
+                        <input type="text" id="quick_hotel_name" name="name" class="form-control form-control-sm" required placeholder="e.g. MAKKAH CLOCK ROYAL TOWER">
+                        <small class="text-muted fs-11">Official name of the hotel property.</small>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fs-12 fw-bold text-uppercase text-dark mb-1">City / Place <span class="text-danger">*</span></label>
+                            <select id="quick_hotel_place" name="place" class="form-select form-select-sm" required>
+                                <option value="MAKKAH" selected>MAKKAH</option>
+                                <option value="MADINAH">MADINAH</option>
+                                <option value="JEDDAH">JEDDAH</option>
+                                <option value="AZIZIA">AZIZIA</option>
+                                <option value="MINA">MINA</option>
+                                <option value="OTHER">OTHER</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fs-12 fw-bold text-uppercase text-dark mb-1">Category / Stars</label>
+                            <select id="quick_hotel_category" name="accommodation_category" class="form-select form-select-sm">
+                                <option value="5 Star" selected>5 Star Luxury</option>
+                                <option value="4 Star">4 Star</option>
+                                <option value="3 Star">3 Star</option>
+                                <option value="Standard / Economy">Standard / Economy</option>
+                                <option value="Building">Building / Apartment</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fs-12 fw-bold text-uppercase text-dark mb-1">Contact / Phone</label>
+                        <input type="text" id="quick_hotel_contact" name="contact" class="form-control form-control-sm" placeholder="e.g. +966 12 571 7777">
+                    </div>
+
+                    <div class="mb-1">
+                        <label class="form-label fs-12 fw-bold text-uppercase text-dark mb-1">Address / Location</label>
+                        <input type="text" id="quick_hotel_address" name="address" class="form-control form-control-sm" placeholder="e.g. Ibrahim Al Khalil Road, Makkah">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-3">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="saveQuickHotelBtn" class="btn btn-primary btn-sm px-3 fw-bold">
+                        <i class="mdi mdi-check me-1"></i> Save &amp; Select Hotel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     const hotelsList = @json($hotels);
@@ -515,7 +579,12 @@
             <div class="card-body p-3">
                 <div class="row g-2 mb-2">
                     <div class="col-md-4">
-                        <label class="form-label fs-11 text-muted mb-0 fw-semibold">Hotel Name <span class="text-danger">*</span></label>
+                        <div class="d-flex justify-content-between align-items-center mb-0">
+                            <label class="form-label fs-11 text-muted mb-0 fw-semibold">Hotel Name <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-link p-0 text-primary fs-11 text-decoration-none fw-semibold open-quick-hotel-btn" data-hotel-idx="${hIdx}" data-bs-toggle="modal" data-bs-target="#quickAddHotelModal">
+                                <i class="mdi mdi-plus-circle me-1"></i>+ New Hotel
+                            </button>
+                        </div>
                         <select class="form-select form-select-sm hotel-select mb-1" data-hotel-idx="${hIdx}">
                             ${hotelOptions}
                         </select>
@@ -1030,6 +1099,79 @@
                     btn.disabled = false;
                     btn.innerHTML = '<i class="mdi mdi-check me-1"></i> Save &amp; Select';
                     alert('Network error while creating hotel client.');
+                });
+            });
+        }
+
+        // Quick Add Hotel AJAX Handler
+        let activeHotelTargetIdx = null;
+        document.getElementById('itemsContainer').addEventListener('click', function (e) {
+            const hotelBtn = e.target.closest('.open-quick-hotel-btn');
+            if (hotelBtn) {
+                activeHotelTargetIdx = hotelBtn.getAttribute('data-hotel-idx');
+            }
+        });
+
+        const quickHotelForm = document.getElementById('quickAddHotelForm');
+        if (quickHotelForm) {
+            quickHotelForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const saveHotelBtn = document.getElementById('saveQuickHotelBtn');
+                saveHotelBtn.disabled = true;
+                saveHotelBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+                const formData = new FormData(this);
+
+                fetch("{{ route('hotel.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    saveHotelBtn.disabled = false;
+                    saveHotelBtn.innerHTML = '<i class="mdi mdi-check me-1"></i> Save &amp; Select Hotel';
+
+                    if (data.success && data.hotel) {
+                        const h = data.hotel;
+                        hotelsList.push({ id: h.id, name: h.name, city: h.place });
+
+                        // Update all hotel select dropdowns across all cards
+                        document.querySelectorAll('.hotel-select').forEach(sel => {
+                            const opt = document.createElement('option');
+                            opt.value = h.name;
+                            opt.setAttribute('data-id', h.id);
+                            opt.textContent = `${h.name} (${h.place || 'Hotel'})`;
+                            sel.appendChild(opt);
+                        });
+
+                        // Select in the card that initiated the modal
+                        if (activeHotelTargetIdx !== null) {
+                            const card = document.getElementById(`hotel_card_${activeHotelTargetIdx}`);
+                            if (card) {
+                                const sel = card.querySelector('.hotel-select');
+                                const nameInp = card.querySelector('.hotel-name-input');
+                                const idInp = card.querySelector('.hotel-id-input');
+                                if (sel) sel.value = h.name;
+                                if (nameInp) nameInp.value = h.name;
+                                if (idInp) idInp.value = h.id;
+                                syncHotelToRooms(activeHotelTargetIdx);
+                            }
+                        }
+
+                        bootstrap.Modal.getInstance(document.getElementById('quickAddHotelModal'))?.hide();
+                        quickHotelForm.reset();
+                    } else {
+                        alert(data.message || 'Error creating hotel');
+                    }
+                })
+                .catch(err => {
+                    saveHotelBtn.disabled = false;
+                    saveHotelBtn.innerHTML = '<i class="mdi mdi-check me-1"></i> Save &amp; Select Hotel';
+                    alert('Network error while creating hotel.');
                 });
             });
         }

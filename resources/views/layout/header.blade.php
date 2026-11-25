@@ -175,6 +175,15 @@
                         </li>
                         @endcan
 
+                        @can('hotel_view')
+                        <li class="{{ request()->routeIs('hotel.*') ? 'menuitem-active' : '' }}">
+                            <a href="{{ route('hotel.index') }}">
+                                <i data-feather="map-pin"></i>
+                                <span>Hotels</span>
+                            </a>
+                        </li>
+                        @endcan
+
                         @can('supplier_view')
                         <li class="{{ request()->routeIs('supplier.*') ? 'menuitem-active' : '' }}">
                             <a href="{{ route('supplier.index') }}">

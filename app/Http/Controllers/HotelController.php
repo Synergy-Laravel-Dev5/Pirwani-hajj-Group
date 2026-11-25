@@ -36,6 +36,10 @@ class HotelController extends Controller
     {
         $this->authorize('hotel_create');
 
+        if (!$request->has('status')) {
+            $request->merge(['status' => 'active']);
+        }
+
         $request->validate([
             'name'                   => 'required|string|max:255',
             'hotel_number'           => 'nullable|string|max:100',
@@ -64,9 +68,25 @@ class HotelController extends Controller
 
             logUserActivity('Hotel Created', 'Name: ' . $hotel->name . ' | Number: ' . $hotel->hotel_number, $hotel->id, 'Hotel');
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Hotel created successfully.',
+                    'hotel'   => $hotel,
+                ]);
+            }
+
             return redirect()->route('hotel.index')->with('success', 'Hotel created successfully.');
         } catch (Exception $e) {
             Log::error('Hotel creation failed: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error creating hotel: ' . $e->getMessage()
+                ], 422);
+            }
+
             return redirect()->back()->withInput()->with('error', 'Error creating hotel: ' . $e->getMessage());
         }
     }
