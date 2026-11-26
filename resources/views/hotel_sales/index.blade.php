@@ -173,6 +173,20 @@
             </div>
 
             <!-- Invoices Table -->
+            <style>
+                .hotel-sales-table th,
+                .hotel-sales-table td {
+                    white-space: nowrap;
+                    vertical-align: middle;
+                    padding: 0.6rem 0.45rem;
+                }
+                .hotel-sales-table thead th {
+                    font-size: 11px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.3px;
+                }
+            </style>
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                     <h5 class="fs-15 fw-semibold text-primary mb-0">
@@ -182,63 +196,95 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 fs-13">
+                        <table class="table table-hover align-middle mb-0 fs-13 hotel-sales-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>Invoice #</th>
                                     <th>Date</th>
                                     <th>Customer / Agent</th>
                                     <th>Title</th>
-                                    <th>Reserved Hotels & Allotment</th>
-                                    <th class="text-end">Total Amount</th>
-                                    <th class="text-end">Till Received</th>
+                                    <th>Hotels & Allotment</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-end">Received</th>
                                     <th class="text-end">Balance</th>
                                     <th class="text-center">Status</th>
-                                    <th class="text-center" style="width: 140px;">Actions</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($sales as $sale)
+                                    @php
+                                        $itemsCount = $sale->items->count();
+                                        $uniqueHotels = $sale->items->pluck('hotel_name')->filter()->unique()->values();
+                                        $hotelCount = $uniqueHotels->count();
+                                        $firstHotel = $uniqueHotels->first() ?? '—';
+                                        $totalRooms = $sale->items->filter(fn($i) => $i->allotment_basis !== 'bed' && strtoupper((string)$i->room_type) !== 'BED')->sum('quantity');
+                                        $totalBeds  = $sale->items->filter(fn($i) => $i->allotment_basis === 'bed' || strtoupper((string)$i->room_type) === 'BED')->sum('quantity');
+
+                                        $summaryParts = [];
+                                        if ($totalRooms > 0) {
+                                            $summaryParts[] = $totalRooms . ' ' . \Illuminate\Support\Str::plural('Room', $totalRooms);
+                                        }
+                                        if ($totalBeds > 0) {
+                                            $summaryParts[] = $totalBeds . ' ' . \Illuminate\Support\Str::plural('Bed', $totalBeds);
+                                        }
+                                        $summaryText = count($summaryParts) > 0
+                                            ? implode(', ', $summaryParts)
+                                            : ($itemsCount . ' ' . \Illuminate\Support\Str::plural('Item', $itemsCount));
+                                    @endphp
                                     <tr>
                                         <td>
-                                            <a href="{{ route('hotel-sales.show', $sale->id) }}" class="fw-bold text-primary">
+                                            <a href="{{ route('hotel-sales.show', $sale->id) }}" class="fw-bold text-primary text-decoration-none">
                                                 {{ $sale->invoice_number }}
                                             </a>
                                         </td>
-                                        <td>{{ $sale->invoice_date ? $sale->invoice_date->format('d-M-Y') : '—' }}</td>
+                                        <td class="text-muted">
+                                            {{ $sale->invoice_date ? $sale->invoice_date->format('d-M-Y') : '—' }}
+                                        </td>
                                         <td>
-                                            <div class="fw-bold text-dark">{{ $sale->customer_name }}</div>
-                                            <div class="fs-11 text-muted">
-                                                @if($sale->supplier)
-                                                    <span class="badge bg-soft-info text-info">Supplier / Vendor</span>
-                                                @elseif($sale->sale_for === 'supplier')
-                                                    <span class="badge bg-soft-info text-info">Supplier</span>
+                                            <div class="d-inline-flex align-items-center gap-1">
+                                                <span class="fw-bold text-dark d-inline-block text-truncate" style="max-width: 125px;"
+                                                      title="{{ $sale->customer_name }}{{ $sale->contact ? ' • ' . $sale->contact : '' }}">
+                                                    {{ $sale->customer_name }}
+                                                </span>
+                                                @if($sale->supplier || $sale->sale_for === 'supplier')
+                                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle fs-11">Supplier</span>
                                                 @elseif($sale->sale_for === 'company')
-                                                    <span class="badge bg-soft-primary text-primary">Agent / B2B</span>
+                                                    <span class="badge bg-info-subtle text-info border border-info-subtle fs-11">B2B</span>
                                                 @else
-                                                    <span class="badge bg-soft-success text-success">Client / B2C</span>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle fs-11">Client</span>
                                                 @endif
-                                                @if($sale->contact) • {{ $sale->contact }} @endif
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="fw-semibold text-dark fs-12">{{ $sale->reservation_title }}</span>
+                                            <span class="fw-semibold text-dark fs-12 d-inline-block text-truncate align-middle" style="max-width: 145px;"
+                                                  title="{{ $sale->reservation_title }}">
+                                                {{ $sale->reservation_title ?: '—' }}
+                                            </span>
                                         </td>
                                         <td>
-                                            @foreach($sale->items as $item)
-                                                <div class="fs-11 mb-1">
+                                            @if($itemsCount > 0)
+                                                <div class="d-inline-flex align-items-center gap-1">
                                                     <i class="mdi mdi-hotel text-primary"></i>
-                                                    <strong>{{ $item->hotel_name }}</strong>:
-                                                    @if($item->allotment_basis === 'bed' || strtoupper($item->room_type) === 'BED')
-                                                        <span class="badge bg-soft-warning text-warning border">BED: {{ $item->quantity }} Beds</span>
-                                                    @elseif($item->allotment_basis === 'per_night')
-                                                        <span class="badge bg-soft-info text-info border">{{ $item->room_type }}: {{ $item->quantity }} (Per Night)</span>
-                                                    @else
-                                                        <span class="badge bg-soft-success text-success border">{{ $item->room_type }}: {{ $item->quantity }} Rooms</span>
+                                                    <span class="fw-semibold text-dark d-inline-block text-truncate" style="max-width: 115px;"
+                                                          title="{{ $uniqueHotels->implode(', ') }}">
+                                                        {{ $firstHotel }}
+                                                    </span>
+                                                    @if($hotelCount > 1)
+                                                        <span class="badge bg-secondary-subtle text-secondary fs-11"
+                                                              title="{{ $uniqueHotels->implode(', ') }}">+{{ $hotelCount - 1 }}</span>
                                                     @endif
-                                                    <span class="text-muted">({{ $item->meal_plan ?: 'RO' }}, {{ $item->no_of_nights }} Nts)</span>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary py-0 px-2 fs-11 fw-semibold"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#saleItemsModal{{ $sale->id }}"
+                                                            title="View all {{ $itemsCount }} allotment line(s)">
+                                                        {{ $summaryText }} <i class="mdi mdi-eye-outline ms-1"></i>
+                                                    </button>
                                                 </div>
-                                            @endforeach
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
                                         </td>
                                         <td class="text-end fw-bold text-primary">
                                             {{ $sale->currency }} {{ number_format($sale->total_amount, 2) }}
@@ -255,25 +301,25 @@
                                             </span>
                                         </td>
                                         <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
+                                            <div class="d-inline-flex align-items-center justify-content-center gap-1">
                                                 @can('hotel_sale_show')
-                                                <a href="{{ route('hotel-sales.show', $sale->id) }}" class="btn btn-primary btn-sm" title="View & Print Voucher">
+                                                <a href="{{ route('hotel-sales.show', $sale->id) }}" class="btn btn-primary btn-sm px-2 py-1" title="View & Print Voucher">
                                                     <i class="mdi mdi-printer"></i>
                                                 </a>
-                                                <a href="{{ route('hotel-sales.download-pdf', $sale->id) }}" class="btn btn-danger btn-sm" title="Download PDF">
+                                                <a href="{{ route('hotel-sales.download-pdf', $sale->id) }}" class="btn btn-danger btn-sm px-2 py-1" title="Download PDF">
                                                     <i class="mdi mdi-file-pdf-box"></i>
                                                 </a>
                                                 @endcan
                                                 @can('hotel_sale_edit')
-                                                <a href="{{ route('hotel-sales.edit', $sale->id) }}" class="btn btn-outline-secondary btn-sm" title="Edit">
+                                                <a href="{{ route('hotel-sales.edit', $sale->id) }}" class="btn btn-outline-secondary btn-sm px-2 py-1" title="Edit">
                                                     <i class="mdi mdi-pencil"></i>
                                                 </a>
                                                 @endcan
                                                 @can('hotel_sale_trash')
-                                                <form action="{{ route('hotel-sales.delete', $sale->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this reservation invoice?');">
+                                                <form action="{{ route('hotel-sales.delete', $sale->id) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Delete this reservation invoice?');">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm px-2 py-1" title="Delete">
                                                         <i class="mdi mdi-trash-can-outline"></i>
                                                     </button>
                                                 </form>
@@ -304,6 +350,84 @@
                     </div>
                 @endif
             </div>
+
+            <!-- Allotment Details Modals -->
+            @foreach($sales as $sale)
+                @if($sale->items->count() > 0)
+                    <div class="modal fade" id="saleItemsModal{{ $sale->id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header bg-primary text-white py-2 px-3">
+                                    <div>
+                                        <h5 class="modal-title fs-15 fw-bold text-white mb-0">
+                                            <i class="mdi mdi-hotel me-1"></i> Reserved Hotels & Allotment — {{ $sale->invoice_number }}
+                                        </h5>
+                                        <small class="text-white-50">
+                                            {{ $sale->customer_name }}@if($sale->reservation_title) • {{ $sale->reservation_title }}@endif
+                                        </small>
+                                    </div>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-3">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered align-middle mb-0 fs-12">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Hotel</th>
+                                                    <th>Type & Qty</th>
+                                                    <th>Meal Plan</th>
+                                                    <th>Check In</th>
+                                                    <th>Check Out</th>
+                                                    <th class="text-center">Nights</th>
+                                                    <th class="text-end">Rate</th>
+                                                    <th class="text-end">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($sale->items as $idx => $item)
+                                                    <tr>
+                                                        <td class="text-muted">{{ $idx + 1 }}</td>
+                                                        <td class="fw-semibold text-dark">{{ $item->hotel_name }}</td>
+                                                        <td>
+                                                            @if($item->allotment_basis === 'bed' || strtoupper((string)$item->room_type) === 'BED')
+                                                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle">BED: {{ $item->quantity }} Beds</span>
+                                                            @elseif($item->allotment_basis === 'per_night')
+                                                                <span class="badge bg-info-subtle text-info border border-info-subtle">{{ $item->room_type }}: {{ $item->quantity }} (Per Night)</span>
+                                                            @else
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle">{{ $item->room_type }}: {{ $item->quantity }} Rooms</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>{{ $item->meal_plan ?: 'RO' }}</td>
+                                                        <td>{{ $item->check_in ? \Carbon\Carbon::parse($item->check_in)->format('d-M-Y') : '—' }}</td>
+                                                        <td>{{ $item->check_out ? \Carbon\Carbon::parse($item->check_out)->format('d-M-Y') : '—' }}</td>
+                                                        <td class="text-center">{{ $item->no_of_nights }}</td>
+                                                        <td class="text-end">{{ number_format($item->rate_per_unit, 2) }}</td>
+                                                        <td class="text-end fw-bold text-primary">{{ number_format($item->amount, 2) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between">
+                                    <span class="fw-bold text-dark fs-13">
+                                        Total: <span class="text-primary">{{ $sale->currency }} {{ number_format($sale->total_amount, 2) }}</span>
+                                    </span>
+                                    <div class="d-flex gap-2">
+                                        @can('hotel_sale_show')
+                                            <a href="{{ route('hotel-sales.show', $sale->id) }}" class="btn btn-primary btn-sm">
+                                                <i class="mdi mdi-printer me-1"></i> View & Print Voucher
+                                            </a>
+                                        @endcan
+                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
 
         </div>
     </div>
